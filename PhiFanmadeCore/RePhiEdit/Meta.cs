@@ -30,7 +30,7 @@ public class Meta
     /// <summary>
     /// 谱面难度
     /// </summary>
-    [JsonProperty("level")] public string Level = "EZ  Lv.1"; // 难度
+    [JsonProperty("level")] public string Level = "NR  Lv.17"; // 难度
     /// <summary>
     /// 谱面名称
     /// </summary>
@@ -38,7 +38,7 @@ public class Meta
     /// <summary>
     /// 谱面偏移，单位为毫秒
     /// </summary>
-    [JsonProperty("offset")] public int Offset; // 音乐偏移
+    [JsonProperty("offset")] public int Offset = 0; // 音乐偏移
     /// <summary>
     /// 音乐的相对路径
     /// </summary>

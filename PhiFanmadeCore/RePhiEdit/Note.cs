@@ -86,8 +86,6 @@ public class Note
     public string? HitSound = null; // 音效
 }
 
-
-
 public enum NoteType
 {
     Tap = 1,
