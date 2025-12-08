@@ -13,7 +13,7 @@
         <Description>即使身处无人角落，我仍要继续向前，直到我无法前进。</Description>
         <PackageProjectUrl>https://github.com/NuanRMxi-Lazy-Team</PackageProjectUrl>
         <PackageLicenseUrl>https://www.gnu.org/licenses/agpl-3.0.html</PackageLicenseUrl>
-        <PackageIcon>NRSNRM - 副本.png</PackageIcon>
+        <PackageIcon>PhiFanmadeToolIcon.png</PackageIcon>
         <RepositoryUrl>https://github.com/NuanRMxi-Lazy-Team</RepositoryUrl>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     </PropertyGroup>
