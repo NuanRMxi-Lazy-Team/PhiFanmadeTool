@@ -627,8 +627,8 @@ attach them to the start of each source file to most effectively state
 the exclusion of warranty; and each file should have at least the
 "copyright" line and a pointer to where the full notice is found.
 
-        <one line to give the program's name and a brief idea of what it does.>
-        Copyright (C) <year>  <name of author>
+        PhiFanmadeTool - A tool for PhiFanmade Chart
+        Copyright (C) 2025 NuanR_Mxi & NuanR_Star & Kaede HikariN & Kaede NuanR_Mxi & Kaede NuanR_Star & 枫暖日明曦 & 枫暖日星辉 & 暖日明曦 & 暖日星辉 & 暖日 & 暖星 & NuanR_Mxi Lazy Team & NuanR_Star Lazy Team & NuanR_Star Ciallo Team
 
         This program is free software: you can redistribute it and/or modify
         it under the terms of the GNU Affero General Public License as
