@@ -16,8 +16,8 @@ public class JudgeLine
     [JsonProperty("notes")] public Note[] Notes = []; // note列表
     [JsonProperty("zOrder")] public int ZOrder; // Z轴顺序
 
-    [JsonProperty("attachUI", NullValueHandling = NullValueHandling.Ignore)]
-    public string? AttachUi; // 绑定UI名，当不绑定时为null
+    [JsonProperty("attachUI", NullValueHandling = NullValueHandling.Ignore)] [JsonConverter(typeof(AttachUiConverter))]
+    public AttachUi? AttachUi; // 绑定UI名，当不绑定时为null
 
     [JsonProperty("isGif")] public bool IsGif; // 纹理是否为GIF
 
