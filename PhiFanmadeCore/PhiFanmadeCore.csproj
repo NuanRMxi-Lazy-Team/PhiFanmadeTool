@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AssemblyName>PhiFanmade.Core</AssemblyName>
+        <RootNamespace>PhiFanmade.Core</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="PhiChain\" />
+      <Folder Include="PhiEdit\" />
+      <Folder Include="Phigros\v1\" />
+    </ItemGroup>
+
+</Project>
