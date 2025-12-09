@@ -30,46 +30,43 @@ namespace PhiFanmade.Core.RePhiEdit
             return existingValue;
         }
     }
-
-    /// <summary>
-    /// 用于兼容多字段名的颜色数组转换器
-    /// </summary>
+    
     public class ColorConverter : JsonConverter<byte[]>
     {
         public override void WriteJson(JsonWriter writer, byte[] value, JsonSerializer serializer)
         {
-            writer.WritePropertyName("tint");
             writer.WriteStartArray();
-            foreach (var v in value)
+            foreach (var b in value)
             {
-                writer.WriteValue(v);
+                writer.WriteValue(b);
             }
-
             writer.WriteEndArray();
         }
 
         public override byte[] ReadJson(JsonReader reader, Type objectType, byte[] existingValue, bool hasExistingValue,
             JsonSerializer serializer)
         {
-            // 读取字段名（color 或 tint）
-            string propertyName = reader.TokenType == JsonToken.PropertyName
-                ? (reader.Value?.ToString() ?? "").ToLower()
-                : "";
-
-            // 前进到下一个 token
-            reader.Read();
-
-            // 当字段是 tint 或 color 且内容是数组时读取
-            if ((propertyName == "tint" || propertyName == "color") &&
-                reader.TokenType == JsonToken.StartArray)
+            if (reader.TokenType == JsonToken.StartArray)
             {
-                var list = serializer.Deserialize<List<byte>>(reader);
-                return list?.ToArray() ?? existingValue;
+                var list = new List<byte>();
+                while (reader.Read())
+                {
+                    if (reader.TokenType == JsonToken.EndArray)
+                        break;
+
+                    if (reader.TokenType == JsonToken.Integer)
+                    {
+                        list.Add(Convert.ToByte(reader.Value));
+                    }
+                }
+                return list.ToArray();
             }
 
-            return existingValue;
+            return existingValue ?? new byte[] { 255, 255, 255 };
         }
     }
+
+
 
     /// <summary>
     /// 用于转换音符类型枚举的转换器

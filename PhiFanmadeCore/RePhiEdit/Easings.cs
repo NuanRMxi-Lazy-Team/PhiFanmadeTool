@@ -315,7 +315,7 @@ namespace PhiFanmade.Core.RePhiEdit
     {
         public override void WriteJson(JsonWriter writer, Easing value, JsonSerializer serializer)
         {
-            serializer.Serialize(writer, value);
+            writer.WriteValue((int)value);
         }
 
         public override Easing ReadJson(JsonReader reader, Type objectType, Easing existingValue, bool hasExistingValue,

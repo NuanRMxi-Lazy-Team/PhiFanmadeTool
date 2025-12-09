@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 # 定义路径
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $packageName = "PhiFanmadeCore"
-$version = "0.0.2"
+$version = "0.0.3"
 $outputPath = Join-Path $scriptPath "Build"
 $tempPath = Join-Path $outputPath "Temp"
 

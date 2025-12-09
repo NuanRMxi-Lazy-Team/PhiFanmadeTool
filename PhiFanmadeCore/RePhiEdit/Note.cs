@@ -70,8 +70,16 @@ namespace PhiFanmade.Core.RePhiEdit
         /// <summary>
         /// 音符颜色（RGB，顶点颜色乘法），此字段在Json中优先为tint，早期版本使用过color字段
         /// </summary>
-        [JsonConverter(typeof(ColorConverter))]
+        [JsonConverter(typeof(ColorConverter))] [JsonProperty("tint")]
         public byte[] Color = {255, 255, 255}; // 颜色（RGB）
+        
+        [JsonProperty("color",NullValueHandling =  NullValueHandling.Ignore)]
+        [JsonConverter(typeof(ColorConverter))]
+        private byte[] ColorLegacyField
+        {
+            get => null; // 序列化时不输出
+            set { if (value != null) Color = value; } // 反序列化时赋值
+        }
 
         /// <summary>
         /// 打击特效颜色（RGB，顶点颜色乘法）
