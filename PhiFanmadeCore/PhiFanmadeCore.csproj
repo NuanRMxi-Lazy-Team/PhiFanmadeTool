@@ -1,9 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
         <AssemblyName>PhiFanmade.Core</AssemblyName>
         <RootNamespace>PhiFanmade.Core</RootNamespace>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -16,23 +14,26 @@
         <PackageIcon>PhiFanmadeToolIcon.png</PackageIcon>
         <RepositoryUrl>https://github.com/NuanRMxi-Lazy-Team</RepositoryUrl>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <Copyright>NuanR_Star Ciallo Copyright © 2025</Copyright>
+        <TargetFrameworks>net10.0;net9.0;net8.0;net472</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="PhiChain\" />
-      <Folder Include="PhiEdit\" />
-      <Folder Include="Phigros\v1\" />
+        <Folder Include="PhiChain\"/>
+        <Folder Include="PhiEdit\"/>
+        <Folder Include="Phigros\v1\"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="PhiFanmadeToolIcon.png">
-        <Pack>True</Pack>
-        <PackagePath></PackagePath>
-      </None>
+        <None Include="PhiFanmadeToolIcon.png" Pack="true" PackagePath="\"/>
+        <None Update="PhiFanmadeToolIcon.png">
+            <Pack>True</Pack>
+            <PackagePath></PackagePath>
+        </None>
     </ItemGroup>
 
 </Project>
