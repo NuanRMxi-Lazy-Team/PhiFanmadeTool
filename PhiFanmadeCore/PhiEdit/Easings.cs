@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 
-namespace PhiFanmade.Core.RePhiEdit
+namespace PhiFanmade.Core.PhiEdit
 {
     public static class Easings
     {

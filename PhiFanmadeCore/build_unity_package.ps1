@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 # 定义路径
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $packageName = "PhiFanmadeCore"
-$version = "0.0.1"
+$version = "0.0.2"
 $outputPath = Join-Path $scriptPath "Build"
 $tempPath = Join-Path $outputPath "Temp"
 
@@ -60,7 +60,7 @@ foreach ($file in @("LICENSE", "LICENSE.md", "LICENSE.txt", "README", "README.md
     $filePath = Join-Path $parentPath $file
     if (Test-Path $filePath) {
         Copy-Item -Path $filePath -Destination $tempPath -Force
-        Write-Host "copyed $file" -ForegroundColor Cyan
+        Write-Host "copied $file" -ForegroundColor Cyan
     }
 }
 
@@ -78,7 +78,7 @@ Get-ChildItem -Path $tempPath -Recurse | ForEach-Object {
 
     if ($shouldExclude) {
         Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "fucked: $($_.Name)" -ForegroundColor Yellow
+        Write-Host "Excluded: $($_.Name)" -ForegroundColor Yellow
     }
 }
 

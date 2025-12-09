@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmadeCore", "PhiFanmad
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmadeOpenTool", "PhiFanmadeOpenTool\PhiFanmadeOpenTool.csproj", "{65D83983-76C2-4F64-95BE-FE04E0BCA8B4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmadeOpenToolCli", "PhiFanmadeOpenToolCli\PhiFanmadeOpenToolCli.csproj", "{05F42F98-A797-480B-9994-9FE5CA23A8D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{65D83983-76C2-4F64-95BE-FE04E0BCA8B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65D83983-76C2-4F64-95BE-FE04E0BCA8B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{65D83983-76C2-4F64-95BE-FE04E0BCA8B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05F42F98-A797-480B-9994-9FE5CA23A8D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05F42F98-A797-480B-9994-9FE5CA23A8D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05F42F98-A797-480B-9994-9FE5CA23A8D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05F42F98-A797-480B-9994-9FE5CA23A8D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
