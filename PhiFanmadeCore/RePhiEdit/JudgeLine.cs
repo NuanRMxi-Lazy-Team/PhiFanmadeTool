@@ -9,12 +9,12 @@ namespace PhiFanmade.Core.RePhiEdit
         /// <summary>
         /// 判定线名称
         /// </summary>
-        public string Name = "PhiFanmadeCoreJudgeLine";
+        [JsonProperty("Name")] public string Name = "PhiFanmadeCoreJudgeLine";
 
         /// <summary>
         /// 判定线纹理相对路径，默认值为line.png
         /// </summary>
-        public string Texture = "line.png"; // 判定线纹理路径
+        [JsonProperty("Texture")] public string Texture = "line.png"; // 判定线纹理路径
 
         /// <summary>
         /// 判定线纹理锚点(0~1之间)，默认值为中心点(0.5, 0.5)
@@ -24,7 +24,8 @@ namespace PhiFanmade.Core.RePhiEdit
         /// <summary>
         /// 判定线事件层列表
         /// </summary>
-        [JsonProperty("eventLayers")] public List<EventLayer> EventLayers = new List<EventLayer>(); // 事件层
+        [JsonProperty("eventLayers", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public List<EventLayer> EventLayers = new List<EventLayer>(); // 事件层
 
         /// <summary>
         /// 父级判定线索引，-1表示无父级
@@ -47,7 +48,7 @@ namespace PhiFanmade.Core.RePhiEdit
         /// 为什么？RePhiEdit就是这样设计的。。。
         /// </summary>
         [JsonProperty("numOfNotes")]
-        [Obsolete("你不能修改这个值，也不应该读取这个值，这个值完全不准确",true)]
+        [Obsolete("你不能修改这个值，也不应该读取这个值，这个值完全不准确", true)]
         public int TotalNumberOfNotes
         {
             get
@@ -60,14 +61,15 @@ namespace PhiFanmade.Core.RePhiEdit
                         continue;
                     count++;
                 }
+
                 return count;
             }
         }
-        
+
         /// <summary>
         /// 特殊事件层（故事板）
         /// </summary>
-        [JsonProperty("extended",DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonProperty("extended", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public ExtendLayer Extended = new ExtendLayer();
 
         /// <summary>
@@ -88,9 +90,9 @@ namespace PhiFanmade.Core.RePhiEdit
         [JsonProperty("isGif")] public bool IsGif; // 纹理是否为GIF
 
         /// <summary>
-        /// 绑定组
+        /// 所属组
         /// </summary>
-        [JsonProperty("linkgroup")] public int LinkGroup = 0; // 绑定组
+        [JsonProperty("Group")] public int Group = 0; // 绑定组
 
         /// <summary>
         /// 当前判定线相对于当前BPM的因子。判定线BPM = 谱面BPM / BpmFactor
@@ -103,7 +105,7 @@ namespace PhiFanmade.Core.RePhiEdit
         [JsonProperty("rotateWithFather")] public bool RotateWithFather = false; // 是否随父级旋转
 
         #region Controls
-        
+
         /// <summary>
         /// Position（X） Control 控制点列表
         /// </summary>
