@@ -32,7 +32,7 @@ namespace PhiFanmade.Core.RePhiEdit
             }
     
             var previousEvent = events.FindLast(e => beat > e.EndBeat);
-            return previousEvent != null ? previousEvent.End : default;
+            return previousEvent != null ? previousEvent.EndValue : default;
         }
 
         /// <summary>

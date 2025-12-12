@@ -9,7 +9,7 @@ namespace PhiFanmade.Core.RePhiEdit
         /// 是否为贝塞尔曲线
         /// </summary>
         [JsonProperty("bezier")] [JsonConverter(typeof(BoolConverter))]
-        public bool Bezier = false; // 是否为贝塞尔曲线
+        public bool IsBezier = false; // 是否为贝塞尔曲线
 
         /// <summary>
         /// 贝塞尔曲线控制点
@@ -29,17 +29,17 @@ namespace PhiFanmade.Core.RePhiEdit
         /// <summary>
         /// 缓动类型
         /// </summary>
-        [JsonProperty("easingType")] public Easing EasingType = new Easing(1); // 缓动类型
+        [JsonProperty("easingType")] public Easing Easing = new Easing(1); // 缓动类型
 
         /// <summary>
         /// 事件开始数值
         /// </summary>
-        [JsonProperty("start")] public T Start; // 开始值
+        [JsonProperty("start")] public T StartValue; // 开始值
 
         /// <summary>
         /// 事件结束数值
         /// </summary>
-        [JsonProperty("end")] public T End; // 结束值
+        [JsonProperty("end")] public T EndValue; // 结束值
 
         /// <summary>
         /// 事件开始拍
@@ -58,32 +58,67 @@ namespace PhiFanmade.Core.RePhiEdit
         /// <returns>指定拍时，此事件的数值</returns>
         public T GetValueAtBeat(Beat beat)
         {
-            float t = (beat - StartBeat) / (EndBeat - StartBeat);
+            var t = (beat - StartBeat) / (EndBeat - StartBeat);
+
+            // 如果启用了贝塞尔曲线,使用 Bezier.Do
+            if (IsBezier)
+            {
+                // 检查 T 的类型并调用相应的方法
+                if (typeof(T) == typeof(float))
+                    return (T)(object)Bezier.Do(BezierPoints, t, Convert.ToSingle(StartValue),
+                        Convert.ToSingle(EndValue), EasingLeft, EasingRight);
+                else if (typeof(T) == typeof(double))
+                    return (T)(object)Bezier.Do(BezierPoints, t, Convert.ToDouble(StartValue),
+                        Convert.ToDouble(EndValue), EasingLeft, EasingRight);
+                else if (typeof(T) == typeof(int))
+                    return (T)(object)Bezier.Do(BezierPoints, t, Convert.ToDouble(StartValue),
+                        Convert.ToDouble(EndValue), EasingLeft, EasingRight);
+                else if (typeof(T) == typeof(byte[]))
+                {
+                    byte[] startBytes = StartValue as byte[];
+                    byte[] endBytes = EndValue as byte[];
+                    if (startBytes == null || endBytes == null)
+                        throw new InvalidOperationException("Start or End is not a byte array, or is null.");
+                    if (startBytes.Length != endBytes.Length)
+                        throw new InvalidOperationException(
+                            "Byte arrays must be of the same length for interpolation.");
+                    byte[] result = new byte[startBytes.Length];
+                    for (int i = 0; i < startBytes.Length; i++)
+                        result[i] = Bezier.Do(BezierPoints, t, startBytes[i], endBytes[i], EasingLeft, EasingRight);
+                    return (T)(object)result;
+                }
+                else
+                    throw new NotSupportedException($"类型 {typeof(T)} 不受支持。");
+            }
+
             // 检查 T 的类型并调用相应的方法
             if (typeof(T) == typeof(float))
-                return (T)(object)EasingType.Do(EasingLeft, EasingRight, Convert.ToSingle(Start), Convert.ToSingle(End),
+                return (T)(object)Easing.Do(EasingLeft, EasingRight, Convert.ToSingle(StartValue),
+                    Convert.ToSingle(EndValue),
                     t);
             else if (typeof(T) == typeof(double))
-                return (T)(object)EasingType.Do(EasingLeft, EasingRight, Convert.ToDouble(Start), Convert.ToDouble(End),
+                return (T)(object)Easing.Do(EasingLeft, EasingRight, Convert.ToDouble(StartValue),
+                    Convert.ToDouble(EndValue),
                     t);
             else if (typeof(T) == typeof(int))
-                return (T)(object)EasingType.Do(EasingLeft, EasingRight, Convert.ToDouble(Start), Convert.ToDouble(End),
+                return (T)(object)Easing.Do(EasingLeft, EasingRight, Convert.ToDouble(StartValue),
+                    Convert.ToDouble(EndValue),
                     t);
             else if (typeof(T) == typeof(byte[]))
             {
-                byte[] startBytes = Start as byte[];
-                byte[] endBytes = End as byte[];
+                byte[] startBytes = StartValue as byte[];
+                byte[] endBytes = EndValue as byte[];
                 if (startBytes == null || endBytes == null)
                     throw new InvalidOperationException("Start or End is not a byte array, or is null.");
                 if (startBytes.Length != endBytes.Length)
                     throw new InvalidOperationException("Byte arrays must be of the same length for interpolation.");
                 byte[] result = new byte[startBytes.Length];
                 for (int i = 0; i < startBytes.Length; i++)
-                    result[i] = EasingType.Do(EasingLeft, EasingRight, startBytes[i], endBytes[i], t);
+                    result[i] = Easing.Do(EasingLeft, EasingRight, startBytes[i], endBytes[i], t);
                 return (T)(object)result;
             }
             else
-                throw new NotSupportedException($"类型 {typeof(T)} 不受支持。仅支持 float 和 double 类型。");
+                throw new NotSupportedException($"类型 {typeof(T)} 不受支持。");
         }
     }
 }

@@ -177,7 +177,7 @@ namespace PhiFanmade.Core.RePhiEdit
         // Method to evaluate easing between any start and end point
         private static double Evaluate(EasingFunction function, double start, double end, double t)
         {
-            // 爱来自PhiZone Player
+            // code by PhiZone Player
             double progress = function(start + (end - start) * t);
             double progressStart = function(start);
             double progressEnd = function(end);
