@@ -28,8 +28,13 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             /// <param name="format">是否需要格式化</param>
             /// <returns>Json</returns>
-            public string ExportToJson(bool format) =>
-                JsonConvert.SerializeObject(this, format ? Formatting.Indented : Formatting.None);
+            public string ExportToJson(bool format)
+            {
+                foreach (var judgeLine in JudgeLineList)
+                foreach (var eventlayer in judgeLine.EventLayers)
+                    eventlayer.Sort();
+                return JsonConvert.SerializeObject(this, format ? Formatting.Indented : Formatting.None);
+            }
 
 
             /// <summary>
@@ -38,9 +43,16 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <param name="json">谱面Json数据</param>
             /// <returns>谱面对象</returns>
             /// <exception cref="InvalidOperationException">谱面json数据无法正确序列化</exception>
-            public static Chart LoadFromJson(string json) => JsonConvert.DeserializeObject<Chart>(json) ??
-                                                             throw new InvalidOperationException(
-                                                                 "Failed to deserialize Chart from JSON.");
+            public static Chart LoadFromJson(string json)
+            {
+                var chart = JsonConvert.DeserializeObject<Chart>(json) ??
+                            throw new InvalidOperationException(
+                                "Failed to deserialize Chart from JSON.");
+                foreach (var judgeLine in chart.JudgeLineList)
+                foreach (var eventlayer in judgeLine.EventLayers)
+                    eventlayer.Sort();
+                return chart;
+            }
 
             /// <summary>
             /// 异步序列化为Json

@@ -73,8 +73,8 @@ namespace PhiFanmade.Core.RePhiEdit
                         return (T)(object)Bezier.Do(BezierPoints, t, Convert.ToDouble(StartValue),
                             Convert.ToDouble(EndValue), EasingLeft, EasingRight);
                     else if (typeof(T) == typeof(int))
-                        return (T)(object)Bezier.Do(BezierPoints, t, Convert.ToDouble(StartValue),
-                            Convert.ToDouble(EndValue), EasingLeft, EasingRight);
+                        return (T)(object)Bezier.Do(BezierPoints, t, Convert.ToInt32(StartValue),
+                            Convert.ToInt32(EndValue), EasingLeft, EasingRight);
                     else if (typeof(T) == typeof(byte[]))
                     {
                         byte[] startBytes = StartValue as byte[];
@@ -103,9 +103,8 @@ namespace PhiFanmade.Core.RePhiEdit
                         Convert.ToDouble(EndValue),
                         t);
                 else if (typeof(T) == typeof(int))
-                    return (T)(object)Easing.Do(EasingLeft, EasingRight, Convert.ToDouble(StartValue),
-                        Convert.ToDouble(EndValue),
-                        t);
+                    return (T)(object)Easing.Do(EasingLeft, EasingRight, Convert.ToInt32(StartValue),
+                        Convert.ToInt32(EndValue), t);
                 else if (typeof(T) == typeof(byte[]))
                 {
                     byte[] startBytes = StartValue as byte[];

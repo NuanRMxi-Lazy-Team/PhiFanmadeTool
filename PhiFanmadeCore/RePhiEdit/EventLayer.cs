@@ -11,7 +11,7 @@ namespace PhiFanmade.Core.RePhiEdit
             [JsonProperty("moveXEvents")] public List<Event<float>> MoveXEvents = new List<Event<float>>(); // 移动事件
             [JsonProperty("moveYEvents")] public List<Event<float>> MoveYEvents = new List<Event<float>>(); // 移动事件
             [JsonProperty("rotateEvents")] public List<Event<float>> RotateEvents = new List<Event<float>>(); // 旋转事件
-            [JsonProperty("alphaEvents")] public List<Event<float>> AlphaEvents = new List<Event<float>>(); // 透明度事件
+            [JsonProperty("alphaEvents")] public List<Event<int>> AlphaEvents = new List<Event<int>>(); // 透明度事件
             [JsonProperty("speedEvents")] public List<Event<float>> SpeedEvents = new List<Event<float>>(); // 速度事件
 
             /// <summary>
@@ -25,6 +25,7 @@ namespace PhiFanmade.Core.RePhiEdit
                 for (int i = 0; i < events.Count; i++)
                 {
                     var e = events[i];
+                        return e.EndValue;
                     // 如果当前拍在事件范围内，返回插值结果
                     if (beat >= e.StartBeat && beat <= e.EndBeat)
                         return e.GetValueAtBeat(beat);

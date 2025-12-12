@@ -23,7 +23,7 @@ Kaede NuanR_Star Copyright © 2025 PhiFanmadeTool Project.
 暖星 Copyright © 2025 PhiFanmadeTool Project.  
 NuanR_Mxi Lazy Team Copyright © 2025 PhiFanmadeTool Project.  
 NuanR_Star Lazy Team Copyright © 2025 PhiFanmadeTool Project.  
-NuanR_Star Ciallo Team Copyright © 2025 PhiFanmadeTool Project
+NuanR_Star Ciallo Team Copyright © 2025 PhiFanmadeTool Project.
 
 ## 免责声明
 本软件与南京鸽游网络有限公司（厦门鸽游网络有限公司）无任何关联。
