@@ -10,7 +10,7 @@ namespace PhiFanmade.Core.RePhiEdit
         /// <summary>
         /// RePhiEdit版本号
         /// </summary>
-        [JsonProperty("RPEVersion")] public int RpeVersion = 150; // RPE版本
+        [JsonProperty("RPEVersion")] public int RpeVersion = 170; // RPE版本
 
         /// <summary>
         /// 曲绘的相对路径

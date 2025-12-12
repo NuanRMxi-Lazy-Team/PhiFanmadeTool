@@ -307,6 +307,20 @@ namespace PhiFanmade.Core.RePhiEdit
             //插值后返回
             return start + (end - start) * easedTime;
         }
+        
+        public int Do(float minLim, float maxLim, int start, int end, float t)
+        {
+            var easedTime = Easings.Evaluate(_easingNumber, minLim, maxLim, t);
+            //插值后返回
+            return (int)(start + (end - start) * easedTime);
+        }
+        
+        public byte Do(float minLim, float maxLim, byte start, byte end, float t)
+        {
+            var easedTime = Easings.Evaluate(_easingNumber, minLim, maxLim, t);
+            //插值后返回
+            return (byte)(start + (end - start) * easedTime);
+        }
         // 以int访问时，返回缓动编号
         public static implicit operator int(Easing easing) => easing._easingNumber;
     }

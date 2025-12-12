@@ -9,7 +9,7 @@ namespace PhiFanmade.Core.RePhiEdit
     /// 使用int[]隐式转换时，返回原始数组
     /// </summary>
     [JsonConverter(typeof(BeatJsonConverter))]
-    public class Beat
+    public class Beat 
     {
         private readonly int[] _beat;
 

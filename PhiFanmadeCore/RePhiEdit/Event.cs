@@ -1,58 +1,89 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 
 namespace PhiFanmade.Core.RePhiEdit
 {
-    public class Event
+    public class Event<T>
     {
         /// <summary>
         /// 是否为贝塞尔曲线
         /// </summary>
         [JsonProperty("bezier")] [JsonConverter(typeof(BoolConverter))]
         public bool Bezier = false; // 是否为贝塞尔曲线
+
         /// <summary>
         /// 贝塞尔曲线控制点
         /// </summary>
         [JsonProperty("bezierPoints")] public float[] BezierPoints = new float[4]; // 贝塞尔曲线点
+
         /// <summary>
         /// 缓动截取左界限
         /// </summary>
         [JsonProperty("easingLeft")] public float EasingLeft = 0.0f; // 缓动开始
+
         /// <summary>
         /// 缓动截取右界限
         /// </summary>
         [JsonProperty("easingRight")] public float EasingRight = 1.0f; // 缓动结束
+
         /// <summary>
         /// 缓动类型
         /// </summary>
         [JsonProperty("easingType")] public Easing EasingType = new Easing(1); // 缓动类型
+
         /// <summary>
         /// 事件开始数值
         /// </summary>
-        [JsonProperty("start")] public float Start = 0f; // 开始值
+        [JsonProperty("start")] public T Start; // 开始值
+
         /// <summary>
         /// 事件结束数值
         /// </summary>
-        [JsonProperty("end")] public float End = 0f; // 结束值
+        [JsonProperty("end")] public T End; // 结束值
+
         /// <summary>
         /// 事件开始拍
         /// </summary>
-        [JsonProperty("startTime")] public Beat StartBeat = new Beat(new[]{0, 0, 1}); // 开始时间
+        [JsonProperty("startTime")] public Beat StartBeat = new Beat(new[] { 0, 0, 1 }); // 开始时间
+
         /// <summary>
         /// 事件结束拍
         /// </summary>
-        [JsonProperty("endTime")] public Beat EndBeat = new Beat(new[]{1, 0, 1}); // 结束时间
+        [JsonProperty("endTime")] public Beat EndBeat = new Beat(new[] { 1, 0, 1 }); // 结束时间
 
         /// <summary>
         /// 获取某个拍在这个事件中的值
         /// </summary>
         /// <param name="beat">指定拍</param>
         /// <returns>指定拍时，此事件的数值</returns>
-        public float GetValueAtBeat(Beat beat)
+        public T GetValueAtBeat(Beat beat)
         {
-            //获得这个拍在这个事件的时间轴上的位置
             float t = (beat - StartBeat) / (EndBeat - StartBeat);
-            return EasingType.Do(EasingLeft, EasingRight, Start, End, t);
+            // 检查 T 的类型并调用相应的方法
+            if (typeof(T) == typeof(float))
+                return (T)(object)EasingType.Do(EasingLeft, EasingRight, Convert.ToSingle(Start), Convert.ToSingle(End),
+                    t);
+            else if (typeof(T) == typeof(double))
+                return (T)(object)EasingType.Do(EasingLeft, EasingRight, Convert.ToDouble(Start), Convert.ToDouble(End),
+                    t);
+            else if (typeof(T) == typeof(int))
+                return (T)(object)EasingType.Do(EasingLeft, EasingRight, Convert.ToDouble(Start), Convert.ToDouble(End),
+                    t);
+            else if (typeof(T) == typeof(byte[]))
+            {
+                byte[] startBytes = Start as byte[];
+                byte[] endBytes = End as byte[];
+                if (startBytes == null || endBytes == null)
+                    throw new InvalidOperationException("Start or End is not a byte array, or is null.");
+                if (startBytes.Length != endBytes.Length)
+                    throw new InvalidOperationException("Byte arrays must be of the same length for interpolation.");
+                byte[] result = new byte[startBytes.Length];
+                for (int i = 0; i < startBytes.Length; i++)
+                    result[i] = EasingType.Do(EasingLeft, EasingRight, startBytes[i], endBytes[i], t);
+                return (T)(object)result;
+            }
+            else
+                throw new NotSupportedException($"类型 {typeof(T)} 不受支持。仅支持 float 和 double 类型。");
         }
     }
 }
-

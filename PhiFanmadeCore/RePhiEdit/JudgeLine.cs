@@ -1,26 +1,90 @@
 ﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace PhiFanmade.Core.RePhiEdit
 {
     public class JudgeLine
     {
+        /// <summary>
+        /// 判定线名称
+        /// </summary>
         public string Name = "PhiFanmadeCoreJudgeLine";
+
+        /// <summary>
+        /// 判定线纹理相对路径，默认值为line.png
+        /// </summary>
         public string Texture = "line.png"; // 判定线纹理路径
-        [JsonProperty("anchor")] public float[] Anchor = {0.5f, 0.5f}; // 判定线纹理锚点
-        [JsonProperty("eventLayers")] public EventLayer[] EventLayers = Array.Empty<EventLayer>(); // 事件层
+
+        /// <summary>
+        /// 判定线纹理锚点(0~1之间)，默认值为中心点(0.5, 0.5)
+        /// </summary>
+        [JsonProperty("anchor")] public float[] Anchor = { 0.5f, 0.5f }; // 判定线纹理锚点
+
+        /// <summary>
+        /// 判定线事件层列表
+        /// </summary>
+        [JsonProperty("eventLayers")] public List<EventLayer> EventLayers = new List<EventLayer>(); // 事件层
+
+        /// <summary>
+        /// 父级判定线索引，-1表示无父级
+        /// </summary>
         [JsonProperty("father")] public int Father = -1; // 父级
 
+        /// <summary>
+        /// 是否遮罩越过判定线的音符（已被打击的除外）
+        /// </summary>
         [JsonProperty("isCover")] [JsonConverter(typeof(BoolConverter))]
         public bool IsCover = true; // 是否遮罩
 
-        [JsonProperty("notes")] public Note[] Notes = Array.Empty<Note>(); // note列表
+        /// <summary>
+        /// 判定线音符列表
+        /// </summary>
+        [JsonProperty("notes")] public List<Note> Notes = new List<Note>(); // note列表
+
+        /// <summary>
+        /// Note总数量(包含 FakeNote，不包含任何形式的Hold)。
+        /// 为什么？RePhiEdit就是这样设计的。。。
+        /// </summary>
+        [JsonProperty("numOfNotes")]
+        [Obsolete("你不能修改这个值，也不应该读取这个值，这个值完全不准确",true)]
+        public int TotalNumberOfNotes
+        {
+            get
+            {
+                // Note总数量(包含 FakeNote，不包含任何形式的Hold)
+                int count = 0;
+                foreach (var note in Notes)
+                {
+                    if (note.Type == NoteType.Hold)
+                        continue;
+                    count++;
+                }
+                return count;
+            }
+        }
+        
+        /// <summary>
+        /// 特殊事件层（故事板）
+        /// </summary>
+        [JsonProperty("extended",DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public ExtendLayer Extended = new ExtendLayer();
+
+        /// <summary>
+        /// 判定线的Z轴顺序
+        /// </summary>
         [JsonProperty("zOrder")] public int ZOrder; // Z轴顺序
 
+        /// <summary>
+        /// 判定线是否绑定UI
+        /// </summary>
         [JsonProperty("attachUI", NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(AttachUiConverter))]
-        public AttachUi? AttachUi; // 绑定UI名，当不绑定时为null
+        public AttachUi? AttachUi = null; // 绑定UI名，当不绑定时为null
 
+        /// <summary>
+        /// 判定线纹理是否为GIF
+        /// </summary>
         [JsonProperty("isGif")] public bool IsGif; // 纹理是否为GIF
 
         /// <summary>
@@ -33,25 +97,114 @@ namespace PhiFanmade.Core.RePhiEdit
         /// </summary>
         [JsonProperty("bpmfactor")] public float BpmFactor = 1.0f; // BPM因子
 
+        /// <summary>
+        /// 是否跟随父线旋转
+        /// </summary>
         [JsonProperty("rotateWithFather")] public bool RotateWithFather = false; // 是否随父级旋转
 
-        [JsonProperty("posControl")] public PosControl[] PositionControl =
+        #region Controls
+        
+        /// <summary>
+        /// Position（X） Control 控制点列表
+        /// </summary>
+        [JsonProperty("posControl")] public List<XControl> PositionControl = new List<XControl>
         {
-            new PosControl
+            new XControl
             {
                 Easing = new Easing(1),
                 Pos = 1.0f,
                 X = 0.0f
             },
-            new PosControl
+            new XControl
             {
                 Easing = new Easing(1),
                 Pos = 1.0f,
                 X = 9999999.0f
             }
         };
+
+        /// <summary>
+        /// Alpha Control 控制点列表
+        /// </summary>
+        [JsonProperty("alphaControl")] public List<AlphaControl> AlphaControl = new List<AlphaControl>
+        {
+            new AlphaControl
+            {
+                Easing = new Easing(1),
+                Alpha = 1.0f,
+                X = 0.0f
+            },
+            new AlphaControl
+            {
+                Easing = new Easing(1),
+                Alpha = 1.0f,
+                X = 9999999.0f
+            }
+        };
+
+        /// <summary>
+        /// Size Control 控制点列表
+        /// </summary>
+        [JsonProperty("sizeControl")] public List<SizeControl> SizeControl = new List<SizeControl>
+        {
+            new SizeControl
+            {
+                Easing = new Easing(1),
+                Size = 1.0f,
+                X = 0.0f
+            },
+            new SizeControl
+            {
+                Easing = new Easing(1),
+                Size = 1.0f,
+                X = 9999999.0f
+            }
+        };
+
+        /// <summary>
+        /// Skew Control 控制点列表
+        /// </summary>
+        [JsonProperty("skewControl")] public List<SkewControl> SkewControl = new List<SkewControl>
+        {
+            new SkewControl
+            {
+                Easing = new Easing(1),
+                Skew = 0.0f,
+                X = 0.0f
+            },
+            new SkewControl
+            {
+                Easing = new Easing(1),
+                Skew = 0.0f,
+                X = 9999999.0f
+            }
+        };
+
+        /// <summary>
+        /// Y Control 控制点列表
+        /// </summary>
+        [JsonProperty("yControl")] public List<YControl> YControl = new List<YControl>
+        {
+            new YControl
+            {
+                Easing = new Easing(1),
+                Y = 1.0f,
+                X = 0.0f
+            },
+            new YControl
+            {
+                Easing = new Easing(1),
+                Y = 1.0f,
+                X = 9999999.0f
+            }
+        };
+
+        #endregion
     }
 
+    /// <summary>
+    /// 绑定UI枚举
+    /// </summary>
     public enum AttachUi
     {
         Pause = 1,

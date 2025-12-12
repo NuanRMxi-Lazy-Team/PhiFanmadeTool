@@ -13,7 +13,7 @@ namespace PhiFanmade.Core.RePhiEdit
         [JsonProperty("alpha")] public float Alpha = 1.0f;
     }
 
-    public class PosControl : ControlBase
+    public class XControl : ControlBase
     {
         [JsonProperty("pos")] public float Pos = 1.0f;
     }

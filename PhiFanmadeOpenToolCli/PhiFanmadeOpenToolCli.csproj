@@ -5,6 +5,8 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AssemblyName>PhiFanmade.OpenTool.Cli</AssemblyName>
+        <RootNamespace>PhiFanmade.OpenTool.Cli</RootNamespace>
     </PropertyGroup>
     
     <ItemGroup>
