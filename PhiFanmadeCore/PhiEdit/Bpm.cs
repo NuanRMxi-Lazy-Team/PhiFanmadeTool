@@ -1,12 +1,17 @@
 ﻿namespace PhiFanmade.Core.PhiEdit
 {
-    public class Bpm
+    public static partial class PhiEdit
     {
-        public float BeatPerMinute = 120f;
-        public float StartBeat = 0f;
-        public override string ToString()
+        public class Bpm
         {
-            return $"bp {StartBeat} {BeatPerMinute}";
+            public float BeatPerMinute = 120f;
+            public float StartBeat = 0f;
+
+            public override string ToString()
+            {
+                return $"bp {StartBeat} {BeatPerMinute}";
+            }
         }
+        
     }
 }

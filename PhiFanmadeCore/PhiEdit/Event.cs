@@ -1,6 +1,8 @@
 ﻿using System;
 namespace PhiFanmade.Core.PhiEdit
 {
+    public static partial class PhiEdit
+    {
     public class Event
     {
         public float StartBeat = 0f;
@@ -46,5 +48,6 @@ namespace PhiFanmade.Core.PhiEdit
             else
                 return $"{head} {judgeLineIndex} {StartBeat} {EndBeat} {EndValue}";
         }
+    }
     }
 }

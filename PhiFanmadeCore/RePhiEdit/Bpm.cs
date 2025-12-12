@@ -2,14 +2,12 @@
 
 namespace PhiFanmade.Core.RePhiEdit
 {
-    public class Bpm
+    public static partial class RePhiEdit
     {
-        [JsonProperty("bpm")] public float BeatPerMinute = 120f;
-        [JsonProperty("startTime")] public Beat StartTime = new Beat(new[]{0,0,1});
-
-        public override string ToString()
+        public class Bpm
         {
-            return $"bp {BeatPerMinute} {StartTime}";
+            [JsonProperty("bpm")] public float BeatPerMinute = 120f;
+            [JsonProperty("startTime")] public Beat StartTime = new Beat(new[] { 0, 0, 1 });
         }
     }
 }

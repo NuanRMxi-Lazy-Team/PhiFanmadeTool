@@ -1,11 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AssemblyName>PhiFanmade.OpenTool</AssemblyName>
         <RootNamespace>PhiFanmade.OpenTool</RootNamespace>
     </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\PhiFanmadeCore\PhiFanmadeCore.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Utils\" />
+    </ItemGroup>
 
 </Project>
