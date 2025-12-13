@@ -25,7 +25,6 @@ namespace PhiFanmade.Core.RePhiEdit
                 for (int i = 0; i < events.Count; i++)
                 {
                     var e = events[i];
-                        return e.EndValue;
                     // 如果当前拍在事件范围内，返回插值结果
                     if (beat >= e.StartBeat && beat <= e.EndBeat)
                         return e.GetValueAtBeat(beat);
