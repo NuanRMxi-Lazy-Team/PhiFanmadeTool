@@ -1,6 +1,6 @@
 ﻿namespace PhiFanmade.OpenTool.Utils;
 
-public static class PhiEdit
+public static class PhiEditUtility
 {
     public static class CoordinateTransform
     {

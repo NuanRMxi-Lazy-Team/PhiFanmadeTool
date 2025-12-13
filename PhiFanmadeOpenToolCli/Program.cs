@@ -11,7 +11,7 @@ var rpeChart = await Chart.LoadFromJsonAsync(rpeChartText);
 // 层级合并
 foreach (var judgeline in rpeChart.JudgeLineList)
 {
-    judgeline.EventLayers = new List<EventLayer>(){RePhiEdit.LayerMerge(judgeline.EventLayers)};
+    judgeline.EventLayers = new List<EventLayer>(){RePhiEditUtility.LayerMerge(judgeline.EventLayers)};
 }
 // 加上_PFC文件名后缀导出到同目录
 var outputPathRpe = Path.Combine(Path.GetDirectoryName(rpeChartPath) ?? "", Path.GetFileNameWithoutExtension(rpeChartPath) + "_PFC.json");

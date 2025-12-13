@@ -1,24 +1,27 @@
-﻿namespace PhiFanmade.OpenTool.Utils;
+﻿using PhiFanmade.Core.PhiEdit;
+using PhiFanmade.Core.RePhiEdit;
 
-public class RePhiEdit
+namespace PhiFanmade.OpenTool.Utils;
+
+public class RePhiEditUtility
 {
     public static class CoordinateTransform
     {
         public static float ToPhiEditX(float rePhiEditX)
         {
-            var rpeMin = Core.RePhiEdit.RePhiEdit.Chart.CoordinateSystem.MinX;
-            var rpeMax = Core.RePhiEdit.RePhiEdit.Chart.CoordinateSystem.MaxX;
-            var peMin = Core.PhiEdit.PhiEdit.Chart.CoordinateSystem.MinX;
-            var peMax = Core.PhiEdit.PhiEdit.Chart.CoordinateSystem.MaxX;
+            var rpeMin = RePhiEdit.Chart.CoordinateSystem.MinX;
+            var rpeMax = RePhiEdit.Chart.CoordinateSystem.MaxX;
+            var peMin = PhiEdit.Chart.CoordinateSystem.MinX;
+            var peMax = PhiEdit.Chart.CoordinateSystem.MaxX;
             return (rePhiEditX - rpeMin) / (rpeMax - rpeMin) * (peMax - peMin) + peMin;
         }
 
         public static float ToPhiEditY(float rePhiEditY)
         {
-            var rpeMin = Core.RePhiEdit.RePhiEdit.Chart.CoordinateSystem.MinY;
-            var rpeMax = Core.RePhiEdit.RePhiEdit.Chart.CoordinateSystem.MaxY;
-            var peMin = Core.PhiEdit.PhiEdit.Chart.CoordinateSystem.MinY;
-            var peMax = Core.PhiEdit.PhiEdit.Chart.CoordinateSystem.MaxY;
+            var rpeMin = RePhiEdit.Chart.CoordinateSystem.MinY;
+            var rpeMax = RePhiEdit.Chart.CoordinateSystem.MaxY;
+            var peMin = PhiEdit.Chart.CoordinateSystem.MinY;
+            var peMax = PhiEdit.Chart.CoordinateSystem.MaxY;
             return (rePhiEditY - rpeMin) / (rpeMax - rpeMin) * (peMax - peMin) + peMin;
         }
     }
@@ -32,8 +35,8 @@ public class RePhiEdit
     /// <param name="formEvents">要合并进源事件的事件列表</param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static List<Core.RePhiEdit.RePhiEdit.Event<T>> EventMerge<T>(
-        List<Core.RePhiEdit.RePhiEdit.Event<T>> toEvents, List<Core.RePhiEdit.RePhiEdit.Event<T>> formEvents)
+    public static List<RePhiEdit.Event<T>> EventMerge<T>(
+        List<RePhiEdit.Event<T>> toEvents, List<RePhiEdit.Event<T>> formEvents)
     {
         if (toEvents == null || toEvents.Count == 0)
             return formEvents.ToList() ?? new();
@@ -68,9 +71,9 @@ public class RePhiEdit
 
         if (overlapFound)
         {
-            var newEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
+            var newEvents = new List<RePhiEdit.Event<T>>();
             // 获得所有重合区间，比如，formEvents在1~2、4~8拍有事件，toEvents在1~8拍有事件，则重合区间以较长的为准，即1~8拍
-            var overlapIntervals = new List<(Core.RePhiEdit.RePhiEdit.Beat Start, Core.RePhiEdit.RePhiEdit.Beat End)>();
+            var overlapIntervals = new List<(RePhiEdit.Beat Start, RePhiEdit.Beat End)>();
             foreach (var formEvent in formEvents)
             {
                 foreach (var toEvent in toEvents)
@@ -134,11 +137,11 @@ public class RePhiEdit
 
 
             // 对每个区间内的事件进行切割，两个事件列表都要做切割，切割后的事件长度为0.0625f
-            //var cutLength = new Core.RePhiEdit.RePhiEdit.Beat(0.0625d); // 0.0625拍
-            //var cutLength = new Core.RePhiEdit.RePhiEdit.Beat(0.125f);
-            var cutLength = new Core.RePhiEdit.RePhiEdit.Beat(0.015625d);
-            var cutedToEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
-            var cutedFormEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
+            //var cutLength = new RePhiEdit.Beat(0.0625d); // 0.0625拍
+            //var cutLength = new RePhiEdit.Beat(0.125f);
+            var cutLength = new RePhiEdit.Beat(0.015625d);
+            var cutedToEvents = new List<RePhiEdit.Event<T>>();
+            var cutedFormEvents = new List<RePhiEdit.Event<T>>();
             foreach (var (start, end) in overlapIntervals)
             {
                 // 切割toEvents内的事件
@@ -154,7 +157,7 @@ public class RePhiEdit
                         var segmentEnd = currentBeat + cutLength;
                         if (segmentEnd > cutEnd)
                             segmentEnd = cutEnd;
-                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                        var newEvent = new RePhiEdit.Event<T>
                         {
                             StartBeat = currentBeat,
                             EndBeat = segmentEnd,
@@ -179,7 +182,7 @@ public class RePhiEdit
                         var segmentEnd = currentBeat + cutLength;
                         if (segmentEnd > cutEnd)
                             segmentEnd = cutEnd;
-                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                        var newEvent = new RePhiEdit.Event<T>
                         {
                             StartBeat = currentBeat,
                             EndBeat = segmentEnd,
@@ -193,7 +196,7 @@ public class RePhiEdit
             }
 
             // 再次合并，现在所有事件长度都一致了，但是要注意，两个事件列表的当前值总和为最终值，无事件的地方使用上一个事件的结束值，没有上一个事件则使用默认值，如果合并不当会导致数值跳变
-            var allCutedEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
+            var allCutedEvents = new List<RePhiEdit.Event<T>>();
             var formOverlapEventLastEndValue = (T)default;
             var toOverlapEventLastEndValue = (T)default;
             // 以0.125拍为采样大小，遍历每一个重合区间
@@ -212,62 +215,31 @@ public class RePhiEdit
                         cutedToEvents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
                     var formEvent =
                         cutedFormEvents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
-                    if (toEvent != null && formEvent != null)
+                    
+                    // 计算合并后的值
+                    var toStartValue = toEvent != null ? toEvent.StartValue : toOverlapEventLastEndValue;
+                    var formStartValue = formEvent != null ? formEvent.StartValue : formOverlapEventLastEndValue;
+                    var startValue = (dynamic)toStartValue + (dynamic)formStartValue;
+
+                    var toEndValue = toEvent != null ? toEvent.EndValue : toOverlapEventLastEndValue;
+                    var formEndValue = formEvent != null ? formEvent.EndValue : formOverlapEventLastEndValue;
+                    var endValue = (dynamic)toEndValue + (dynamic)formEndValue;
+                    
+                    var newEvent = new RePhiEdit.Event<T>
                     {
-                        // 合并toEvent和formEvent的StartValue和EndValue
-                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
-                        {
-                            StartBeat = currentBeat,
-                            EndBeat = nextBeat,
-                            StartValue = (dynamic)formEvent.StartValue + (dynamic)toEvent.StartValue,
-                            EndValue = (dynamic)formEvent.EndValue + (dynamic)toEvent.EndValue,
-                        };
-                        allCutedEvents.Add(newEvent);
-                        formOverlapEventLastEndValue = formEvent.EndValue;
-                        toOverlapEventLastEndValue = toEvent.EndValue;
-                        currentBeat = nextBeat;
-                    }
-                    else if (toEvent != null && formEvent == null)
-                    {
-                        // 只有toEvent
-                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
-                        {
-                            StartBeat = currentBeat,
-                            EndBeat = nextBeat,
-                            StartValue = (dynamic)toEvent.StartValue + (dynamic)formOverlapEventLastEndValue,
-                            EndValue = (dynamic)toEvent.EndValue + (dynamic)formOverlapEventLastEndValue,
-                        };
-                        allCutedEvents.Add(newEvent);
-                        toOverlapEventLastEndValue = toEvent.EndValue;
-                        currentBeat = nextBeat;
-                    }
-                    else if (toEvent == null && formEvent != null)
-                    {
-                        // 只有formEvent
-                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
-                        {
-                            StartBeat = currentBeat,
-                            EndBeat = nextBeat,
-                            StartValue = (dynamic)formEvent.StartValue + (dynamic)toOverlapEventLastEndValue,
-                            EndValue = (dynamic)formEvent.EndValue + (dynamic)toOverlapEventLastEndValue,
-                        };
-                        allCutedEvents.Add(newEvent);
-                        formOverlapEventLastEndValue = formEvent.EndValue;
-                        currentBeat = nextBeat;
-                    }
-                    else
-                    {
-                        // 都没有，直接以toOverlapEventLastEndValue和formOverlapEventLastEndValue为值，StartValue和EndValue相等
-                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
-                        {
-                            StartBeat = currentBeat,
-                            EndBeat = nextBeat,
-                            StartValue = (dynamic)toOverlapEventLastEndValue + (dynamic)formOverlapEventLastEndValue,
-                            EndValue = (dynamic)toOverlapEventLastEndValue + (dynamic)formOverlapEventLastEndValue,
-                        };
-                        allCutedEvents.Add(newEvent);
-                        currentBeat = nextBeat;
-                    }
+                        StartBeat = currentBeat,
+                        EndBeat = nextBeat,
+                        StartValue = (dynamic)startValue,
+                        EndValue = (dynamic)endValue,
+                    };
+                    
+                    allCutedEvents.Add(newEvent);
+                    
+                    // 更新最后的结束值
+                    if (toEvent != null) toOverlapEventLastEndValue = toEvent.EndValue;
+                    if (formEvent != null) formOverlapEventLastEndValue = formEvent.EndValue;
+                    
+                    currentBeat = nextBeat;
                 }
             }
 
@@ -292,7 +264,7 @@ public class RePhiEdit
             {
                 var previousToEvent = toEvents.FindLast(e => e.EndBeat <= formEvent.StartBeat);
                 var toEventValue = previousToEvent != null ? previousToEvent.EndValue : default;
-                var mergedEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                var mergedEvent = new RePhiEdit.Event<T>
                 {
                     StartBeat = formEvent.StartBeat,
                     EndBeat = formEvent.EndBeat,
@@ -315,17 +287,17 @@ public class RePhiEdit
         return toEvents;
     }
 
-    public static Core.RePhiEdit.RePhiEdit.EventLayer LayerMerge(List<Core.RePhiEdit.RePhiEdit.EventLayer> layers)
+    public static RePhiEdit.EventLayer LayerMerge(List<RePhiEdit.EventLayer> layers)
     {
         // 清理null层级
         layers.RemoveAll(layer => layer == null);
         if (layers.Count <= 1)
         {
             OnWarning.Invoke("LayerMerge: layers count less than or equal to 1, no need to merge.");
-            return layers.FirstOrDefault() ?? new Core.RePhiEdit.RePhiEdit.EventLayer();
+            return layers.FirstOrDefault() ?? new RePhiEdit.EventLayer();
         }
 
-        var mergedLayer = new Core.RePhiEdit.RePhiEdit.EventLayer();
+        var mergedLayer = new RePhiEdit.EventLayer();
         foreach (var layer in layers)
         {
             if (layer.AlphaEvents.Count > 0)
