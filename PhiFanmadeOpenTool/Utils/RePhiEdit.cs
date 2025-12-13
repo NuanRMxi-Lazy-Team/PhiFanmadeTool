@@ -35,6 +35,18 @@ public class RePhiEdit
     public static List<Core.RePhiEdit.RePhiEdit.Event<T>> EventMerge<T>(
         List<Core.RePhiEdit.RePhiEdit.Event<T>> toEvents, List<Core.RePhiEdit.RePhiEdit.Event<T>> formEvents)
     {
+        if (toEvents == null || toEvents.Count == 0)
+            return formEvents.ToList() ?? new();
+
+
+        if (formEvents == null || formEvents.Count == 0)
+            return toEvents.ToList();
+        if (typeof(T) != typeof(int) && typeof(T) != typeof(float) && typeof(T) != typeof(double))
+        {
+            throw new NotSupportedException("EventMerge only supports int, float, and double types.");
+        }
+
+
         // 将formEvents合并进toEvents，先检查是否有重合事件
         var overlapFound = false;
         foreach (var formEvent in formEvents)
@@ -275,16 +287,21 @@ public class RePhiEdit
         else // 如果没有重合事件,直接合并
         {
             //toEvents.AddRange(formEvents);
+
             foreach (var formEvent in formEvents)
             {
-                // 获得这个事件StartBeat前的第一个toEvent的结束值
                 var previousToEvent = toEvents.FindLast(e => e.EndBeat <= formEvent.StartBeat);
-                var toEventValue = previousToEvent != null ? previousToEvent.EndValue : (T)default;
-                // 直接修改formEvent的StartValue和EndValue
-                formEvent.StartValue = (dynamic)formEvent.StartValue + (dynamic)toEventValue;
-                formEvent.EndValue = (dynamic)formEvent.EndValue + (dynamic)toEventValue;
-                toEvents.Add(formEvent);
+                var toEventValue = previousToEvent != null ? previousToEvent.EndValue : default;
+                var mergedEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                {
+                    StartBeat = formEvent.StartBeat,
+                    EndBeat = formEvent.EndBeat,
+                    StartValue = (dynamic)formEvent.StartValue + (dynamic)toEventValue,
+                    EndValue = (dynamic)formEvent.EndValue + (dynamic)toEventValue
+                };
+                toEvents.Add(mergedEvent);
             }
+
 
             // 合并后按开始拍排序
             toEvents.Sort((a, b) =>
@@ -311,11 +328,16 @@ public class RePhiEdit
         var mergedLayer = new Core.RePhiEdit.RePhiEdit.EventLayer();
         foreach (var layer in layers)
         {
-            mergedLayer.AlphaEvents = EventMerge(mergedLayer.AlphaEvents, layer.AlphaEvents);
-            mergedLayer.MoveXEvents = EventMerge(mergedLayer.MoveXEvents, layer.MoveXEvents);
-            mergedLayer.MoveYEvents = EventMerge(mergedLayer.MoveYEvents, layer.MoveYEvents);
-            mergedLayer.RotateEvents = EventMerge(mergedLayer.RotateEvents, layer.RotateEvents);
-            mergedLayer.SpeedEvents = EventMerge(mergedLayer.SpeedEvents, layer.SpeedEvents);
+            if (layer.AlphaEvents.Count > 0)
+                mergedLayer.AlphaEvents = EventMerge(layer.AlphaEvents, mergedLayer.AlphaEvents);
+            if (layer.MoveXEvents.Count > 0)
+                mergedLayer.MoveXEvents = EventMerge(layer.MoveXEvents, mergedLayer.MoveXEvents);
+            if (layer.MoveYEvents.Count > 0)
+                mergedLayer.MoveYEvents = EventMerge(layer.MoveYEvents, mergedLayer.MoveYEvents);
+            if (layer.RotateEvents.Count > 0)
+                mergedLayer.RotateEvents = EventMerge(layer.RotateEvents, mergedLayer.RotateEvents);
+            if (layer.SpeedEvents.Count > 0)
+                mergedLayer.SpeedEvents = EventMerge(layer.SpeedEvents, mergedLayer.SpeedEvents);
         }
 
         return mergedLayer;
