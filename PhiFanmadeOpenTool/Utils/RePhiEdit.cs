@@ -56,284 +56,212 @@ public class RePhiEdit
 
         if (overlapFound)
         {
-            // 先合并没有重合的事件,并把重合的事件从原始列表中移除,添加到新的列表中
-            var overlapToEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
-            var overlapFormEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
-            var nonOverlapFormEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
-
-            // 检查每个formEvent是否与toEvents中的任何事件重合
+            var newEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
+            // 获得所有重合区间，比如，formEvents在1~2、4~8拍有事件，toEvents在1~8拍有事件，则重合区间以较长的为准，即1~8拍
+            var overlapIntervals = new List<(Core.RePhiEdit.RePhiEdit.Beat Start, Core.RePhiEdit.RePhiEdit.Beat End)>();
             foreach (var formEvent in formEvents)
             {
-                var hasOverlap = false;
                 foreach (var toEvent in toEvents)
                 {
                     if (formEvent.StartBeat < toEvent.EndBeat && formEvent.EndBeat > toEvent.StartBeat)
                     {
-                        hasOverlap = true;
-                        // 将重合的toEvent添加到overlapToEvents(避免重复)
-                        if (!overlapToEvents.Contains(toEvent))
+                        var start = formEvent.StartBeat < toEvent.StartBeat ? formEvent.StartBeat : toEvent.StartBeat;
+                        var end = formEvent.EndBeat > toEvent.EndBeat ? formEvent.EndBeat : toEvent.EndBeat;
+                        // 如果已经存在，不要添加
+                        if (overlapIntervals.Any(interval => interval.Start == start && interval.End == end))
+                            continue;
+                        // 如果与其它overlapInterval有重合，进行合并（扩展）
+                        if (overlapIntervals.Any(interval =>
+                                start < interval.End && end > interval.Start))
                         {
-                            overlapToEvents.Add(toEvent);
+                            for (var i = 0; i < overlapIntervals.Count; i++)
+                            {
+                                var interval = overlapIntervals[i];
+                                if (start < interval.End && end > interval.Start)
+                                {
+                                    var newStart = start < interval.Start ? start : interval.Start;
+                                    var newEnd = end > interval.End ? end : interval.End;
+                                    overlapIntervals[i] = (newStart, newEnd);
+                                    start = newStart;
+                                    end = newEnd;
+                                }
+                            }
                         }
+                        else overlapIntervals.Add((start, end)); // 否则直接添加
+                    }
+                }
+            }
+
+            // 先把未重合的事件加入newEvents
+            foreach (var toEvent in toEvents)
+            {
+                var isInOverlap = overlapIntervals.Any(interval =>
+                    toEvent.StartBeat < interval.End && toEvent.EndBeat > interval.Start);
+                if (!isInOverlap)
+                {
+                    newEvents.Add(toEvent);
+                }
+            }
+
+            // 由于当前数值是两个事件列表的数值相加得到的，所以未重合的formEvents事件需要加上toEvents在该拍的数值
+            foreach (var formEvent in formEvents)
+            {
+                var isInOverlap = overlapIntervals.Any(interval =>
+                    formEvent.StartBeat < interval.End && formEvent.EndBeat > interval.Start);
+                if (!isInOverlap)
+                {
+                    // 获得这个事件StartBeat前的第一个toEvent的结束值
+                    var previousToEvent = toEvents.FindLast(e => e.EndBeat <= formEvent.StartBeat);
+                    var toEventValue = previousToEvent != null ? previousToEvent.EndValue : (T)default;
+                    // 直接修改formEvent的StartValue和EndValue
+                    formEvent.StartValue = (dynamic)formEvent.StartValue + (dynamic)toEventValue;
+                    formEvent.EndValue = (dynamic)formEvent.EndValue + (dynamic)toEventValue;
+                    newEvents.Add(formEvent);
+                }
+            }
+
+
+            // 对每个区间内的事件进行切割，两个事件列表都要做切割，切割后的事件长度为0.0625f
+            //var cutLength = new Core.RePhiEdit.RePhiEdit.Beat(new[] { 0, 31, 500 }); // 0.0625拍
+            var cutLength = new Core.RePhiEdit.RePhiEdit.Beat(0.125f);
+            var cutedToEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
+            var cutedFormEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
+            foreach (var (start, end) in overlapIntervals)
+            {
+                // 切割toEvents内的事件
+                var toEventsToCut = toEvents.Where(e => e.StartBeat < end && e.EndBeat > start).ToList();
+                foreach (var toEvent in toEventsToCut)
+                {
+                    toEvents.Remove(toEvent);
+                    var cutStart = toEvent.StartBeat < start ? start : toEvent.StartBeat;
+                    var cutEnd = toEvent.EndBeat > end ? end : toEvent.EndBeat;
+                    var currentBeat = cutStart;
+                    while (currentBeat < cutEnd)
+                    {
+                        var segmentEnd = currentBeat + cutLength;
+                        if (segmentEnd > cutEnd)
+                            segmentEnd = cutEnd;
+                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                        {
+                            StartBeat = currentBeat,
+                            EndBeat = segmentEnd,
+                            StartValue = toEvent.GetValueAtBeat(currentBeat),
+                            EndValue = toEvent.GetValueAtBeat(segmentEnd),
+                        };
+                        cutedToEvents.Add(newEvent);
+                        currentBeat = segmentEnd;
                     }
                 }
 
-                if (hasOverlap)
+                // 切割formEvents内的事件
+                var formEventsToCut = formEvents.Where(e => e.StartBeat < end && e.EndBeat > start).ToList();
+                foreach (var formEvent in formEventsToCut)
                 {
-                    overlapFormEvents.Add(formEvent);
-                }
-                else
-                {
-                    nonOverlapFormEvents.Add(formEvent);
-                }
-            }
-
-            // 从toEvents中移除重合的事件
-
-            foreach (var overlapEvent in overlapToEvents)
-            {
-                toEvents.Remove(overlapEvent);
-            }
-
-
-            // 合并没有重合的formEvents到toEvents
-            toEvents.AddRange(nonOverlapFormEvents);
-
-            // 从overlapToEvents和overlapFormEvents中取StartBeat最小和EndBeat最大的事件作为采样起点和采样终点
-            var allOverlapEvents = overlapToEvents.Concat(overlapFormEvents).ToList();
-            var sampleStartBeat = allOverlapEvents[0].StartBeat;
-            var sampleEndBeat = allOverlapEvents[0].EndBeat;
-
-
-            foreach (var e in allOverlapEvents)
-            {
-                if (e.StartBeat < sampleStartBeat)
-                    sampleStartBeat = e.StartBeat;
-                if (e.EndBeat > sampleEndBeat)
-                    sampleEndBeat = e.EndBeat;
-            }
-
-            // 每次采样间隔为0.0625拍
-            var sampleInterval = new Core.RePhiEdit.RePhiEdit.Beat(0.0625f);
-            var currentBeat = sampleStartBeat;
-            // 先别急！如果allOverlapEvents中有事件的长度比sampleInterval还小怎么办？那就以最小事件长度为采样间隔
-            var minEventLength = allOverlapEvents.Min(e => (e.EndBeat - e.StartBeat));
-            if (minEventLength < sampleInterval)
-                sampleInterval = minEventLength;
-
-            // 对每个重叠事件进行分割，分割精细度为采样大小
-            var allSplitEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
-            foreach (var formOverlapEvent in overlapFormEvents)
-            {
-                var splitStartBeat = formOverlapEvent.StartBeat;
-                while (splitStartBeat < formOverlapEvent.EndBeat)
-                {
-                    var splitEndBeat = splitStartBeat + sampleInterval;
-                    if (splitEndBeat > formOverlapEvent.EndBeat)
-                        splitEndBeat = formOverlapEvent.EndBeat;
-
-                    var splitEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                    formEvents.Remove(formEvent);
+                    var cutStart = formEvent.StartBeat < start ? start : formEvent.StartBeat;
+                    var cutEnd = formEvent.EndBeat > end ? end : formEvent.EndBeat;
+                    var currentBeat = cutStart;
+                    while (currentBeat < cutEnd)
                     {
-                        StartBeat = splitStartBeat,
-                        EndBeat = splitEndBeat,
-                        StartValue = formOverlapEvent.GetValueAtBeat(splitStartBeat),
-                        EndValue = formOverlapEvent.GetValueAtBeat(splitEndBeat)
-                    };
-                    allSplitEvents.Add(splitEvent);
-
-                    splitStartBeat = splitEndBeat;
+                        var segmentEnd = currentBeat + cutLength;
+                        if (segmentEnd > cutEnd)
+                            segmentEnd = cutEnd;
+                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                        {
+                            StartBeat = currentBeat,
+                            EndBeat = segmentEnd,
+                            StartValue = formEvent.GetValueAtBeat(currentBeat),
+                            EndValue = formEvent.GetValueAtBeat(segmentEnd),
+                        };
+                        cutedFormEvents.Add(newEvent);
+                        currentBeat = segmentEnd;
+                    }
                 }
             }
 
-            overlapFormEvents = allSplitEvents;
-
-            // 对toEvents中的重叠事件也进行分割
-            allSplitEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
-            foreach (var toOverlapEvent in overlapToEvents)
+            // 再次合并，现在所有事件长度都一致了，但是要注意，两个事件列表的当前值总和为最终值，无事件的地方使用上一个事件的结束值，没有上一个事件则使用默认值，如果合并不当会导致数值跳变
+            var allCutedEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
+            var formOverlapEventLastEndValue = (T)default;
+            var toOverlapEventLastEndValue = (T)default;
+            // 以0.125拍为采样大小，遍历每一个重合区间
+            for (var index = 0; index < overlapIntervals.Count; index++)
             {
-                var splitStartBeat = toOverlapEvent.StartBeat;
-                while (splitStartBeat < toOverlapEvent.EndBeat)
+                var (start, end) = overlapIntervals[index];
+                var currentBeat = start;
+                T defaultValue = default;
+                formOverlapEventLastEndValue = default;
+                toOverlapEventLastEndValue = default;
+                while (currentBeat < end)
                 {
-                    var splitEndBeat = splitStartBeat + sampleInterval;
-                    if (splitEndBeat > toOverlapEvent.EndBeat)
-                        splitEndBeat = toOverlapEvent.EndBeat;
-                    var splitEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                    var nextBeat = currentBeat + cutLength;
+                    // 以currentBeat为开始拍，nextBeat为结束拍，寻找cutedToEvents和cutedFormEvents内的事件
+                    var toEvent =
+                        cutedToEvents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
+                    var formEvent =
+                        cutedFormEvents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
+                    if (toEvent != null && formEvent != null)
                     {
-                        StartBeat = splitStartBeat,
-                        EndBeat = splitEndBeat,
-                        StartValue = toOverlapEvent.GetValueAtBeat(splitStartBeat),
-                        EndValue = toOverlapEvent.GetValueAtBeat(splitEndBeat)
-                    };
-                    allSplitEvents.Add(splitEvent);
-                    splitStartBeat = splitEndBeat;
+                        // 合并toEvent和formEvent的StartValue和EndValue
+                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                        {
+                            StartBeat = currentBeat,
+                            EndBeat = nextBeat,
+                            StartValue = (dynamic)formEvent.StartValue + (dynamic)toEvent.StartValue,
+                            EndValue = (dynamic)formEvent.EndValue + (dynamic)toEvent.EndValue,
+                        };
+                        allCutedEvents.Add(newEvent);
+                        formOverlapEventLastEndValue = formEvent.EndValue;
+                        toOverlapEventLastEndValue = toEvent.EndValue;
+                        currentBeat = nextBeat;
+                    }
+                    else if (toEvent != null && formEvent == null)
+                    {
+                        // 只有toEvent
+                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                        {
+                            StartBeat = currentBeat,
+                            EndBeat = nextBeat,
+                            StartValue = (dynamic)toEvent.StartValue + (dynamic)formOverlapEventLastEndValue,
+                            EndValue = (dynamic)toEvent.EndValue + (dynamic)formOverlapEventLastEndValue,
+                        };
+                        allCutedEvents.Add(newEvent);
+                        toOverlapEventLastEndValue = toEvent.EndValue;
+                        currentBeat = nextBeat;
+                    }
+                    else if (toEvent == null && formEvent != null)
+                    {
+                        // 只有formEvent
+                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                        {
+                            StartBeat = currentBeat,
+                            EndBeat = nextBeat,
+                            StartValue = (dynamic)formEvent.StartValue + (dynamic)toOverlapEventLastEndValue,
+                            EndValue = (dynamic)formEvent.EndValue + (dynamic)toOverlapEventLastEndValue,
+                        };
+                        allCutedEvents.Add(newEvent);
+                        formOverlapEventLastEndValue = formEvent.EndValue;
+                        currentBeat = nextBeat;
+                    }
+                    else
+                    {
+                        // 都没有，直接以toOverlapEventLastEndValue和formOverlapEventLastEndValue为值，StartValue和EndValue相等
+                        var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
+                        {
+                            StartBeat = currentBeat,
+                            EndBeat = nextBeat,
+                            StartValue = (dynamic)toOverlapEventLastEndValue + (dynamic)formOverlapEventLastEndValue,
+                            EndValue = (dynamic)toOverlapEventLastEndValue + (dynamic)formOverlapEventLastEndValue,
+                        };
+                        allCutedEvents.Add(newEvent);
+                        currentBeat = nextBeat;
+                    }
                 }
             }
 
-            overlapToEvents = allSplitEvents;
-
-            // 由于当前层级的值为所有层级同类型事件值的总和，所以如果有重合事件，则需要在采样点上将两个事件的值相加，生成新的事件列表、且会影响到采样区间以外的所有事件
-            // 将overlapToEvents和toEvents合并
-            toEvents.AddRange(overlapToEvents);
-            // 将overlapFormEvents和formEvents合并
-            formEvents = overlapFormEvents;
-            // 将formEvents的开始采样区间到结束采样区间没有事件的地方填充事件，事件数值头尾相等且为上一个事件的结束值（没有上一个事件则为0），每个事件的长度为sampleInterval
-            // 将formEvents的开始采样区间到结束采样区间没有事件的地方填充事件，事件数值头尾相等且为上一个事件的结束值（没有上一个事件则为0），每个事件的长度为sampleInterval
-            var filledFormEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
-            var fillBeat = sampleStartBeat;
-            T lastValue = default;
-
-            while (fillBeat < sampleEndBeat)
-            {
-                var fillEndBeat = fillBeat + sampleInterval;
-                if (fillEndBeat > sampleEndBeat)
-                    fillEndBeat = sampleEndBeat;
-
-                // 检查当前区间是否已有事件
-                var hasEvent = formEvents.Any(e => fillBeat >= e.StartBeat && fillBeat < e.EndBeat);
-
-                if (hasEvent)
-                {
-                    // 如果有事件，获取该事件并更新lastValue
-                    var existingEvent = formEvents.First(e => fillBeat >= e.StartBeat && fillBeat < e.EndBeat);
-                    filledFormEvents.Add(existingEvent);
-                    lastValue = existingEvent.EndValue;
-                    fillBeat = existingEvent.EndBeat;
-                }
-                else
-                {
-                    // 如果没有事件，创建填充事件
-                    var fillEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
-                    {
-                        StartBeat = fillBeat,
-                        EndBeat = fillEndBeat,
-                        StartValue = lastValue,
-                        EndValue = lastValue
-                    };
-                    filledFormEvents.Add(fillEvent);
-                    fillBeat = fillEndBeat;
-                }
-            }
-
-            formEvents = filledFormEvents;
-            // 将toEvents和formEvents的同开始结束拍的事件值相加，得到新的事件并替换toEvents中对应的事件
-            var newToEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
-
-            // 遍历采样区间内的每个拍点
-            var currentSampleBeat = sampleStartBeat;
-            while (currentSampleBeat < sampleEndBeat)
-            {
-                var nextSampleBeat = currentSampleBeat + sampleInterval;
-                if (nextSampleBeat > sampleEndBeat)
-                    nextSampleBeat = sampleEndBeat;
-
-                // 在toEvents中查找当前采样点的事件
-                var toEvent = toEvents.FirstOrDefault(e =>
-                    currentSampleBeat >= e.StartBeat && currentSampleBeat < e.EndBeat);
-
-                // 在formEvents中查找当前采样点的事件
-                var formEvent = formEvents.FirstOrDefault(e =>
-                    currentSampleBeat >= e.StartBeat && currentSampleBeat < e.EndBeat);
-
-                if (toEvent != null && formEvent != null)
-                {
-                    // 获取两个事件在采样点的值
-                    var toStartValue = toEvent.GetValueAtBeat(currentSampleBeat);
-                    var toEndValue = toEvent.GetValueAtBeat(nextSampleBeat);
-                    var formStartValue = formEvent.GetValueAtBeat(currentSampleBeat);
-                    var formEndValue = formEvent.GetValueAtBeat(nextSampleBeat);
-
-                    // 使用dynamic进行值相加
-                    dynamic newStartValue = toStartValue;
-                    dynamic newEndValue = toEndValue;
-                    newStartValue += (dynamic)formStartValue;
-                    newEndValue += (dynamic)formEndValue;
-
-                    // 创建新事件
-                    var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
-                    {
-                        StartBeat = currentSampleBeat,
-                        EndBeat = nextSampleBeat,
-                        StartValue = (T)newStartValue,
-                        EndValue = (T)newEndValue
-                    };
-                    newToEvents.Add(newEvent);
-                }
-                else if (toEvent != null)
-                {
-                    // 只有toEvent存在，需要叠加currentSampleBeat前最后一个formEvent的EndValue
-                    var lastFormEvent = formEvents.LastOrDefault(e => e.EndBeat <= currentSampleBeat);
-                    dynamic formCarryValue = lastFormEvent != null ? (dynamic)lastFormEvent.EndValue : default(T);
-                    
-                    var toStartValue = toEvent.GetValueAtBeat(currentSampleBeat);
-                    var toEndValue = toEvent.GetValueAtBeat(nextSampleBeat);
-                    
-                    dynamic newStartValue = toStartValue;
-                    dynamic newEndValue = toEndValue;
-                    newStartValue += formCarryValue;
-                    newEndValue += formCarryValue;
-                    
-                    var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
-                    {
-                        StartBeat = currentSampleBeat,
-                        EndBeat = nextSampleBeat,
-                        StartValue = (T)newStartValue,
-                        EndValue = (T)newEndValue
-                    };
-                    newToEvents.Add(newEvent);
-                }
-                else if (formEvent != null)
-                {
-                    // 只有formEvent存在，需要叠加currentSampleBeat前最后一个toEvent的EndValue
-                    var lastToEvent = toEvents.LastOrDefault(e => e.EndBeat <= currentSampleBeat);
-                    dynamic toCarryValue = lastToEvent != null ? (dynamic)lastToEvent.EndValue : default(T);
-                    
-                    var formStartValue = formEvent.GetValueAtBeat(currentSampleBeat);
-                    var formEndValue = formEvent.GetValueAtBeat(nextSampleBeat);
-                    
-                    dynamic newStartValue = formStartValue;
-                    dynamic newEndValue = formEndValue;
-                    newStartValue += toCarryValue;
-                    newEndValue += toCarryValue;
-                    
-                    var newEvent = new Core.RePhiEdit.RePhiEdit.Event<T>
-                    {
-                        StartBeat = currentSampleBeat,
-                        EndBeat = nextSampleBeat,
-                        StartValue = (T)newStartValue,
-                        EndValue = (T)newEndValue
-                    };
-                    newToEvents.Add(newEvent);
-                }
-
-                currentSampleBeat = nextSampleBeat;
-            }
-
-            // 计算formEvents在采样区间内的累积值变化
-            dynamic carryValue = default(T);
-            if (formEvents.Any())
-            {
-                var lastFormInSample = formEvents.LastOrDefault(e => e.EndBeat <= sampleEndBeat);
-                if (lastFormInSample != null)
-                    carryValue = lastFormInSample.EndValue;
-            }
-
-            // 替换第311-326行的逻辑
-            // 对采样区间后的所有toEvents累加formCarryValue
-            foreach (var e in toEvents)
-            {
-                if (e.StartBeat >= sampleEndBeat)
-                {
-                    dynamic newStartValue = (dynamic)e.StartValue + carryValue;
-                    dynamic newEndValue = (dynamic)e.EndValue + carryValue;
-                    e.StartValue = (T)newStartValue;
-                    e.EndValue = (T)newEndValue;
-                }
-            }
-
-            // 删除toEvents中采样区间的所有事件，防止重叠
-            toEvents.RemoveAll(e => e.StartBeat < sampleEndBeat && e.EndBeat > sampleStartBeat);
-            // 将newToEvents中的事件合并到toEvents中
-            toEvents.AddRange(newToEvents);
+            // 把切割后的事件加入newEvents
+            newEvents.AddRange(allCutedEvents);
+            // 最后把newEvents赋值给toEvents
+            toEvents = newEvents;
 
             // 按开始拍排序
             toEvents.Sort((a, b) =>

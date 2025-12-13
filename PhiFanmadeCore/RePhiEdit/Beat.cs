@@ -20,11 +20,11 @@ namespace PhiFanmade.Core.RePhiEdit
                 _beat = beatArray ?? new[] { 0, 0, 1 };
             }
 
-            public Beat(float beat)
+            public Beat(double beat)
             {
-                // 将 float 转换为 Beat 结构，假设小数部分表示分数，[1]和[2]最长不得超过三位，必须确保beat[1] / beat[2] + beat[0] = beat
+                // 将 double 转换为 Beat 结构，假设小数部分表示分数，[1]和[2]最长不得超过三位，必须确保beat[1] / beat[2] + beat[0] = beat
                 int wholePart = (int)Math.Floor(beat);
-                float fractionalPart = beat - wholePart;
+                double fractionalPart = beat - wholePart;
                 int denominator = 1000; // 使用1000作为分母以获得三位
                 int numerator = (int)Math.Round(fractionalPart * denominator);
                 // 约分
@@ -138,6 +138,18 @@ namespace PhiFanmade.Core.RePhiEdit
 
                 return new Beat(new[] { wholePart, numerator, denominator });
             }
+            // 定义两个Beat对象的比较运算符，强行使用double作为比较依据，float有精度问题
+            public static bool operator <(Beat a, Beat b) => (double)a < (double)b;
+            public static bool operator >(Beat a, Beat b) => (double)a > (double)b;
+            public static bool operator <=(Beat a, Beat b) => (double)a <= (double)b;
+            public static bool operator >=(Beat a, Beat b) => (double)a >= (double)b;
+            public static bool operator ==(Beat a, Beat b)
+            {
+                if (ReferenceEquals(a, b)) return true;
+                if (a is null || b is null) return false;
+                return (double)a == (double)b;
+            }
+            public static bool operator !=(Beat a, Beat b) => !(a == b);
 
             /// <summary>
             /// 返回 Beat 的字符串表示，格式为 beat[0]:beat[1]/beat[2]
