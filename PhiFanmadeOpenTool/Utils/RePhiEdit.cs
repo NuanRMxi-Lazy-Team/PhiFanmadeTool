@@ -122,8 +122,9 @@ public class RePhiEdit
 
 
             // 对每个区间内的事件进行切割，两个事件列表都要做切割，切割后的事件长度为0.0625f
-            //var cutLength = new Core.RePhiEdit.RePhiEdit.Beat(new[] { 0, 31, 500 }); // 0.0625拍
-            var cutLength = new Core.RePhiEdit.RePhiEdit.Beat(0.125f);
+            //var cutLength = new Core.RePhiEdit.RePhiEdit.Beat(0.0625d); // 0.0625拍
+            //var cutLength = new Core.RePhiEdit.RePhiEdit.Beat(0.125f);
+            var cutLength = new Core.RePhiEdit.RePhiEdit.Beat(0.015625d);
             var cutedToEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
             var cutedFormEvents = new List<Core.RePhiEdit.RePhiEdit.Event<T>>();
             foreach (var (start, end) in overlapIntervals)

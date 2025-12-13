@@ -22,15 +22,53 @@ namespace PhiFanmade.Core.RePhiEdit
 
             public Beat(double beat)
             {
-                // 将 double 转换为 Beat 结构，假设小数部分表示分数，[1]和[2]最长不得超过三位，必须确保beat[1] / beat[2] + beat[0] = beat
+                // 将 double 转换为 Beat 结构，使用连分数算法获得最佳分数近似
                 int wholePart = (int)Math.Floor(beat);
                 double fractionalPart = beat - wholePart;
-                int denominator = 1000; // 使用1000作为分母以获得三位
-                int numerator = (int)Math.Round(fractionalPart * denominator);
-                // 约分
-                int gcd = GCD(numerator, denominator);
-                numerator /= gcd;
-                denominator /= gcd;
+    
+                if (Math.Abs(fractionalPart) < 1e-9)
+                {
+                    _beat = new[] { wholePart, 0, 1 };
+                    return;
+                }
+    
+                // 使用连分数算法找到最佳分数表示（限制分母最大为1000）
+                int numerator = 1, denominator = 0;
+                int prevNumerator = 0, prevDenominator = 1;
+                double remaining = fractionalPart;
+                const int maxDenominator = 1000;
+
+                for (int iteration = 0; iteration < 20 && denominator <= maxDenominator; iteration++)
+                {
+                    int digit = (int)Math.Floor(remaining);
+    
+                    int tempNum = digit * numerator + prevNumerator;
+                    int tempDen = digit * denominator + prevDenominator;
+
+                    if (tempDen > maxDenominator) break;
+
+                    prevNumerator = numerator;
+                    prevDenominator = denominator;
+                    numerator = tempNum;
+                    denominator = tempDen;
+
+                    remaining = remaining - digit;
+                    if (Math.Abs(remaining) < 1e-9 || Math.Abs((double)numerator / denominator - fractionalPart) < 1e-9)
+                        break;
+
+                    remaining = 1.0 / remaining;
+                }
+    
+                // 如果连分数算法没有找到好的近似，使用简单的四舍五入方法
+                if (denominator == 0 || denominator > maxDenominator)
+                {
+                    denominator = 1000;
+                    numerator = (int)Math.Round(fractionalPart * denominator);
+                    int gcd = GCD(numerator, denominator);
+                    numerator /= gcd;
+                    denominator /= gcd;
+                }
+    
                 _beat = new[] { wholePart, numerator, denominator };
             }
 
@@ -48,7 +86,17 @@ namespace PhiFanmade.Core.RePhiEdit
                     b = a % b;
                     a = temp;
                 }
+                return a;
+            }
 
+            private static long GCD(long a, long b)
+            {
+                while (b != 0)
+                {
+                    long temp = b;
+                    b = a % b;
+                    a = temp;
+                }
                 return a;
             }
 
@@ -83,14 +131,24 @@ namespace PhiFanmade.Core.RePhiEdit
             {
                 // 基于Beat = beat[1] / beat[2] + beat[0]的定义进行加法运算
                 var wholePart = a[0] + b[0];
-                var numerator = a[1] * b[2] + b[1] * a[2];
-                var denominator = a[2] * b[2];
+    
+                // 使用 long 防止中间计算溢出
+                long numerator = (long)a[1] * b[2] + (long)b[1] * a[2];
+                long denominator = (long)a[2] * b[2];
+
+                // 处理进位
+                if (numerator >= denominator)
+                {
+                    long carry = numerator / denominator;
+                    wholePart += (int)carry;
+                    numerator %= denominator;
+                }
 
                 // 处理负数情况
                 if (numerator < 0)
                 {
-                    int borrowCount = (-numerator + denominator - 1) / denominator;
-                    wholePart -= borrowCount;
+                    long borrowCount = (-numerator + denominator - 1) / denominator;
+                    wholePart -= (int)borrowCount;
                     numerator += borrowCount * denominator;
                 }
 
@@ -101,11 +159,17 @@ namespace PhiFanmade.Core.RePhiEdit
                 }
 
                 // 约分
-                int gcd = GCD(Math.Abs(numerator), denominator);
+                long gcd = GCD(Math.Abs(numerator), denominator);
                 numerator /= gcd;
                 denominator /= gcd;
+    
+                // 检查是否超出 int 范围
+                if (numerator > int.MaxValue || denominator > int.MaxValue)
+                {
+                    throw new OverflowException("Beat calculation resulted in values too large for int representation.");
+                }
 
-                return new Beat(new[] { wholePart, numerator, denominator });
+                return new Beat(new[] { wholePart, (int)numerator, (int)denominator });
             }
 
 
@@ -114,14 +178,16 @@ namespace PhiFanmade.Core.RePhiEdit
             {
                 // 基于Beat = beat[1] / beat[2] + beat[0]的定义进行减法运算
                 var wholePart = a[0] - b[0];
-                var numerator = a[1] * b[2] - b[1] * a[2];
-                var denominator = a[2] * b[2];
+
+                // 使用 long 防止中间计算溢出
+                long numerator = (long)a[1] * b[2] - (long)b[1] * a[2];
+                long denominator = (long)a[2] * b[2];
 
                 // 处理负数情况
                 if (numerator < 0)
                 {
-                    int borrowCount = (-numerator + denominator - 1) / denominator;
-                    wholePart -= borrowCount;
+                    long borrowCount = (-numerator + denominator - 1) / denominator;
+                    wholePart -= (int)borrowCount;
                     numerator += borrowCount * denominator;
                 }
 
@@ -131,12 +197,18 @@ namespace PhiFanmade.Core.RePhiEdit
                     return new Beat(new[] { wholePart, 0, 1 });
                 }
 
-                // 约分以避免分母过大导致的问题
-                int gcd = GCD(Math.Abs(numerator), denominator);
+                // 约分
+                long gcd = GCD(Math.Abs(numerator), denominator);
                 numerator /= gcd;
                 denominator /= gcd;
 
-                return new Beat(new[] { wholePart, numerator, denominator });
+                // 检查是否超出 int 范围
+                if (numerator > int.MaxValue || denominator > int.MaxValue)
+                {
+                    throw new OverflowException("Beat calculation resulted in values too large for int representation.");
+                }
+
+                return new Beat(new[] { wholePart, (int)numerator, (int)denominator });
             }
             // 定义两个Beat对象的比较运算符，强行使用double作为比较依据，float有精度问题
             public static bool operator <(Beat a, Beat b) => (double)a < (double)b;
