@@ -274,7 +274,18 @@ public class RePhiEdit
         }
         else // 如果没有重合事件,直接合并
         {
-            toEvents.AddRange(formEvents);
+            //toEvents.AddRange(formEvents);
+            foreach (var formEvent in formEvents)
+            {
+                // 获得这个事件StartBeat前的第一个toEvent的结束值
+                var previousToEvent = toEvents.FindLast(e => e.EndBeat <= formEvent.StartBeat);
+                var toEventValue = previousToEvent != null ? previousToEvent.EndValue : (T)default;
+                // 直接修改formEvent的StartValue和EndValue
+                formEvent.StartValue = (dynamic)formEvent.StartValue + (dynamic)toEventValue;
+                formEvent.EndValue = (dynamic)formEvent.EndValue + (dynamic)toEventValue;
+                toEvents.Add(formEvent);
+            }
+
             // 合并后按开始拍排序
             toEvents.Sort((a, b) =>
             {
