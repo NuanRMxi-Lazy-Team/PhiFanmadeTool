@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Linq;
+using Newtonsoft.Json;
 
 namespace PhiFanmade.Core.RePhiEdit
 {
@@ -90,6 +91,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// 打击特效颜色（RGB，顶点颜色乘法）
             /// </summary>
             [JsonProperty("tintHitEffects", NullValueHandling = NullValueHandling.Ignore)]
+            [JsonConverter(typeof(ColorConverter))]
             public byte[] HitFxColor = null;
 
             /// <summary>
@@ -97,6 +99,29 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             [JsonProperty("hitsound", NullValueHandling = NullValueHandling.Ignore)]
             public string HitSound = null; // 音效
+            public Note Clone()
+            {
+                //return (Note)this.MemberwiseClone();
+                // 有Beat，不能使用MemberwiseClone
+                return new Note
+                {
+                    Above = Above,
+                    Alpha = Alpha,
+                    StartBeat = new Beat((int[])StartBeat),
+                    EndBeat = new Beat((int[])EndBeat),
+                    IsFake = IsFake,
+                    PositionX = PositionX,
+                    Size = Size,
+                    JudgeArea = JudgeArea,
+                    SpeedMultiplier = SpeedMultiplier,
+                    Type = Type,
+                    VisibleTime = VisibleTime,
+                    YOffset = YOffset,
+                    Color = Color.ToArray(),
+                    HitFxColor = HitFxColor != null ? HitFxColor.ToArray() : null,
+                    HitSound = HitSound
+                };
+            }
         }
 
         public enum NoteType

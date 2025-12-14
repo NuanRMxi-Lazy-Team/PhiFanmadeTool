@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Newtonsoft.Json;
 
 namespace PhiFanmade.Core.RePhiEdit
@@ -121,6 +122,22 @@ namespace PhiFanmade.Core.RePhiEdit
                 }
                 else
                     throw new NotSupportedException($"类型 {typeof(T)} 不受支持。");
+            }
+
+            public Event<T> Clone()
+            {
+                return new Event<T>
+                {
+                    IsBezier = IsBezier,
+                    BezierPoints = BezierPoints.ToArray(),
+                    EasingLeft = EasingLeft,
+                    EasingRight = EasingRight,
+                    Easing = Easing,
+                    StartValue = StartValue,
+                    EndValue = EndValue,
+                    StartBeat = StartBeat,
+                    EndBeat = EndBeat
+                };
             }
         }
     }

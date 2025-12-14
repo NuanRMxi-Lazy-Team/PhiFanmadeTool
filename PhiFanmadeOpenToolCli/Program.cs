@@ -8,14 +8,22 @@ var rpeChartPath = Console.ReadLine() ?? throw new InvalidOperationException("No
 rpeChartPath = rpeChartPath.Trim('"');
 var rpeChartText = await File.ReadAllTextAsync(rpeChartPath);
 var rpeChart = await Chart.LoadFromJsonAsync(rpeChartText);
-// 层级合并
-foreach (var judgeline in rpeChart.JudgeLineList)
+// 父级解绑
+var chartCopy = rpeChart.Clone();
+for (var index = 0; index < rpeChart.JudgeLineList.Count; index++)
 {
-    judgeline.EventLayers = new List<EventLayer>(){RePhiEditUtility.LayerMerge(judgeline.EventLayers)};
+    var judgeline = rpeChart.JudgeLineList[index];
+    Console.WriteLine(judgeline.PositionControls.Count);
+    if (judgeline.Father != -1)
+    {
+        chartCopy.JudgeLineList[index] = RePhiEditUtility.FatherUnbind(index, rpeChart.JudgeLineList);
+    }
+    //judgeline.EventLayers = new List<EventLayer>(){RePhiEditUtility.LayerMerge(judgeline.EventLayers)};
 }
+
 // 加上_PFC文件名后缀导出到同目录
 var outputPathRpe = Path.Combine(Path.GetDirectoryName(rpeChartPath) ?? "", Path.GetFileNameWithoutExtension(rpeChartPath) + "_PFC.json");
-await File.WriteAllTextAsync(outputPathRpe, await rpeChart.ExportToJsonAsync(true));
+await File.WriteAllTextAsync(outputPathRpe, await chartCopy.ExportToJsonAsync(true));
 /*
 Console.WriteLine("Please enter the path to the PhiEditor Chart file:");
 var peChartPath = Console.ReadLine() ?? throw new InvalidOperationException("No input provided");

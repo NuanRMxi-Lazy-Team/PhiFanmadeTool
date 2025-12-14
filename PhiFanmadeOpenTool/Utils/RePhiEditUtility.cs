@@ -27,23 +27,102 @@ public class RePhiEditUtility
     }
 
     public static Action<string> OnWarning = s => { };
+    
+    /// <summary>
+    /// 将判定线与自己的父判定线解绑，并保持行为一致，注意，此函数不会将原有的所有层级合并。
+    /// </summary>
+    /// <param name="targetJudgeLineIndex">需要解绑的判定线索引</param>
+    /// <param name="allJudgeLines">所有判定线</param>
+    /// <returns></returns>
+    public static RePhiEdit.JudgeLine FatherUnbind(int targetJudgeLineIndex,List<RePhiEdit.JudgeLine> allJudgeLines)
+    {
+        throw new NotImplementedException("FatherUnbind is not implemented yet.");
+        var judgeLineCopy = allJudgeLines[targetJudgeLineIndex].Clone();
+        var allJudgeLinesCopy = allJudgeLines.Select(jl => jl.Clone()).ToList();
+        try
+        {
+            if (judgeLineCopy.Father <= -1)
+            {
+                OnWarning.Invoke("FatherUnbind: judgeLine has no father.");
+                return judgeLineCopy;
+            }
+            var fatherLine = allJudgeLinesCopy[judgeLineCopy.Father];
+            // 复制一份fatherLine的EventLayers
+            var fatherEventLayers = fatherLine.EventLayers.ToList();
+            // 层级合并
+            fatherEventLayers.RemoveAll(layer => layer == null);
+            if (fatherEventLayers.Count <= 1)
+            {
+                OnWarning.Invoke("FatherUnbind: Father JudgeLine layers count less than or equal to 1, no need to merge.");
+                return judgeLineCopy;
+            }
+
+            var mergedLayer = new RePhiEdit.EventLayer();
+            foreach (var layer in fatherEventLayers)
+            {
+                if (layer.MoveXEvents.Count > 0)
+                    mergedLayer.MoveXEvents = EventMerge(layer.MoveXEvents, mergedLayer.MoveXEvents);
+                if (layer.MoveYEvents.Count > 0)
+                    mergedLayer.MoveYEvents = EventMerge(layer.MoveYEvents, mergedLayer.MoveYEvents);
+                if (layer.RotateEvents.Count > 0 && judgeLineCopy.RotateWithFather)
+                    mergedLayer.RotateEvents = EventMerge(layer.RotateEvents, mergedLayer.RotateEvents);
+            }
+            // 检查judgeLine的EventLayers的Count是否大于等于4，如果大于等于4，则将mergedLayer与最后一个EventLayer合并，否则直接添加mergedLayer
+            if (judgeLineCopy.EventLayers.Count >= 4)
+            {
+                var lastLayer = judgeLineCopy.EventLayers.Last();
+                if (lastLayer.MoveXEvents.Count > 0)
+                    lastLayer.MoveXEvents = EventMerge(mergedLayer.MoveXEvents, lastLayer.MoveXEvents);
+                else
+                    lastLayer.MoveXEvents = mergedLayer.MoveXEvents;
+                if (lastLayer.MoveYEvents.Count > 0)
+                    lastLayer.MoveYEvents = EventMerge(mergedLayer.MoveYEvents, lastLayer.MoveYEvents);
+                else
+                    lastLayer.MoveYEvents = mergedLayer.MoveYEvents;
+                if (lastLayer.RotateEvents.Count > 0 && judgeLineCopy.RotateWithFather)
+                    lastLayer.RotateEvents = EventMerge(mergedLayer.RotateEvents, lastLayer.RotateEvents);
+                else
+                    lastLayer.RotateEvents = mergedLayer.RotateEvents;
+            }
+            else
+            {
+                judgeLineCopy.EventLayers.Add(mergedLayer);
+            }
+            // 解绑father
+            judgeLineCopy.Father = -1;
+            return judgeLineCopy;
+
+        }
+        catch (NullReferenceException)
+        {
+            OnWarning.Invoke("FatherUnbind: It seems that something is null.");
+            return judgeLineCopy;
+        }
+        catch (Exception e)
+        {
+            OnWarning.Invoke("FatherUnbind: Unknown error: " + e.Message);
+            return judgeLineCopy;
+        }
+    }
 
     /// <summary>
     /// 将两个事件列表合并，如果有重合事件则发出警告
     /// </summary>
-    /// <param name="toEvents">源事件列表</param>
-    /// <param name="formEvents">要合并进源事件的事件列表</param>
+    /// <param name="toEventsCopy">源事件列表</param>
+    /// <param name="formEventsCopy">要合并进源事件的事件列表</param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     public static List<RePhiEdit.Event<T>> EventMerge<T>(
         List<RePhiEdit.Event<T>> toEvents, List<RePhiEdit.Event<T>> formEvents)
     {
-        if (toEvents == null || toEvents.Count == 0)
-            return formEvents.ToList() ?? new();
+        var toEventsCopy = toEvents.Select(e => e.Clone()).ToList();
+        var formEventsCopy = formEvents.Select(e => e.Clone()).ToList();
+        if (toEventsCopy == null || toEventsCopy.Count == 0)
+            return formEventsCopy.ToList() ?? new();
 
 
-        if (formEvents == null || formEvents.Count == 0)
-            return toEvents.ToList();
+        if (formEventsCopy == null || formEventsCopy.Count == 0)
+            return toEventsCopy.ToList();
         if (typeof(T) != typeof(int) && typeof(T) != typeof(float) && typeof(T) != typeof(double))
         {
             throw new NotSupportedException("EventMerge only supports int, float, and double types.");
@@ -52,9 +131,9 @@ public class RePhiEditUtility
 
         // 将formEvents合并进toEvents，先检查是否有重合事件
         var overlapFound = false;
-        foreach (var formEvent in formEvents)
+        foreach (var formEvent in formEventsCopy)
         {
-            foreach (var toEvent in toEvents)
+            foreach (var toEvent in toEventsCopy)
             {
                 if (formEvent.StartBeat < toEvent.EndBeat && formEvent.EndBeat > toEvent.StartBeat)
                 {
@@ -74,9 +153,9 @@ public class RePhiEditUtility
             var newEvents = new List<RePhiEdit.Event<T>>();
             // 获得所有重合区间，比如，formEvents在1~2、4~8拍有事件，toEvents在1~8拍有事件，则重合区间以较长的为准，即1~8拍
             var overlapIntervals = new List<(RePhiEdit.Beat Start, RePhiEdit.Beat End)>();
-            foreach (var formEvent in formEvents)
+            foreach (var formEvent in formEventsCopy)
             {
-                foreach (var toEvent in toEvents)
+                foreach (var toEvent in toEventsCopy)
                 {
                     if (formEvent.StartBeat < toEvent.EndBeat && formEvent.EndBeat > toEvent.StartBeat)
                     {
@@ -108,7 +187,7 @@ public class RePhiEditUtility
             }
 
             // 先把未重合的事件加入newEvents
-            foreach (var toEvent in toEvents)
+            foreach (var toEvent in toEventsCopy)
             {
                 var isInOverlap = overlapIntervals.Any(interval =>
                     toEvent.StartBeat < interval.End && toEvent.EndBeat > interval.Start);
@@ -119,14 +198,14 @@ public class RePhiEditUtility
             }
 
             // 由于当前数值是两个事件列表的数值相加得到的，所以未重合的formEvents事件需要加上toEvents在该拍的数值
-            foreach (var formEvent in formEvents)
+            foreach (var formEvent in formEventsCopy)
             {
                 var isInOverlap = overlapIntervals.Any(interval =>
                     formEvent.StartBeat < interval.End && formEvent.EndBeat > interval.Start);
                 if (!isInOverlap)
                 {
                     // 获得这个事件StartBeat前的第一个toEvent的结束值
-                    var previousToEvent = toEvents.FindLast(e => e.EndBeat <= formEvent.StartBeat);
+                    var previousToEvent = toEventsCopy.FindLast(e => e.EndBeat <= formEvent.StartBeat);
                     var toEventValue = previousToEvent != null ? previousToEvent.EndValue : (T)default;
                     // 直接修改formEvent的StartValue和EndValue
                     formEvent.StartValue = (dynamic)formEvent.StartValue + (dynamic)toEventValue;
@@ -145,10 +224,10 @@ public class RePhiEditUtility
             foreach (var (start, end) in overlapIntervals)
             {
                 // 切割toEvents内的事件
-                var toEventsToCut = toEvents.Where(e => e.StartBeat < end && e.EndBeat > start).ToList();
+                var toEventsToCut = toEventsCopy.Where(e => e.StartBeat < end && e.EndBeat > start).ToList();
                 foreach (var toEvent in toEventsToCut)
                 {
-                    toEvents.Remove(toEvent);
+                    toEventsCopy.Remove(toEvent);
                     var cutStart = toEvent.StartBeat < start ? start : toEvent.StartBeat;
                     var cutEnd = toEvent.EndBeat > end ? end : toEvent.EndBeat;
                     var currentBeat = cutStart;
@@ -170,10 +249,10 @@ public class RePhiEditUtility
                 }
 
                 // 切割formEvents内的事件
-                var formEventsToCut = formEvents.Where(e => e.StartBeat < end && e.EndBeat > start).ToList();
+                var formEventsToCut = formEventsCopy.Where(e => e.StartBeat < end && e.EndBeat > start).ToList();
                 foreach (var formEvent in formEventsToCut)
                 {
-                    formEvents.Remove(formEvent);
+                    formEventsCopy.Remove(formEvent);
                     var cutStart = formEvent.StartBeat < start ? start : formEvent.StartBeat;
                     var cutEnd = formEvent.EndBeat > end ? end : formEvent.EndBeat;
                     var currentBeat = cutStart;
@@ -246,10 +325,10 @@ public class RePhiEditUtility
             // 把切割后的事件加入newEvents
             newEvents.AddRange(allCutedEvents);
             // 最后把newEvents赋值给toEvents
-            toEvents = newEvents;
+            toEventsCopy = newEvents;
 
             // 按开始拍排序
-            toEvents.Sort((a, b) =>
+            toEventsCopy.Sort((a, b) =>
             {
                 if (a.StartBeat < b.StartBeat) return -1;
                 if (a.StartBeat > b.StartBeat) return 1;
@@ -260,9 +339,9 @@ public class RePhiEditUtility
         {
             //toEvents.AddRange(formEvents);
 
-            foreach (var formEvent in formEvents)
+            foreach (var formEvent in formEventsCopy)
             {
-                var previousToEvent = toEvents.FindLast(e => e.EndBeat <= formEvent.StartBeat);
+                var previousToEvent = toEventsCopy.FindLast(e => e.EndBeat <= formEvent.StartBeat);
                 var toEventValue = previousToEvent != null ? previousToEvent.EndValue : default;
                 var mergedEvent = new RePhiEdit.Event<T>
                 {
@@ -271,12 +350,12 @@ public class RePhiEditUtility
                     StartValue = (dynamic)formEvent.StartValue + (dynamic)toEventValue,
                     EndValue = (dynamic)formEvent.EndValue + (dynamic)toEventValue
                 };
-                toEvents.Add(mergedEvent);
+                toEventsCopy.Add(mergedEvent);
             }
 
 
             // 合并后按开始拍排序
-            toEvents.Sort((a, b) =>
+            toEventsCopy.Sort((a, b) =>
             {
                 if (a.StartBeat < b.StartBeat) return -1;
                 if (a.StartBeat > b.StartBeat) return 1;
@@ -284,7 +363,7 @@ public class RePhiEditUtility
             });
         }
 
-        return toEvents;
+        return toEventsCopy;
     }
 
     public static RePhiEdit.EventLayer LayerMerge(List<RePhiEdit.EventLayer> layers)

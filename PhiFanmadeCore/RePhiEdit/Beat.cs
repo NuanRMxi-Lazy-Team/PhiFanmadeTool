@@ -25,13 +25,13 @@ namespace PhiFanmade.Core.RePhiEdit
                 // 将 double 转换为 Beat 结构，使用连分数算法获得最佳分数近似
                 int wholePart = (int)Math.Floor(beat);
                 double fractionalPart = beat - wholePart;
-    
+
                 if (Math.Abs(fractionalPart) < 1e-9)
                 {
                     _beat = new[] { wholePart, 0, 1 };
                     return;
                 }
-    
+
                 // 使用连分数算法找到最佳分数表示（限制分母最大为1000）
                 int numerator = 1, denominator = 0;
                 int prevNumerator = 0, prevDenominator = 1;
@@ -41,7 +41,7 @@ namespace PhiFanmade.Core.RePhiEdit
                 for (int iteration = 0; iteration < 20 && denominator <= maxDenominator; iteration++)
                 {
                     int digit = (int)Math.Floor(remaining);
-    
+
                     int tempNum = digit * numerator + prevNumerator;
                     int tempDen = digit * denominator + prevDenominator;
 
@@ -58,7 +58,7 @@ namespace PhiFanmade.Core.RePhiEdit
 
                     remaining = 1.0 / remaining;
                 }
-    
+
                 // 如果连分数算法没有找到好的近似，使用简单的四舍五入方法
                 if (denominator == 0 || denominator > maxDenominator)
                 {
@@ -68,7 +68,7 @@ namespace PhiFanmade.Core.RePhiEdit
                     numerator /= gcd;
                     denominator /= gcd;
                 }
-    
+
                 _beat = new[] { wholePart, numerator, denominator };
             }
 
@@ -86,6 +86,7 @@ namespace PhiFanmade.Core.RePhiEdit
                     b = a % b;
                     a = temp;
                 }
+
                 return a;
             }
 
@@ -97,6 +98,7 @@ namespace PhiFanmade.Core.RePhiEdit
                     b = a % b;
                     a = temp;
                 }
+
                 return a;
             }
 
@@ -131,7 +133,7 @@ namespace PhiFanmade.Core.RePhiEdit
             {
                 // 基于Beat = beat[1] / beat[2] + beat[0]的定义进行加法运算
                 var wholePart = a[0] + b[0];
-    
+
                 // 使用 long 防止中间计算溢出
                 long numerator = (long)a[1] * b[2] + (long)b[1] * a[2];
                 long denominator = (long)a[2] * b[2];
@@ -162,11 +164,12 @@ namespace PhiFanmade.Core.RePhiEdit
                 long gcd = GCD(Math.Abs(numerator), denominator);
                 numerator /= gcd;
                 denominator /= gcd;
-    
+
                 // 检查是否超出 int 范围
                 if (numerator > int.MaxValue || denominator > int.MaxValue)
                 {
-                    throw new OverflowException("Beat calculation resulted in values too large for int representation.");
+                    throw new OverflowException(
+                        "Beat calculation resulted in values too large for int representation.");
                 }
 
                 return new Beat(new[] { wholePart, (int)numerator, (int)denominator });
@@ -205,22 +208,26 @@ namespace PhiFanmade.Core.RePhiEdit
                 // 检查是否超出 int 范围
                 if (numerator > int.MaxValue || denominator > int.MaxValue)
                 {
-                    throw new OverflowException("Beat calculation resulted in values too large for int representation.");
+                    throw new OverflowException(
+                        "Beat calculation resulted in values too large for int representation.");
                 }
 
                 return new Beat(new[] { wholePart, (int)numerator, (int)denominator });
             }
+
             // 定义两个Beat对象的比较运算符，强行使用double作为比较依据，float有精度问题
             public static bool operator <(Beat a, Beat b) => (double)a < (double)b;
             public static bool operator >(Beat a, Beat b) => (double)a > (double)b;
             public static bool operator <=(Beat a, Beat b) => (double)a <= (double)b;
             public static bool operator >=(Beat a, Beat b) => (double)a >= (double)b;
+
             public static bool operator ==(Beat a, Beat b)
             {
                 if (ReferenceEquals(a, b)) return true;
                 if (a is null || b is null) return false;
                 return (double)a == (double)b;
             }
+
             public static bool operator !=(Beat a, Beat b) => !(a == b);
 
             /// <summary>
@@ -246,24 +253,6 @@ namespace PhiFanmade.Core.RePhiEdit
                 double otherValue = other;
 
                 return thisValue.CompareTo(otherValue);
-            }
-        }
-
-        public class BeatJsonConverter : JsonConverter<Beat>
-        {
-            public override void WriteJson(JsonWriter writer, Beat value, JsonSerializer serializer)
-            {
-                // 将 Beat 序列化为 int[] 数组
-                int[] beatArray = value;
-                serializer.Serialize(writer, beatArray);
-            }
-
-            public override Beat ReadJson(JsonReader reader, Type objectType, Beat existingValue, bool hasExistingValue,
-                JsonSerializer serializer)
-            {
-                // 从 int[] 数组反序列化为 Beat
-                var beatArray = serializer.Deserialize<int[]>(reader);
-                return new Beat(beatArray);
             }
         }
     }

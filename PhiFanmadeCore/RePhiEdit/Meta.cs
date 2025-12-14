@@ -66,6 +66,11 @@ namespace PhiFanmade.Core.RePhiEdit
                        $"Offset: {Offset}\n" +
                        $"Song: {Song}\n";
             }
+            public Meta Clone()
+            {
+                // 这个没必要自己实现，直接MemberwiseClone就行
+                return (Meta)MemberwiseClone();
+            }
         }
     }
 }

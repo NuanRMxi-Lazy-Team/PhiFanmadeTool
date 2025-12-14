@@ -1,21 +1,25 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace PhiFanmade.Core.RePhiEdit
 {
     public static partial class RePhiEdit
     {
-        public class ControlBase
+        public abstract class ControlBase
         {
             [JsonProperty("easing")] public Easing Easing = new Easing(1);
             [JsonProperty("x")] public float X = 0.0f;
+            
+            public abstract ControlBase Clone();
         }
 
         public class AlphaControl : ControlBase
         {
             [JsonProperty("alpha")] public float Alpha = 1.0f;
-
-            public static readonly List<AlphaControl> Default = new List<AlphaControl>
+            
+            [JsonIgnore]
+            public static List<AlphaControl> Default = new List<AlphaControl>
             {
                 new AlphaControl
                 {
@@ -29,14 +33,26 @@ namespace PhiFanmade.Core.RePhiEdit
                     Alpha = 1.0f,
                     X = 9999999.0f
                 }
-            };
+            }.ConvertAll(input => input.Clone() as AlphaControl);
+            
+            public override ControlBase Clone()
+            {
+                // 深拷贝
+                return new AlphaControl()
+                {
+                    Easing = new Easing(Easing),
+                    X = X,
+                    Alpha = Alpha
+                };
+            }
         }
 
         public class XControl : ControlBase
         {
             [JsonProperty("pos")] public float Pos = 1.0f;
 
-            public static readonly List<XControl> Default = new List<XControl>
+            [JsonIgnore]
+            public static List<XControl> Default => new List<XControl>
             {
                 new XControl
                 {
@@ -50,14 +66,26 @@ namespace PhiFanmade.Core.RePhiEdit
                     Pos = 1.0f,
                     X = 9999999.0f
                 }
-            };
+            }.ConvertAll(input => input.Clone() as XControl);
+            
+            public override ControlBase Clone()
+            {
+                // 深拷贝
+                return new XControl()
+                {
+                    Easing = new Easing(Easing),
+                    X = X,
+                    Pos = Pos
+                };
+            }
         }
 
         public class SizeControl : ControlBase
         {
             [JsonProperty("size")] public float Size = 1.0f;
 
-            public static readonly List<SizeControl> Default = new List<SizeControl>
+            [JsonIgnore]
+            public static List<SizeControl> Default = new List<SizeControl>
             {
                 new SizeControl
                 {
@@ -71,14 +99,26 @@ namespace PhiFanmade.Core.RePhiEdit
                     Size = 1.0f,
                     X = 9999999.0f
                 }
-            };
+            }.ConvertAll(input => input.Clone() as SizeControl);
+            
+            public override ControlBase Clone()
+            {
+                // 深拷贝
+                return new SizeControl()
+                {
+                    Easing = new Easing(Easing),
+                    X = X,
+                    Size = Size
+                };
+            }
         }
 
         public class SkewControl : ControlBase
         {
             [JsonProperty("skew")] public float Skew = 1.0f;
 
-            public static readonly List<SkewControl> Default = new List<SkewControl>
+            [JsonIgnore]
+            public static List<SkewControl> Default = new List<SkewControl>
             {
                 new SkewControl
                 {
@@ -92,14 +132,26 @@ namespace PhiFanmade.Core.RePhiEdit
                     Skew = 0.0f,
                     X = 9999999.0f
                 }
-            };
+            }.ConvertAll(input => input.Clone() as SkewControl);
+            
+            public override ControlBase Clone()
+            {
+                // 深拷贝
+                return new SkewControl()
+                {
+                    Easing = new Easing(Easing),
+                    X = X,
+                    Skew = Skew
+                };
+            }
         }
 
         public class YControl : ControlBase
         {
             [JsonProperty("y")] public float Y = 1.0f;
 
-            public static readonly List<YControl> Default = new List<YControl>
+            [JsonIgnore]
+            public static List<YControl> Default = new List<YControl>
             {
                 new YControl
                 {
@@ -113,7 +165,20 @@ namespace PhiFanmade.Core.RePhiEdit
                     Y = 1.0f,
                     X = 9999999.0f
                 }
-            };
+            }.ConvertAll(input => input.Clone() as YControl);
+
+            public override ControlBase Clone()
+            {
+                // 深拷贝
+                return new YControl()
+                {
+                    Easing = new Easing(Easing),
+                    X = X,
+                    Y = Y
+                };
+            }
         }
+        
+        
     }
 }

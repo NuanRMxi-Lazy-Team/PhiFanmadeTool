@@ -8,11 +8,20 @@ namespace PhiFanmade.Core.RePhiEdit
     {
         public class EventLayer
         {
-            [JsonProperty("moveXEvents")] public List<Event<float>> MoveXEvents = new List<Event<float>>(); // 移动事件
-            [JsonProperty("moveYEvents")] public List<Event<float>> MoveYEvents = new List<Event<float>>(); // 移动事件
-            [JsonProperty("rotateEvents")] public List<Event<float>> RotateEvents = new List<Event<float>>(); // 旋转事件
-            [JsonProperty("alphaEvents")] public List<Event<int>> AlphaEvents = new List<Event<int>>(); // 透明度事件
-            [JsonProperty("speedEvents")] public List<Event<float>> SpeedEvents = new List<Event<float>>(); // 速度事件
+            [JsonProperty("moveXEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+            public List<Event<float>> MoveXEvents; // 移动事件
+
+            [JsonProperty("moveYEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+            public List<Event<float>> MoveYEvents; // 移动事件
+
+            [JsonProperty("rotateEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+            public List<Event<float>> RotateEvents; // 旋转事件
+
+            [JsonProperty("alphaEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+            public List<Event<int>> AlphaEvents; // 透明度事件
+
+            [JsonProperty("speedEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+            public List<Event<float>> SpeedEvents; // 速度事件
 
             /// <summary>
             /// 获取某个拍时，指定事件层级指定事件列表的数值
@@ -42,36 +51,55 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             public void Sort()
             {
-                MoveXEvents.Sort((a, b) =>
+                var eventLists = new List<List<Event<float>>>
                 {
-                    if (a.StartBeat < b.StartBeat) return -1;
-                    if (a.StartBeat > b.StartBeat) return 1;
-                    return 0;
-                });
-                MoveYEvents.Sort((a, b) =>
+                    MoveXEvents, MoveYEvents, RotateEvents, SpeedEvents
+                };
+                var alphaEventList = AlphaEvents;
+                eventLists.ForEach(events =>
                 {
-                    if (a.StartBeat < b.StartBeat) return -1;
-                    if (a.StartBeat > b.StartBeat) return 1;
-                    return 0;
+                    events?.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
                 });
-                RotateEvents.Sort((a, b) =>
-                {
-                    if (a.StartBeat < b.StartBeat) return -1;
-                    if (a.StartBeat > b.StartBeat) return 1;
-                    return 0;
-                });
-                AlphaEvents.Sort((a, b) =>
-                {
-                    if (a.StartBeat < b.StartBeat) return -1;
-                    if (a.StartBeat > b.StartBeat) return 1;
-                    return 0;
-                });
-                SpeedEvents.Sort((a, b) =>
-                {
-                    if (a.StartBeat < b.StartBeat) return -1;
-                    if (a.StartBeat > b.StartBeat) return 1;
-                    return 0;
-                });
+                alphaEventList?.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
+            }
+
+            /// <summary>
+            /// 克隆，使用深拷贝
+            /// </summary>
+            /// <returns>一个从里到外都新新的事件层级！</returns>
+            public EventLayer Clone()
+            {
+                // 深拷贝，包括Event列表
+                var clone = new EventLayer();
+                // 保证列表中的元素也被深拷贝（通过LINQ调用Event的Clone方法）
+                if (MoveXEvents != null)
+                    clone.MoveXEvents = MoveXEvents.ConvertAll(e => e.Clone());
+                if (MoveYEvents != null)
+                    clone.MoveYEvents = MoveYEvents.ConvertAll(e => e.Clone());
+                if (RotateEvents != null)
+                    clone.RotateEvents = RotateEvents.ConvertAll(e => e.Clone());
+                if (AlphaEvents != null)
+                    clone.AlphaEvents = AlphaEvents.ConvertAll(e => e.Clone());
+                if (SpeedEvents != null)
+                    clone.SpeedEvents = SpeedEvents.ConvertAll(e => e.Clone());
+                return clone;
+            }
+
+            /// <summary>
+            /// 强行预期化，将空列表设置为null，保证Json序列化时不包含空列表
+            /// </summary>
+            public void Anticipation()
+            {
+                if (MoveXEvents != null && MoveXEvents.Count == 0)
+                    MoveXEvents = null;
+                if (MoveYEvents != null && MoveYEvents.Count == 0)
+                    MoveYEvents = null;
+                if (RotateEvents != null && RotateEvents.Count == 0)
+                    RotateEvents = null;
+                if (AlphaEvents != null && AlphaEvents.Count == 0)
+                    AlphaEvents = null;
+                if (SpeedEvents != null && SpeedEvents.Count == 0)
+                    SpeedEvents = null;
             }
         }
     }

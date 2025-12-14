@@ -109,27 +109,136 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <summary>
             /// Position（X） Control 控制点列表
             /// </summary>
-            [JsonProperty("posControl")] public List<XControl> PositionControls = XControl.Default;
+            [JsonProperty("posControl")]
+            public List<XControl> PositionControls
+            {
+                get
+                {
+                    if (_positionControls == null)
+                    {
+                        _positionControls = new List<XControl>();
+                    }
+                    return _positionControls;
+                }
+                set => _positionControls = value;
+            }
+
+            private List<XControl> _positionControls;
 
             /// <summary>
             /// Alpha Control 控制点列表
             /// </summary>
-            [JsonProperty("alphaControl")] public List<AlphaControl> AlphaControls = AlphaControl.Default;
+            [JsonProperty("alphaControl")]
+            public List<AlphaControl> AlphaControls
+            {
+                get
+                {
+                    if (_alphaControls == null)
+                    {
+                        _alphaControls = new List<AlphaControl>();
+                    }
+                    return _alphaControls;
+                }
+                set => _alphaControls = value;
+            }
+            private  List<AlphaControl> _alphaControls;
 
             /// <summary>
             /// Size Control 控制点列表
             /// </summary>
-            [JsonProperty("sizeControl")] public List<SizeControl> SizeControls = SizeControl.Default;
+            [JsonProperty("sizeControl")]
+            public List<SizeControl> SizeControls
+            {
+                get
+                {
+                    if (_sizeControls == null)
+                    {
+                        _sizeControls = new List<SizeControl>();
+                    }
+                    return _sizeControls;
+                }
+                set => _sizeControls = value;
+            }
+            private List<SizeControl> _sizeControls;
 
             /// <summary>
             /// Skew Control 控制点列表
             /// </summary>
-            [JsonProperty("skewControl")] public List<SkewControl> SkewControls = SkewControl.Default;
+            [JsonProperty("skewControl")]
+            public List<SkewControl> SkewControls
+            {
+                get
+                {
+                    if (_skewControls == null)
+                    {
+                        _skewControls = new List<SkewControl>();
+                    }
+                    return _skewControls;
+                }
+                set => _skewControls = value;
+            }
+            private List<SkewControl> _skewControls;
 
             /// <summary>
             /// Y Control 控制点列表
             /// </summary>
-            [JsonProperty("yControl")] public List<YControl> YControls = YControl.Default;
+            [JsonProperty("yControl")] public List<YControl> YControls
+            {
+                get
+                {
+                    if (_yControls == null)
+                    {
+                        _yControls = new List<YControl>();
+                    }
+                    return _yControls;
+                }
+                set => _yControls = value;
+            }
+            private List<YControl> _yControls;
+
+           public JudgeLine Clone()
+           {
+               var clone = new JudgeLine
+               {
+                   Name = Name,
+                   Texture = Texture,
+                   Anchor = (float[])Anchor.Clone(),
+                   Father = Father,
+                   IsCover = IsCover,
+                   ZOrder = ZOrder,
+                   IsGif = IsGif,
+                   Group = Group,
+                   BpmFactor = BpmFactor,
+                   RotateWithFather = RotateWithFather,
+                   AttachUi = AttachUi,
+                   EventLayers = new List<EventLayer>(),
+                   Notes = new List<Note>(),
+                   Extended = Extended?.Clone(),
+                   PositionControls = new List<XControl>(),
+                   AlphaControls = new List<AlphaControl>(),
+                   SizeControls = new List<SizeControl>(),
+                   SkewControls = new List<SkewControl>(),
+                   YControls = new List<YControl>()
+               };
+           
+               // 深拷贝列表
+               foreach (var eventLayer in EventLayers)
+                   clone.EventLayers.Add(eventLayer.Clone());
+               foreach (var note in Notes)
+                   clone.Notes.Add(note.Clone());
+               foreach (var control in PositionControls)
+                   clone.PositionControls.Add(control.Clone() as XControl);
+               foreach (var control in AlphaControls)
+                   clone.AlphaControls.Add(control.Clone() as AlphaControl);
+               foreach (var control in SizeControls)
+                   clone.SizeControls.Add(control.Clone() as SizeControl);
+               foreach (var control in SkewControls)
+                   clone.SkewControls.Add(control.Clone() as SkewControl);
+               foreach (var control in YControls)
+                   clone.YControls.Add(control.Clone() as YControl);
+           
+               return clone;
+           }
         }
 
         /// <summary>

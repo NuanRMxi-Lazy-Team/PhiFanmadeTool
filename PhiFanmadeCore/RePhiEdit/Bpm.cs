@@ -8,6 +8,14 @@ namespace PhiFanmade.Core.RePhiEdit
         {
             [JsonProperty("bpm")] public float BeatPerMinute = 120f;
             [JsonProperty("startTime")] public Beat StartTime = new Beat(new[] { 0, 0, 1 });
+            public Bpm Clone()
+            {
+                return new Bpm()
+                {
+                    BeatPerMinute = BeatPerMinute,
+                    StartTime = new Beat((int[])StartTime)
+                };
+            }
         }
     }
 }

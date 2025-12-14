@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -31,8 +33,24 @@ namespace PhiFanmade.Core.RePhiEdit
             public string ExportToJson(bool format)
             {
                 foreach (var judgeLine in JudgeLineList)
-                foreach (var eventlayer in judgeLine.EventLayers)
-                    eventlayer.Sort();
+                {
+                    // 如果这个判定线层级上有null层级，移除它们
+                    judgeLine.EventLayers.RemoveAll(layer => layer == null);
+                    // 对所有判定线的所有事件层级执行Anticipation()方法
+                    foreach (var eventlayer in judgeLine.EventLayers)
+                    {
+                        eventlayer.Anticipation();
+                        eventlayer.Sort();
+                    }
+                    judgeLine.Extended.Anticipation();
+                    // 如果判定线上有任何类型的Control组为空或null，则设定一个默认值
+                    if (judgeLine.AlphaControls == null || judgeLine.AlphaControls.Count == 0)
+                        judgeLine.AlphaControls = AlphaControl.Default;
+                    if (judgeLine.PositionControls == null || judgeLine.PositionControls.Count == 0)
+                        judgeLine.PositionControls = XControl.Default;
+
+                }
+
                 return JsonConvert.SerializeObject(this, format ? Formatting.Indented : Formatting.None);
             }
 
@@ -49,8 +67,13 @@ namespace PhiFanmade.Core.RePhiEdit
                             throw new InvalidOperationException(
                                 "Failed to deserialize Chart from JSON.");
                 foreach (var judgeLine in chart.JudgeLineList)
-                foreach (var eventlayer in judgeLine.EventLayers)
-                    eventlayer.Sort();
+                {
+                    // 如果这个判定线层级上有null层级，移除它们
+                    judgeLine.EventLayers.RemoveAll(layer => layer == null);
+                    foreach (var eventlayer in judgeLine.EventLayers)
+                        eventlayer.Sort();
+                }
+
                 return chart;
             }
 
@@ -71,6 +94,21 @@ namespace PhiFanmade.Core.RePhiEdit
             public static Task<Chart> LoadFromJsonAsync(string json)
                 => Task.Run(() => LoadFromJson(json));
 
+            public Chart Clone()
+            {
+                return new Chart()
+                {
+                    BpmList = BpmList.ConvertAll(bpm => bpm.Clone()),
+                    Meta = Meta.Clone(),
+                    JudgeLineList = JudgeLineList.ConvertAll(judgeLine => judgeLine.Clone()),
+                    ChartTime = ChartTime,
+                    JudgeLineGroup = JudgeLineGroup.ToArray(),
+                    MultiLineString = MultiLineString,
+                    MultiScale = MultiScale,
+                    XyBind = XyBind
+                };
+            }
+
 
             /// <summary>
             /// 坐标系边界
@@ -86,7 +124,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <summary>
             /// BPM列表
             /// </summary>
-            [JsonProperty("BPMList")] public Bpm[] BpmList =
+            [JsonProperty("BPMList")] public List<Bpm> BpmList = new List<Bpm>
             {
                 new Bpm()
             };
@@ -99,7 +137,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <summary>
             /// 判定线列表
             /// </summary>
-            [JsonProperty("judgeLineList")] public JudgeLine[] JudgeLineList = { };
+            [JsonProperty("judgeLineList")] public List<JudgeLine> JudgeLineList = new List<JudgeLine>();
 
             /// <summary>
             /// 制谱时长（秒）
