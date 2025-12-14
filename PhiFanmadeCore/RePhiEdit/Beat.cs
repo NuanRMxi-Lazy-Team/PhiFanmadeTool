@@ -124,8 +124,8 @@ namespace PhiFanmade.Core.RePhiEdit
             // 隐式转换为 double，返回 CurBeat
             public static implicit operator double(Beat beat) => (double)beat[1] / beat[2] + beat[0];
 
-            // 隐式转换为 int[]，返回 _beat
-            public static implicit operator int[](Beat beat) => beat._beat;
+            // 隐式转换为 int[]，返回 _beat 的副本
+            public static implicit operator int[](Beat beat) => (int[])beat._beat.Clone();
 
             // 定义两个Beat对象的加法运算符
             // 定义两个Beat对象的加法运算符

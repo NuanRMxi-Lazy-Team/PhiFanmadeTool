@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Newtonsoft.Json;
 
 namespace PhiFanmade.Core.RePhiEdit
@@ -124,6 +126,120 @@ namespace PhiFanmade.Core.RePhiEdit
                     throw new NotSupportedException($"类型 {typeof(T)} 不受支持。");
             }
 
+            private bool IsImmutableType(Type type)
+            {
+                // 值类型是不可变的
+                if (type.IsValueType)
+                    return true;
+
+                // 字符串是不可变的
+                if (type == typeof(string))
+                    return true;
+
+                // 检查常见的不可变类型
+                if (type == typeof(DateTime) || type == typeof(DateTimeOffset) ||
+                    type == typeof(TimeSpan) || type == typeof(Guid) ||
+                    type == typeof(Uri) || type == typeof(Version))
+                    return true;
+
+                // 检查是否为枚举
+                if (type.IsEnum)
+                    return true;
+
+                return false;
+            }
+
+            private TValue DeepClone<TValue>(TValue value)
+            {
+                if (value == null)
+                    return default(TValue);
+
+                var type = typeof(TValue);
+
+                // 不可变类型直接返回
+                if (IsImmutableType(type))
+                    return value;
+
+                // 处理数组
+                if (type.IsArray)
+                {
+                    var elementType = type.GetElementType();
+                    var array = value as Array;
+                    var clonedArray = Array.CreateInstance(elementType, array.Length);
+                    for (int i = 0; i < array.Length; i++)
+                    {
+                        var element = array.GetValue(i);
+                        if (IsImmutableType(elementType))
+                            clonedArray.SetValue(element, i);
+                        else
+                        {
+                            var cloneMethod = typeof(Event<T>).GetMethod("DeepClone", BindingFlags.NonPublic | BindingFlags.Instance)
+                                .MakeGenericMethod(elementType);
+                            clonedArray.SetValue(cloneMethod.Invoke(this, new[] { element }), i);
+                        }
+                    }
+                    return (TValue)(object)clonedArray;
+                }
+
+                // 处理泛型集合 (List<T>, Dictionary<K,V>, etc.)
+                if (type.IsGenericType)
+                {
+                    var genericTypeDef = type.GetGenericTypeDefinition();
+
+                    // List<T>
+                    if (genericTypeDef == typeof(List<>))
+                    {
+                        var elementType = type.GetGenericArguments()[0];
+                        var list = value as System.Collections.IList;
+                        var clonedListType = typeof(List<>).MakeGenericType(elementType);
+                        var clonedList = Activator.CreateInstance(clonedListType) as System.Collections.IList;
+
+                        foreach (var item in list)
+                        {
+                            if (IsImmutableType(elementType))
+                                clonedList.Add(item);
+                            else
+                            {
+                                var cloneMethod = typeof(Event<T>).GetMethod("DeepClone", BindingFlags.NonPublic | BindingFlags.Instance)
+                                    .MakeGenericMethod(elementType);
+                                clonedList.Add(cloneMethod.Invoke(this, new[] { item }));
+                            }
+                        }
+                        return (TValue)clonedList;
+                    }
+                }
+
+                // 尝试调用对象的 Clone() 方法
+                var cloneMethodInfo = type.GetMethod("Clone", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                if (cloneMethodInfo != null && cloneMethodInfo.ReturnType == type)
+                {
+                    return (TValue)cloneMethodInfo.Invoke(value, null);
+                }
+
+                // 使用反射进行浅拷贝并递归处理引用类型字段
+                var cloned = Activator.CreateInstance(type);
+                var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+                foreach (var field in fields)
+                {
+                    var fieldValue = field.GetValue(value);
+                    if (fieldValue == null)
+                        continue;
+
+                    var fieldType = field.FieldType;
+                    if (IsImmutableType(fieldType))
+                        field.SetValue(cloned, fieldValue);
+                    else
+                    {
+                        var cloneMethod = typeof(Event<T>).GetMethod("DeepClone", BindingFlags.NonPublic | BindingFlags.Instance)
+                            .MakeGenericMethod(fieldType);
+                        field.SetValue(cloned, cloneMethod.Invoke(this, new[] { fieldValue }));
+                    }
+                }
+
+                return (TValue)cloned;
+            }
+
             public Event<T> Clone()
             {
                 return new Event<T>
@@ -133,10 +249,10 @@ namespace PhiFanmade.Core.RePhiEdit
                     EasingLeft = EasingLeft,
                     EasingRight = EasingRight,
                     Easing = Easing,
-                    StartValue = StartValue,
-                    EndValue = EndValue,
-                    StartBeat = StartBeat,
-                    EndBeat = EndBeat
+                    StartValue = DeepClone(StartValue),
+                    EndValue = DeepClone(EndValue),
+                    StartBeat = new Beat((int[])StartBeat),
+                    EndBeat = new Beat((int[])EndBeat)
                 };
             }
         }
