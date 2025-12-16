@@ -162,6 +162,7 @@ public static class SystemLanguage
         var lang  = Environment.GetEnvironmentVariable("LANG");
 
         var raw = FirstNonEmpty(lcAll, lcMsg, lang);
+        raw = NormalizeToBcp47(raw);
 
         // 如果环境变量没有，尝试常见配置文件
         raw ??= TryReadLocaleFromEtc();
