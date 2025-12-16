@@ -7,24 +7,21 @@
         <Nullable>enable</Nullable>
         <AssemblyName>PhiFanmade.OpenTool.Cli</AssemblyName>
         <RootNamespace>PhiFanmade.OpenTool.Cli</RootNamespace>
-        <InvariantGlobalization>true</InvariantGlobalization>
-        <AssemblyVersion>0.0.1.0</AssemblyVersion>
+        <AssemblyVersion>0.0.2.0</AssemblyVersion>
+        <PublishAot>true</PublishAot>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
-    
+
     <ItemGroup>
-    <ProjectReference Include="..\PhiFanmadeCore\PhiFanmadeCore.csproj" />
-    <ProjectReference Include="..\PhiFanmadeOpenTool\PhiFanmadeOpenTool.csproj" />
-  </ItemGroup>
+        <ProjectReference Include="..\PhiFanmadeCore\PhiFanmadeCore.csproj"/>
+        <ProjectReference Include="..\PhiFanmadeOpenTool\PhiFanmadeOpenTool.csproj"/>
+        <ProjectReference Include="..\PhiFanmadeOpenToolLocalization\PhiFanmadeOpenToolLocalization.csproj" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Update="Localization\*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Spectre.Console" Version="0.54.1-alpha.0.10" />
-  </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Spectre.Console" Version="0.54.1-alpha.0.10"/>
+    </ItemGroup>
 
 </Project>

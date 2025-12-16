@@ -229,14 +229,34 @@ namespace PhiFanmade.Core.RePhiEdit
         {
             public override Beat Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
-                var arr = JsonSerializer.Deserialize<int[]>(ref reader, options) ?? new[] { 0, 0, 1 };
-                return new Beat(arr);
+                // 手动读取数组，避免 AOT 问题
+                if (reader.TokenType != JsonTokenType.StartArray)
+                    throw new JsonException("Expected start of array for Beat");
+
+                reader.Read();
+                var values = new int[3];
+                for (int i = 0; i < 3 && reader.TokenType == JsonTokenType.Number; i++)
+                {
+                    values[i] = reader.GetInt32();
+                    reader.Read();
+                }
+
+                if (reader.TokenType != JsonTokenType.EndArray)
+                    throw new JsonException("Expected end of array for Beat");
+
+                return new Beat(values);
             }
 
             public override void Write(Utf8JsonWriter writer, Beat value, JsonSerializerOptions options)
             {
+                // 手动写入数组，避免 AOT 问题
                 int[] beatArray = value;
-                JsonSerializer.Serialize(writer, beatArray, options);
+                writer.WriteStartArray();
+                foreach (var v in beatArray)
+                {
+                    writer.WriteNumberValue(v);
+                }
+                writer.WriteEndArray();
             }
         }
 

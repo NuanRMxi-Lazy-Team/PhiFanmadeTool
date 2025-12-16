@@ -77,7 +77,12 @@ namespace PhiFanmade.Core.RePhiEdit
             /// 为什么？RePhiEdit就是这样设计的。。。
             /// </summary>
             [JsonProperty("numOfNotes")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonIgnore]
+            [Obsolete("你不能修改这个值，也不应该读取这个值，这个值完全不准确", false)]
+#else
             [Obsolete("你不能修改这个值，也不应该读取这个值，这个值完全不准确", true)]
+#endif
             public int TotalNumberOfNotes
             {
                 get
@@ -179,6 +184,10 @@ namespace PhiFanmade.Core.RePhiEdit
                 set => _positionControls = value;
             }
 
+            [Newtonsoft.Json.JsonIgnore]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonIgnore]
+#endif
             private List<XControl> _positionControls;
 
             /// <summary>
@@ -200,6 +209,10 @@ namespace PhiFanmade.Core.RePhiEdit
                 }
                 set => _alphaControls = value;
             }
+            [Newtonsoft.Json.JsonIgnore]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonIgnore]
+#endif
             private  List<AlphaControl> _alphaControls;
 
             /// <summary>
@@ -221,6 +234,10 @@ namespace PhiFanmade.Core.RePhiEdit
                 }
                 set => _sizeControls = value;
             }
+            [Newtonsoft.Json.JsonIgnore]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonIgnore]
+#endif
             private List<SizeControl> _sizeControls;
 
             /// <summary>
@@ -242,6 +259,10 @@ namespace PhiFanmade.Core.RePhiEdit
                 }
                 set => _skewControls = value;
             }
+            [Newtonsoft.Json.JsonIgnore]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonIgnore]
+#endif
             private List<SkewControl> _skewControls;
 
             /// <summary>
@@ -263,6 +284,10 @@ namespace PhiFanmade.Core.RePhiEdit
                 }
                 set => _yControls = value;
             }
+            [Newtonsoft.Json.JsonIgnore]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonIgnore]
+#endif
             private List<YControl> _yControls;
 
            public JudgeLine Clone()

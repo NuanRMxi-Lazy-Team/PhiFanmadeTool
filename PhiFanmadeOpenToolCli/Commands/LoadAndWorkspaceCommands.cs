@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using PhiFanmade.OpenTool.Cli.Infrastructure;
-using PhiFanmade.OpenTool.Cli.Localization;
+using PhiFanmade.OpenTool.Localization;
 using PhiFanmade.OpenTool.Cli.Parsing;
-using static PhiFanmade.Core.RePhiEdit.RePhiEdit;
 
 namespace PhiFanmade.OpenTool.Cli.Commands;
 
@@ -44,7 +43,7 @@ public sealed class WorkspaceListCommand : ICommandHandler
         var ws = new WorkspaceService();
         foreach (var id in ws.List())
         {
-            System.Console.WriteLine(id);
+            Console.WriteLine(id);
         }
         return Task.FromResult(0);
     }

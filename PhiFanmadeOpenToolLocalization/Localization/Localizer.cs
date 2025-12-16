@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Text.Json;
 
-namespace PhiFanmade.OpenTool.Cli.Localization;
+namespace PhiFanmade.OpenTool.Localization;
 
 public interface ILocalizer
 {
@@ -32,7 +32,7 @@ public sealed class Localizer : ILocalizer
 
     public static ILocalizer Create()
     {
-        var lang = SystemLanguage.GetPreferredLanguageTag();
+        var lang = CultureInfo.CurrentCulture.Name;
         var loc = TryLoad(lang) ?? TryLoad("en-US") ?? new Localizer(lang, new());
         return loc;
     }
@@ -45,11 +45,16 @@ public sealed class Localizer : ILocalizer
             var file = Path.Combine(dir, lang + ".json");
             if (!File.Exists(file)) return null;
             var json = File.ReadAllText(file);
-            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
+            var options = new JsonSerializerOptions
+            {
+                TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver()
+            };
+            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json, options) ?? new();
             return new Localizer(lang, dict);
         }
-        catch
+        catch (Exception e)
         {
+            Console.WriteLine("Failed to load localization for " + lang + ": " + e.Message);
             return null;
         }
     }

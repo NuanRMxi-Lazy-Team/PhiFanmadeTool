@@ -299,6 +299,10 @@ namespace PhiFanmade.Core.RePhiEdit
                 _easingNumber = easingNumber;
             }
 
+            [Newtonsoft.Json.JsonIgnore]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonIgnore]
+#endif
             private int _easingNumber;
 
             public float Do(float minLim, float maxLim, float start, float end, float t)

@@ -19,6 +19,10 @@ namespace PhiFanmade.Core.RePhiEdit
 #endif
         public class Beat : IComparable<Beat>
         {
+            [Newtonsoft.Json.JsonIgnore]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonIgnore]
+#endif
             private readonly int[] _beat;
 
             public Beat(int[] beatArray)

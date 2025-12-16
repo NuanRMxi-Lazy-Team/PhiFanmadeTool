@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using System.Threading.Tasks;
 using PhiFanmade.OpenTool.Cli.Infrastructure;
-using PhiFanmade.OpenTool.Cli.Localization;
+using PhiFanmade.OpenTool.Localization;
 
 namespace PhiFanmade.OpenTool.Cli.Commands;
 

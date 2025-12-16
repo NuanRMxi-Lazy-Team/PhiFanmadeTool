@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AssemblyName>PhiFanmade.OpenTool.Localization</AssemblyName>
+        <RootNamespace>PhiFanmade.OpenTool.Localization</RootNamespace>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <None Update="Localization\*.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+</Project>
