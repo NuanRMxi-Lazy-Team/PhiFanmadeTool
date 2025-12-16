@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+// STJ 特性使用完全限定名，避免命名冲突
 
 namespace PhiFanmade.Core.RePhiEdit
 {
@@ -8,15 +9,28 @@ namespace PhiFanmade.Core.RePhiEdit
     {
         public abstract class ControlBase
         {
-            [JsonProperty("easing")] public Easing Easing = new Easing(1);
-            [JsonProperty("x")] public float X = 0.0f;
+            [JsonProperty("easing")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("easing")]
+#endif
+            public Easing Easing = new Easing(1);
+
+            [JsonProperty("x")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("x")]
+#endif
+            public float X = 0.0f;
 
             public abstract ControlBase Clone();
         }
 
         public class AlphaControl : ControlBase
         {
-            [JsonProperty("alpha")] public float Alpha = 1.0f;
+            [JsonProperty("alpha")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("alpha")]
+#endif
+            public float Alpha = 1.0f;
 
             [JsonIgnore]
             public static List<AlphaControl> Default
@@ -55,7 +69,11 @@ namespace PhiFanmade.Core.RePhiEdit
 
         public class XControl : ControlBase
         {
-            [JsonProperty("pos")] public float Pos = 1.0f;
+            [JsonProperty("pos")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("pos")]
+#endif
+            public float Pos = 1.0f;
 
             [JsonIgnore]
             public static List<XControl> Default
@@ -94,7 +112,11 @@ namespace PhiFanmade.Core.RePhiEdit
 
         public class SizeControl : ControlBase
         {
-            [JsonProperty("size")] public float Size = 1.0f;
+            [JsonProperty("size")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("size")]
+#endif
+            public float Size = 1.0f;
 
             [JsonIgnore]
             public static List<SizeControl> Default
@@ -133,7 +155,11 @@ namespace PhiFanmade.Core.RePhiEdit
 
         public class SkewControl : ControlBase
         {
-            [JsonProperty("skew")] public float Skew = 1.0f;
+            [JsonProperty("skew")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("skew")]
+#endif
+            public float Skew = 1.0f;
 
             [JsonIgnore]
             public static List<SkewControl> Default
@@ -172,7 +198,11 @@ namespace PhiFanmade.Core.RePhiEdit
 
         public class YControl : ControlBase
         {
-            [JsonProperty("y")] public float Y = 1.0f;
+            [JsonProperty("y")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("y")]
+#endif
+            public float Y = 1.0f;
 
             [JsonIgnore]
             public static List<YControl> Default

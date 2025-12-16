@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+// STJ 特性使用完全限定名
 
 namespace PhiFanmade.Core.RePhiEdit
 {
@@ -11,39 +12,65 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <summary>
             /// 判定线名称
             /// </summary>
-            [JsonProperty("Name")] public string Name = "PhiFanmadeCoreJudgeLine";
+            [JsonProperty("Name")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("Name")]
+#endif
+            public string Name = "PhiFanmadeCoreJudgeLine";
 
             /// <summary>
             /// 判定线纹理相对路径，默认值为line.png
             /// </summary>
-            [JsonProperty("Texture")] public string Texture = "line.png"; // 判定线纹理路径
+            [JsonProperty("Texture")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("Texture")]
+#endif
+            public string Texture = "line.png"; // 判定线纹理路径
 
             /// <summary>
             /// 判定线纹理锚点(0~1之间)，默认值为中心点(0.5, 0.5)
             /// </summary>
-            [JsonProperty("anchor")] public float[] Anchor = { 0.5f, 0.5f }; // 判定线纹理锚点
+            [JsonProperty("anchor")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("anchor")]
+#endif
+            public float[] Anchor = { 0.5f, 0.5f }; // 判定线纹理锚点
 
             /// <summary>
             /// 判定线事件层列表
             /// </summary>
             [JsonProperty("eventLayers", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("eventLayers")]
+#endif
             public List<EventLayer> EventLayers = new List<EventLayer>(); // 事件层
 
             /// <summary>
             /// 父级判定线索引，-1表示无父级
             /// </summary>
-            [JsonProperty("father")] public int Father = -1; // 父级
+            [JsonProperty("father")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("father")]
+#endif
+            public int Father = -1; // 父级
 
             /// <summary>
             /// 是否遮罩越过判定线的音符（已被打击的除外）
             /// </summary>
-            [JsonProperty("isCover")] [JsonConverter(typeof(BoolConverter))]
+            [JsonProperty("isCover")] [Newtonsoft.Json.JsonConverter(typeof(BoolConverter))]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("isCover"), System.Text.Json.Serialization.JsonConverter(typeof(StjBoolConverter))]
+#endif
             public bool IsCover = true; // 是否遮罩
 
             /// <summary>
             /// 判定线音符列表
             /// </summary>
-            [JsonProperty("notes")] public List<Note> Notes = new List<Note>(); // note列表
+            [JsonProperty("notes")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("notes")]
+#endif
+            public List<Note> Notes = new List<Note>(); // note列表
 
             /// <summary>
             /// Note总数量(包含 FakeNote，不包含任何形式的Hold)。
@@ -72,44 +99,73 @@ namespace PhiFanmade.Core.RePhiEdit
             /// 特殊事件层（故事板）
             /// </summary>
             [JsonProperty("extended", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("extended")]
+#endif
             public ExtendLayer Extended = new ExtendLayer();
 
             /// <summary>
             /// 判定线的Z轴顺序
             /// </summary>
-            [JsonProperty("zOrder")] public int ZOrder; // Z轴顺序
+            [JsonProperty("zOrder")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("zOrder")]
+#endif
+            public int ZOrder; // Z轴顺序
 
             /// <summary>
             /// 判定线是否绑定UI
             /// </summary>
             [JsonProperty("attachUI", NullValueHandling = NullValueHandling.Ignore)]
-            [JsonConverter(typeof(AttachUiConverter))]
+            [Newtonsoft.Json.JsonConverter(typeof(AttachUiConverter))]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("attachUI"), System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull), System.Text.Json.Serialization.JsonConverter(typeof(StjAttachUiConverter))]
+#endif
             public AttachUi? AttachUi = null; // 绑定UI名，当不绑定时为null
 
             /// <summary>
             /// 判定线纹理是否为GIF
             /// </summary>
-            [JsonProperty("isGif")] public bool IsGif; // 纹理是否为GIF
+            [JsonProperty("isGif")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("isGif")]
+#endif
+            public bool IsGif; // 纹理是否为GIF
 
             /// <summary>
             /// 所属组
             /// </summary>
-            [JsonProperty("Group")] public int Group = 0; // 绑定组
+            [JsonProperty("Group")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("Group")]
+#endif
+            public int Group = 0; // 绑定组
 
             /// <summary>
             /// 当前判定线相对于当前BPM的因子。判定线BPM = 谱面BPM / BpmFactor
             /// </summary>
-            [JsonProperty("bpmfactor")] public float BpmFactor = 1.0f; // BPM因子
+            [JsonProperty("bpmfactor")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("bpmfactor")]
+#endif
+            public float BpmFactor = 1.0f; // BPM因子
 
             /// <summary>
             /// 是否跟随父线旋转
             /// </summary>
-            [JsonProperty("rotateWithFather")] public bool RotateWithFather = false; // 是否随父级旋转
+            [JsonProperty("rotateWithFather")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("rotateWithFather")]
+#endif
+            public bool RotateWithFather = false; // 是否随父级旋转
 
             /// <summary>
             /// Position（X） Control 控制点列表
             /// </summary>
             [JsonProperty("posControl")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("posControl")]
+#endif
             public List<XControl> PositionControls
             {
                 get
@@ -129,6 +185,9 @@ namespace PhiFanmade.Core.RePhiEdit
             /// Alpha Control 控制点列表
             /// </summary>
             [JsonProperty("alphaControl")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("alphaControl")]
+#endif
             public List<AlphaControl> AlphaControls
             {
                 get
@@ -147,6 +206,9 @@ namespace PhiFanmade.Core.RePhiEdit
             /// Size Control 控制点列表
             /// </summary>
             [JsonProperty("sizeControl")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("sizeControl")]
+#endif
             public List<SizeControl> SizeControls
             {
                 get
@@ -165,6 +227,9 @@ namespace PhiFanmade.Core.RePhiEdit
             /// Skew Control 控制点列表
             /// </summary>
             [JsonProperty("skewControl")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("skewControl")]
+#endif
             public List<SkewControl> SkewControls
             {
                 get
@@ -182,7 +247,11 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <summary>
             /// Y Control 控制点列表
             /// </summary>
-            [JsonProperty("yControl")] public List<YControl> YControls
+            [JsonProperty("yControl")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("yControl")]
+#endif
+            public List<YControl> YControls
             {
                 get
                 {

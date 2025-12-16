@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+// STJ 特性使用完全限定名
 
 namespace PhiFanmade.Core.RePhiEdit
 {
@@ -9,18 +10,33 @@ namespace PhiFanmade.Core.RePhiEdit
         public class EventLayer
         {
             [JsonProperty("moveXEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("moveXEvents")]
+#endif
             public List<Event<float>> MoveXEvents; // 移动事件
 
             [JsonProperty("moveYEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("moveYEvents")]
+#endif
             public List<Event<float>> MoveYEvents; // 移动事件
 
             [JsonProperty("rotateEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("rotateEvents")]
+#endif
             public List<Event<float>> RotateEvents; // 旋转事件
 
             [JsonProperty("alphaEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("alphaEvents")]
+#endif
             public List<Event<int>> AlphaEvents; // 透明度事件
 
             [JsonProperty("speedEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("speedEvents")]
+#endif
             public List<Event<float>> SpeedEvents; // 速度事件
 
             /// <summary>

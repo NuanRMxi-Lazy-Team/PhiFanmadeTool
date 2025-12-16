@@ -289,6 +289,9 @@ namespace PhiFanmade.Core.RePhiEdit
         }
 
         [JsonConverter(typeof(EasingJsonConverter))]
+#if !NETSTANDARD2_1
+        [System.Text.Json.Serialization.JsonConverter(typeof(StjEasingJsonConverter))]
+#endif
         public class Easing
         {
             public Easing(int easingNumber)

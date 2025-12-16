@@ -1,5 +1,8 @@
 ﻿using System;
 using Newtonsoft.Json;
+#if !NETSTANDARD2_1
+using System.Text.Json.Serialization;
+#endif
 
 namespace PhiFanmade.Core.RePhiEdit
 {
@@ -10,7 +13,10 @@ namespace PhiFanmade.Core.RePhiEdit
         /// 使用float或double隐式转换时，返回 CurBeat = beat[1] / beat[2] + beat[0]
         /// 使用int[]隐式转换时，返回原始数组
         /// </summary>
-        [JsonConverter(typeof(BeatJsonConverter))]
+        [Newtonsoft.Json.JsonConverter(typeof(BeatJsonConverter))]
+#if !NETSTANDARD2_1
+        [System.Text.Json.Serialization.JsonConverter(typeof(StjBeatJsonConverter))]
+#endif
         public class Beat : IComparable<Beat>
         {
             private readonly int[] _beat;
@@ -237,6 +243,31 @@ namespace PhiFanmade.Core.RePhiEdit
             public override string ToString()
             {
                 return $"{this[0]}:{this[1]}/{this[2]}";
+            }
+
+            /// <summary>
+            /// 确定指定的对象是否等于当前 Beat 对象
+            /// </summary>
+            /// <param name="obj">要与当前对象进行比较的对象</param>
+            /// <returns>如果指定的对象等于当前对象，则为 true；否则为 false</returns>
+            public override bool Equals(object obj)
+            {
+                if (obj is Beat other)
+                {
+                    return this == other;
+                }
+
+                return false;
+            }
+
+            /// <summary>
+            /// 获取当前 Beat 对象的哈希代码
+            /// </summary>
+            /// <returns>当前对象的哈希代码</returns>
+            public override int GetHashCode()
+            {
+                double value = this;
+                return value.GetHashCode();
             }
 
             /// <summary>

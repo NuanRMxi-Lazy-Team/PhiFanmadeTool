@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+// STJ 支持
+#if !NETSTANDARD2_1
+using System.Text.Json;
+using System.Text.Json.Serialization;
+#endif
 
 namespace PhiFanmade.Core.RePhiEdit
 {
@@ -77,6 +82,58 @@ namespace PhiFanmade.Core.RePhiEdit
                 return chart;
             }
 
+#if !NETSTANDARD2_1
+            /// <summary>
+            /// 使用 System.Text.Json 序列化为Json
+            /// </summary>
+            public string ExportToJsonStj(bool format)
+            {
+                foreach (var judgeLine in JudgeLineList)
+                {
+                    judgeLine.EventLayers.RemoveAll(layer => layer == null);
+                    foreach (var eventlayer in judgeLine.EventLayers)
+                    {
+                        eventlayer.Anticipation();
+                        eventlayer.Sort();
+                    }
+                    judgeLine.Extended.Anticipation();
+                    if (judgeLine.AlphaControls == null || judgeLine.AlphaControls.Count == 0)
+                        judgeLine.AlphaControls = AlphaControl.Default;
+                    if (judgeLine.PositionControls == null || judgeLine.PositionControls.Count == 0)
+                        judgeLine.PositionControls = XControl.Default;
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = format,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+                return System.Text.Json.JsonSerializer.Serialize(this, options);
+            }
+
+            /// <summary>
+            /// 使用 System.Text.Json 从Json反序列化
+            /// </summary>
+            public static Chart LoadFromJsonStj(string json)
+            {
+                var chart = System.Text.Json.JsonSerializer.Deserialize<Chart>(json) ??
+                            throw new InvalidOperationException("Failed to deserialize Chart from JSON.");
+                foreach (var judgeLine in chart.JudgeLineList)
+                {
+                    judgeLine.EventLayers.RemoveAll(layer => layer == null);
+                    foreach (var eventlayer in judgeLine.EventLayers)
+                        eventlayer.Sort();
+                }
+                return chart;
+            }
+
+            public Task<string> ExportToJsonStjAsync(bool format)
+                => Task.Run(() => ExportToJsonStj(format));
+
+            public static Task<Chart> LoadFromJsonStjAsync(string json)
+                => Task.Run(() => LoadFromJsonStj(json));
+#endif
+
             /// <summary>
             /// 异步序列化为Json
             /// </summary>
@@ -124,7 +181,11 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <summary>
             /// BPM列表
             /// </summary>
-            [JsonProperty("BPMList")] public List<Bpm> BpmList = new List<Bpm>
+            [JsonProperty("BPMList")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("BPMList")]
+#endif
+            public List<Bpm> BpmList = new List<Bpm>
             {
                 new Bpm()
             };
@@ -132,37 +193,65 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <summary>
             /// 元数据
             /// </summary>
-            [JsonProperty("META")] public Meta Meta = new Meta();
+            [JsonProperty("META")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("META")]
+#endif
+            public Meta Meta = new Meta();
 
             /// <summary>
             /// 判定线列表
             /// </summary>
-            [JsonProperty("judgeLineList")] public List<JudgeLine> JudgeLineList = new List<JudgeLine>();
+            [JsonProperty("judgeLineList")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("judgeLineList")]
+#endif
+            public List<JudgeLine> JudgeLineList = new List<JudgeLine>();
 
             /// <summary>
             /// 制谱时长（秒）
             /// </summary>
-            [JsonProperty("chartTime")] public double ChartTime = 0d;
+            [JsonProperty("chartTime")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("chartTime")]
+#endif
+            public double ChartTime = 0d;
 
             /// <summary>
             /// 判定线组
             /// </summary>
-            [JsonProperty("judgeLineGroup")] public string[] JudgeLineGroup = { "Default" };
+            [JsonProperty("judgeLineGroup")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("judgeLineGroup")]
+#endif
+            public string[] JudgeLineGroup = { "Default" };
 
             /// <summary>
             /// 多线编辑判定线列表（以空格为分割，或使用x:y选中x~y所有判定线）
             /// </summary>
-            [JsonProperty("multiLineString")] public string MultiLineString = "1";
+            [JsonProperty("multiLineString")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("multiLineString")]
+#endif
+            public string MultiLineString = "1";
 
             /// <summary>
             /// 多线编辑页面缩放比例
             /// </summary>
-            [JsonProperty("multiScale")] public float MultiScale = 1.0f;
+            [JsonProperty("multiScale")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("multiScale")]
+#endif
+            public float MultiScale = 1.0f;
 
             /// <summary>
             /// XY事件是否一一对应
             /// </summary>
-            [JsonProperty("xybind")] public bool XyBind = true;
+            [JsonProperty("xybind")]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("xybind")]
+#endif
+            public bool XyBind = true;
         }
     }
 }

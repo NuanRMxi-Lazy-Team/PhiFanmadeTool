@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+// STJ 特性使用完全限定名
 
 namespace PhiFanmade.Core.RePhiEdit
 {
@@ -12,37 +13,55 @@ namespace PhiFanmade.Core.RePhiEdit
             /// 判定线纹理颜色事件列表，颜色格式为RGB字节数组，使用顶点颜色乘法
             /// </summary>
             [JsonProperty("colorEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
-            [JsonConverter(typeof(ColorEventsConverter))]
+            [Newtonsoft.Json.JsonConverter(typeof(ColorEventsConverter))]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("colorEvents"), System.Text.Json.Serialization.JsonConverter(typeof(StjColorEventsConverter))]
+#endif
             public List<Event<byte[]>> ColorEvents;
             
             /// <summary>
             /// 判定线纹理宽度缩放事件列表
             /// </summary>
             [JsonProperty("scaleXEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("scaleXEvents")]
+#endif
             public List<Event<float>> ScaleXEvents;
             
             /// <summary>
             /// 判定线纹理高度缩放事件列表
             /// </summary>
             [JsonProperty("scaleYEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("scaleYEvents")]
+#endif
             public List<Event<float>> ScaleYEvents;
             
             /// <summary>
             /// 判定线文字纹理事件列表
             /// </summary>
             [JsonProperty("textEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("textEvents")]
+#endif
             public List<Event<string>> TextEvents;
             
             /// <summary>
             /// 画笔事件列表，值为画笔大小
             /// </summary>
             [JsonProperty("paintEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("paintEvents")]
+#endif
             public List<Event<float>> PaintEvents;
             
             /// <summary>
             /// 判定线动图播放进度事件列表，值为动图帧进度（0~1之间）
             /// </summary>
             [JsonProperty("gifEvents", DefaultValueHandling = DefaultValueHandling.Ignore)]
+#if !NETSTANDARD2_1
+            [System.Text.Json.Serialization.JsonPropertyName("gifEvents")]
+#endif
             public List<Event<float>> GifEvents;
 
             public ExtendLayer Clone()
