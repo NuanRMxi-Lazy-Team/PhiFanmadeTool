@@ -36,7 +36,6 @@ public class RePhiEditUtility
     /// <returns></returns>
     public static RePhiEdit.JudgeLine FatherUnbind(int targetJudgeLineIndex,List<RePhiEdit.JudgeLine> allJudgeLines)
     {
-        throw new NotImplementedException("FatherUnbind is not implemented yet.");
         var judgeLineCopy = allJudgeLines[targetJudgeLineIndex].Clone();
         var allJudgeLinesCopy = allJudgeLines.Select(jl => jl.Clone()).ToList();
         try
@@ -186,14 +185,24 @@ public class RePhiEditUtility
                 }
             }
 
-            // 先把未重合的事件加入newEvents
+            // 先把未重合的事件加入newEvents（注意需要加上另一侧最近结束值的偏移）
             foreach (var toEvent in toEventsCopy)
             {
                 var isInOverlap = overlapIntervals.Any(interval =>
                     toEvent.StartBeat < interval.End && toEvent.EndBeat > interval.Start);
                 if (!isInOverlap)
                 {
-                    newEvents.Add(toEvent);
+                    // to-only 区间：应加上 formEvents 在该拍之前最近结束事件的结束值
+                    var previousFormEvent = formEventsCopy.FindLast(e => e.EndBeat <= toEvent.StartBeat);
+                    var formOffset = previousFormEvent != null ? previousFormEvent.EndValue : (T)default;
+                    var adjusted = new RePhiEdit.Event<T>
+                    {
+                        StartBeat = toEvent.StartBeat,
+                        EndBeat = toEvent.EndBeat,
+                        StartValue = (dynamic)toEvent.StartValue + (dynamic)formOffset,
+                        EndValue = (dynamic)toEvent.EndValue + (dynamic)formOffset
+                    };
+                    newEvents.Add(adjusted);
                 }
             }
 
@@ -215,9 +224,7 @@ public class RePhiEditUtility
             }
 
 
-            // 对每个区间内的事件进行切割，两个事件列表都要做切割，切割后的事件长度为0.0625f
-            //var cutLength = new RePhiEdit.Beat(0.0625d); // 0.0625拍
-            //var cutLength = new RePhiEdit.Beat(0.125f);
+            // 对每个区间内的事件进行切割，两个事件列表都要做切割，切割后的事件长度为0.015625拍
             var cutLength = new RePhiEdit.Beat(0.015625d);
             var cutedToEvents = new List<RePhiEdit.Event<T>>();
             var cutedFormEvents = new List<RePhiEdit.Event<T>>();
@@ -283,9 +290,11 @@ public class RePhiEditUtility
             {
                 var (start, end) = overlapIntervals[index];
                 var currentBeat = start;
-                T defaultValue = default;
-                formOverlapEventLastEndValue = default;
-                toOverlapEventLastEndValue = default;
+                // 在区间开始前，初始化“最近结束值”为区间开始拍之前最近结束的事件值（可能来自区间之外）
+                var prevTo = toEventsCopy.FindLast(e => e.EndBeat <= start);
+                var prevForm = formEventsCopy.FindLast(e => e.EndBeat <= start);
+                formOverlapEventLastEndValue = prevForm != null ? prevForm.EndValue : (T)default;
+                toOverlapEventLastEndValue = prevTo != null ? prevTo.EndValue : (T)default;
                 while (currentBeat < end)
                 {
                     var nextBeat = currentBeat + cutLength;

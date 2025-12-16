@@ -1,0 +1,13 @@
+﻿{
+  "app.title": "PhiFanmade 开源工具集 CLI",
+  "msg.loaded": "已经把小可爱谱面塞进 {workspace} 工作区啦！",
+  "msg.saved": "做好啦！把工作区 '{workspace}' 存到 '{path}' 了！",
+  "msg.cleared": "哗啦啦~ 所有工作区都打扫干净了喵！",
+  "msg.written": "写好了哟！{path}",
+  "warn.pe.convert": "PE 转换还在化妆中，稍等一下下~",
+  "err.unknown": "咦？这条指令我还不认识呢，试试 'version' 或看看 README 喵~",
+  "err.unimplemented":"这个命令功能还未完全实现呢...",
+  "err.input.required": "需要提供 --input 哟，或者用 --workspace 也可以~",
+  "err.output.required": "需要提供 --output 才能帮你保存呢~",
+  "err.workspace.missing": "没有找到 {workspace} 这个工作区喵..."
+}

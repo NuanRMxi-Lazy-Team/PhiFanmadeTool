@@ -1,0 +1,13 @@
+﻿{
+  "app.title": "PhiFanmade OpenSource Tool CLI",
+  "msg.loaded": "Dropped your lovely chart into workspace: {workspace}",
+  "msg.saved": "All set! Workspace '{workspace}' is saved to: {path}",
+  "msg.cleared": "Sweep sweep~ All workspaces are squeaky clean now!",
+  "msg.written": "Done writing: {path}",
+  "warn.pe.convert": "PE convert is putting on makeup… please wait a tiny bit~",
+  "err.unknown": "Hmm? I don't know this command yet. Try 'version' or peek the README~",
+  "err.unimplemented":"This function has not been fully implemented yet",
+  "err.input.required": "Please provide --input, or use --workspace~",
+  "err.output.required": "Please provide --output so I can save it nicely~",
+  "err.workspace.missing": "Oops, workspace not found: {workspace}"
+}

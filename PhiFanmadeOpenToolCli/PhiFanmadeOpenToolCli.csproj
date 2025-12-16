@@ -2,16 +2,29 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AssemblyName>PhiFanmade.OpenTool.Cli</AssemblyName>
         <RootNamespace>PhiFanmade.OpenTool.Cli</RootNamespace>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <AssemblyVersion>0.0.1.0</AssemblyVersion>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\PhiFanmadeCore\PhiFanmadeCore.csproj" />
-        <ProjectReference Include="..\PhiFanmadeOpenTool\PhiFanmadeOpenTool.csproj" />
-    </ItemGroup>
+    <ProjectReference Include="..\PhiFanmadeCore\PhiFanmadeCore.csproj" />
+    <ProjectReference Include="..\PhiFanmadeOpenTool\PhiFanmadeOpenTool.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Spectre.Console" Version="0.49.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Localization\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>
