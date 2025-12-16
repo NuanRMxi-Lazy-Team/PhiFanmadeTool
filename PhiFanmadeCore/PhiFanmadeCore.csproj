@@ -5,7 +5,7 @@
         <AssemblyName>PhiFanmade.Core</AssemblyName>
         <RootNamespace>PhiFanmade.Core</RootNamespace>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>0.0.3</Version>
+        <Version>0.0.4</Version>
         <Title>PhiFanmade Core Lib</Title>
         <Authors>NuanR_Star Ciallo Team</Authors>
         <Description>即使身处无人角落，我仍要继续向前，直到我无法前进。</Description>
