@@ -6,6 +6,14 @@
 <span style="color:yellow">**注意：此项目仍然处于早期阶段，字段名称与行为随时有可能更改，请斟酌后再使用！**</span>  
 <span style="color:red">**如果您使用本软件进行低质量创作，本软件将对您进行道德谴责，受限于开源协议，项目维护者无权阻止您的任何行为！**</span>
 
+## .NET版本
+PhiFanmadeCore: .NETStandard2.1, .NET8.0, .NET9.0, .NET10.0 （基于System.Text.Json的Json序列化功能不在.NETStandard2.1提供）  
+PhiFanmadeOpenTool: .NET8.0, .NET9.0, .NET10.0  
+PhiFanmadeOpenToolCli: .NET8.0, .NET10.0  
+
+## 招新
+本项目需要更多人开发与维护，欢迎发送邮件到 nrlt@nuanr-mxi.com 来加入开发！
+
 ## 开源许可证
 [GNU AFFERO GENERAL PUBLIC LICENSE](https://www.gnu.org/licenses/agpl-3.0.html)
 

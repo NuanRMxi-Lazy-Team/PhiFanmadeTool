@@ -1,5 +1,6 @@
 ﻿using PhiFanmade.Core.PhiEdit;
 using PhiFanmade.Core.RePhiEdit;
+using PhiFanmade.OpenTool.Localization;
 
 namespace PhiFanmade.OpenTool.Utils;
 
@@ -26,7 +27,10 @@ public class RePhiEditUtility
         }
     }
 
+    public static Action<string> OnInfo = s => { }; 
     public static Action<string> OnWarning = s => { };
+    public static Action<string> OnError = s => { };
+    public static Action<string> OnDebug = s => { };
 
     /// <summary>
     /// 将判定线与自己的父判定线解绑，并保持行为一致，注意，此函数不会将原有的所有层级合并。
@@ -131,6 +135,7 @@ public class RePhiEditUtility
     public static List<RePhiEdit.Event<T>> EventMerge<T>(
         List<RePhiEdit.Event<T>> toEvents, List<RePhiEdit.Event<T>> formEvents)
     {
+        var loc = Localizer.Create();
         // 先检查 null，避免 LINQ "Value cannot be null. (Parameter 'source')" 错误
         if (toEvents == null || toEvents.Count == 0)
         {
@@ -453,13 +458,28 @@ public class RePhiEditUtility
         return toEventsCopy;
     }
 
+    private static List<RePhiEdit.Event<T>>? RemoveUnlessEvent<T>(List<RePhiEdit.Event<T>>? events)
+    {
+        // 在确保events不是null的情况下Copy一份，防止对原始列表篡改
+        var eventsCopy = events?.Select(e => e.Clone()).ToList();
+        if (eventsCopy != null && eventsCopy.Count == 1 &&
+            EqualityComparer<T>.Default.Equals(eventsCopy[0].StartValue, default(T)) &&
+            EqualityComparer<T>.Default.Equals(eventsCopy[0].EndValue, default(T)))
+        {
+            eventsCopy.RemoveAt(0);
+        }
+        return eventsCopy;
+    }
+
     public static RePhiEdit.EventLayer LayerMerge(List<RePhiEdit.EventLayer> layers)
     {
+        var loc = Localizer.Create();
         // 清理null层级
         layers.RemoveAll(layer => layer == null);
         if (layers.Count <= 1)
         {
-            OnWarning.Invoke("LayerMerge: layers count less than or equal to 1, no need to merge.");
+            //OnWarning.Invoke("LayerMerge: layers count less than or equal to 1, no need to merge.");
+            OnWarning.Invoke("LayerMerge" + loc["util.rpe.warn.layer_insufficient_quantity"]);
             return layers.FirstOrDefault() ?? new RePhiEdit.EventLayer();
         }
 
@@ -467,18 +487,10 @@ public class RePhiEditUtility
         
         foreach (var layer in layers)
         {
-            if (layer.AlphaEvents != null && layer.AlphaEvents.Count == 1 && layer.AlphaEvents[0].StartValue == 0 &&
-                layer.AlphaEvents[0].EndValue == 0)
-                layer.AlphaEvents.RemoveAt(0);
-            if (layer.MoveXEvents != null && layer.MoveXEvents.Count == 1 && layer.MoveXEvents[0].StartValue == 0 &&
-                layer.MoveXEvents[0].EndValue == 0)
-                layer.MoveXEvents.RemoveAt(0);
-            if (layer.MoveYEvents != null && layer.MoveYEvents.Count == 1 && layer.MoveYEvents[0].StartValue == 0 &&
-                layer.MoveYEvents[0].EndValue == 0)
-                layer.MoveYEvents.RemoveAt(0);
-            if (layer.RotateEvents != null && layer.RotateEvents.Count == 1 && layer.RotateEvents[0].StartValue == 0 &&
-                layer.RotateEvents[0].EndValue == 0)
-                layer.RotateEvents.RemoveAt(0);
+            layer.AlphaEvents = RemoveUnlessEvent(layer.AlphaEvents);
+            layer.MoveXEvents = RemoveUnlessEvent(layer.MoveXEvents);
+            layer.MoveYEvents = RemoveUnlessEvent(layer.MoveYEvents);
+            layer.RotateEvents = RemoveUnlessEvent(layer.RotateEvents);
         }
 
         var mergedLayer = new RePhiEdit.EventLayer();

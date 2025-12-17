@@ -4,6 +4,7 @@
   "msg.saved": "All set! Workspace '{workspace}' is saved to: {path}",
   "msg.cleared": "Sweep sweep~ All workspaces are squeaky clean now!",
   "msg.written": "Done writing: {path}",
+  "msg.help": "Please read README.md for help~",
   "warn.pe.convert": "PE convert is putting on makeup… please wait a tiny bit~",
   "err.unknown": "Hmm? I don't know this command yet. Try 'version' or peek the README~",
   "err.unimplemented":"This function has not been fully implemented yet",
