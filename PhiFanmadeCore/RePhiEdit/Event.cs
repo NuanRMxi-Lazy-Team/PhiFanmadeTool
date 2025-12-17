@@ -16,7 +16,8 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             [JsonProperty("bezier")] [Newtonsoft.Json.JsonConverter(typeof(BoolConverter))]
 #if !NETSTANDARD2_1
-            [System.Text.Json.Serialization.JsonPropertyName("bezier"), System.Text.Json.Serialization.JsonConverter(typeof(StjBoolConverter))]
+            [System.Text.Json.Serialization.JsonPropertyName("bezier")]
+            [System.Text.Json.Serialization.JsonConverter(typeof(StjBoolConverter))]
 #endif
             public bool IsBezier = false; // 是否为贝塞尔曲线
 

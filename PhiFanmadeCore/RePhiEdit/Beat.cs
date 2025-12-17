@@ -116,23 +116,23 @@ namespace PhiFanmade.Core.RePhiEdit
             {
                 get
                 {
-                    if (index > 2)
-                        throw new IndexOutOfRangeException("RePhiEdit Beat count can not be greater than 3.");
+                    if (index < 0 || index > 2)
+                        throw new IndexOutOfRangeException("RePhiEdit Beat index must be between 0 and 2.");
                     return _beat[index];
                 }
                 set
                 {
-                    if (index > 2)
-                        throw new IndexOutOfRangeException("RePhiEdit Beat count can not be greater than 3.");
+                    if (index < 0 || index > 2)
+                        throw new IndexOutOfRangeException("RePhiEdit Beat index must be between 0 and 2.");
                     _beat[index] = value;
                 }
             }
-
+            
             // 隐式转换为 float，返回 CurBeat
-            public static implicit operator float(Beat beat) => (float)beat[1] / beat[2] + beat[0];
-
+            public static implicit operator float(Beat beat) => (float)beat._beat[1] / beat._beat[2] + beat._beat[0];
+            
             // 隐式转换为 double，返回 CurBeat
-            public static implicit operator double(Beat beat) => (double)beat[1] / beat[2] + beat[0];
+            public static implicit operator double(Beat beat) => (double)beat._beat[1] / beat._beat[2] + beat._beat[0];
 
             // 隐式转换为 int[]，返回 _beat 的副本
             public static implicit operator int[](Beat beat) => (int[])beat._beat.Clone();
