@@ -8,7 +8,6 @@
         <AssemblyName>PhiFanmade.OpenTool.Cli</AssemblyName>
         <RootNamespace>PhiFanmade.OpenTool.Cli</RootNamespace>
         <AssemblyVersion>0.0.3.0</AssemblyVersion>
-        <PublishAot>true</PublishAot>
         <IsPackable>false</IsPackable>
         <Configurations>Debug;Release</Configurations>
         <Platforms>AnyCPU;x64</Platforms>

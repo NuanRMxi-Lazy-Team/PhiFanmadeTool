@@ -1,0 +1,178 @@
+﻿name: Auto Release on Version Update
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'PhiFanmadeCore/PhiFanmadeCore.csproj'
+      - 'PhiFanmadeOpenTool/PhiFanmadeOpenTool.csproj'
+      - 'PhiFanmadeOpenToolCli/PhiFanmadeOpenToolCli.csproj'
+
+jobs:
+  check-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Check version changes and create releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 函数：从 csproj 文件中提取版本号
+          get_version() {
+            local file=$1
+            grep -oP '<Version>\K[^<]+' "$file" || grep -oP '<AssemblyVersion>\K[^<]+' "$file"
+          }
+
+          # 函数：判断是否为 pre-release
+          is_prerelease() {
+            local version=$1
+            local patch=$(echo "$version" | cut -d'.' -f3)
+            local build=$(echo "$version" | cut -d'.' -f4)
+
+            if [ "$patch" != "0" ] || [ ! -z "$build" -a "$build" != "0" ]; then
+              echo "true"
+            else
+              echo "false"
+            fi
+          }
+
+          # 函数：构建 NuGet 包
+          build_nuget() {
+            local csproj_path=$1
+            local project_name=$2
+          
+            dotnet pack "$csproj_path" -c Release -o ./artifacts
+            echo "Built NuGet package for $project_name"
+          }
+
+          # 函数：构建 CLI 多目标版本
+          build_cli() {
+            local csproj_path=$1
+            local output_dir="./artifacts/cli"
+          
+            # 目标框架和运行时组合
+            local frameworks=("net8.0" "net10.0")
+            local runtimes=("win-x64" "win-x86" "linux-x64" "linux-x86")
+          
+            # 构建依赖框架版本
+            for framework in "${frameworks[@]}"; do
+              for runtime in "${runtimes[@]}"; do
+                echo "Building $framework $runtime (framework-dependent)..."
+                dotnet publish "$csproj_path" \
+                  -c Release \
+                  -f "$framework" \
+                  -r "$runtime" \
+                  --self-contained false \
+                  -o "$output_dir/$framework-$runtime-fdd"
+          
+                # 压缩输出
+                cd "$output_dir/$framework-$runtime-fdd"
+                zip -r "../PhiFanmade.OpenTool.Cli-$framework-$runtime-fdd.zip" .
+                cd -
+              done
+            done
+          
+            # 构建 AOT 版本
+            for framework in "${frameworks[@]}"; do
+              for runtime in "${runtimes[@]}"; do
+                echo "Building $framework $runtime (AOT)..."
+                dotnet publish "$csproj_path" \
+                  -c Release \
+                  -f "$framework" \
+                  -r "$runtime" \
+                  --self-contained true \
+                  -p:PublishAot=true \
+                  -o "$output_dir/$framework-$runtime-aot"
+          
+                # 压缩输出
+                cd "$output_dir/$framework-$runtime-aot"
+                zip -r "../PhiFanmade.OpenTool.Cli-$framework-$runtime-aot.zip" .
+                cd -
+              done
+            done
+          
+            echo "Built all CLI variants"
+          }
+
+          # 函数：创建 release
+          create_release() {
+            local project_name=$1
+            local version=$2
+            local csproj_path=$3
+            local tag="${project_name} v${version}"
+
+            # 检查 tag 是否已存在
+            if git rev-parse "$tag" >/dev/null 2>&1; then
+              echo "Tag $tag already exists, skipping..."
+              return
+            fi
+
+            local prerelease=$(is_prerelease "$version")
+            mkdir -p ./artifacts
+
+            # 根据项目类型构建
+            case "$project_name" in
+              "Core"|"Tool")
+                build_nuget "$csproj_path" "$project_name"
+                ;;
+              "Cli")
+                build_cli "$csproj_path"
+                ;;
+            esac
+
+            # 创建 tag
+            git tag "$tag"
+            git push origin "$tag"
+
+            # 创建 release 并上传构建产物
+            local release_args=(
+              "$tag"
+              --title "$tag"
+              --notes "自动发布 $project_name 版本 $version"
+            )
+          
+            [ "$prerelease" = "true" ] && release_args+=(--prerelease) || release_args+=(--latest)
+          
+            # 添加构建产物
+            if [ "$project_name" = "Core" ] || [ "$project_name" = "Tool" ]; then
+              release_args+=(./artifacts/*.nupkg)
+            elif [ "$project_name" = "Cli" ]; then
+              release_args+=(./artifacts/cli/*.zip)
+            fi
+
+            gh release create "${release_args[@]}"
+
+            echo "Created release: $tag (prerelease: $prerelease)"
+          }
+
+          # 检查 PhiFanmadeCore
+          CORE_VERSION=$(get_version "PhiFanmadeCore/PhiFanmadeCore.csproj")
+          if [ ! -z "$CORE_VERSION" ]; then
+            create_release "Core" "$CORE_VERSION" "PhiFanmadeCore/PhiFanmadeCore.csproj"
+          fi
+
+          # 检查 PhiFanmadeOpenTool
+          TOOL_VERSION=$(get_version "PhiFanmadeOpenTool/PhiFanmadeOpenTool.csproj")
+          if [ ! -z "$TOOL_VERSION" ]; then
+            create_release "Tool" "$TOOL_VERSION" "PhiFanmadeOpenTool/PhiFanmadeOpenTool.csproj"
+          fi
+
+          # 检查 PhiFanmadeOpenToolCli
+          CLI_VERSION=$(get_version "PhiFanmadeOpenToolCli/PhiFanmadeOpenToolCli.csproj")
+          if [ ! -z "$CLI_VERSION" ]; then
+            create_release "Cli" "$CLI_VERSION" "PhiFanmadeOpenToolCli/PhiFanmadeOpenToolCli.csproj"
+          fi
