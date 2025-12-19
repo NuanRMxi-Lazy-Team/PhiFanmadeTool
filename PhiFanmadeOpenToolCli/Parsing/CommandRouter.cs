@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using PhiFanmade.OpenTool.Cli.Infrastructure;
+﻿using PhiFanmade.OpenTool.Cli.Infrastructure;
 using PhiFanmade.OpenTool.Cli.Commands;
 using PhiFanmade.OpenTool.Localization;
 
@@ -19,14 +15,11 @@ public sealed class CommandRouter
     // 标准命令键 -> 别名列表（含多语言）。不区分大小写。
     private static readonly Dictionary<string, string[]> Aliases = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["version"] = new[] { "version", "ver", "版本" },
-        ["load"] = new[] { "load", "载入" },
-        ["save"] = new[] { "save", "保存" },
-        ["workspace.list"] = new[] { "workspace.list", "workspace ls", "workspace list", "工作区 列表", "工作区 list" },
-        ["workspace.clear"] = new[] { "workspace.clear", "workspace clear", "工作区 清理" },
-        ["rpe.unbind-father"] = new[] { "rpe.unbind-father", "rpe.unbind", "解绑父级" },
-        ["rpe.layer-merge"] = new[] { "rpe.layer-merge", "合并所有事件层级" },
-        ["pe.convert"] = new[] { "pe.convert", "转换为PE谱面" },
+        ["version"] = ["version", "ver", "版本"], ["load"] = ["load", "载入"], ["save"] = ["save", "保存"],
+        ["workspace.list"] = ["workspace.list", "workspace ls", "workspace list", "工作区 列表", "工作区 list"],
+        ["workspace.clear"] = ["workspace.clear", "workspace clear", "工作区 清理"],
+        ["rpe.unbind-father"] = ["rpe.unbind-father", "rpe.unbind", "解绑父级"],
+        ["rpe.layer-merge"] = ["rpe.layer-merge", "合并所有事件层级"], ["pe.convert"] = ["pe.convert", "转换为PE谱面"],
         ["help"] = ["help", "帮助"]
     };
 

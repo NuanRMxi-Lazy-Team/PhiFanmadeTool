@@ -299,7 +299,7 @@ namespace PhiFanmade.Core.RePhiEdit
                 _easingNumber = easingNumber;
             }
 
-            [Newtonsoft.Json.JsonIgnore]
+            [JsonIgnore]
 #if !NETSTANDARD2_1
             [System.Text.Json.Serialization.JsonIgnore]
 #endif

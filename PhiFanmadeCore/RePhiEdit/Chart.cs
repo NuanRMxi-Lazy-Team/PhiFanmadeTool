@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.IO;
 // STJ 支持
 #if !NETSTANDARD2_1
 using System.Text.Encodings.Web;
@@ -16,6 +17,37 @@ namespace PhiFanmade.Core.RePhiEdit
     {
         public class Chart
         {
+
+            /// <summary>
+            /// 对判定线及其事件层级进行预处理。
+            /// </summary>
+            public void Anticipation()
+            {
+                foreach (var judgeLine in JudgeLineList)
+                {
+                    // 如果这个判定线层级上有null层级，移除它们
+                    judgeLine.EventLayers.RemoveAll(layer => layer == null);
+                    // 对所有判定线的所有事件层级执行Anticipation()方法
+                    foreach (var eventLayer in judgeLine.EventLayers)
+                    {
+                        eventLayer.Anticipation();
+                        eventLayer.Sort();
+                    }
+
+                    judgeLine.Extended.Anticipation();
+                    // 如果判定线上有任何类型的Control组为空或null，则设定一个默认值
+                    if (judgeLine.AlphaControls == null || judgeLine.AlphaControls.Count == 0)
+                        judgeLine.AlphaControls = AlphaControl.Default;
+                    if (judgeLine.PositionControls == null || judgeLine.PositionControls.Count == 0)
+                        judgeLine.PositionControls = XControl.Default;
+                    if (judgeLine.SizeControls == null || judgeLine.SizeControls.Count == 0)
+                        judgeLine.SizeControls = SizeControl.Default;
+                    if (judgeLine.SkewControls == null || judgeLine.SkewControls.Count == 0)
+                        judgeLine.SkewControls = SkewControl.Default;
+                    if (judgeLine.YControls == null || judgeLine.YControls.Count == 0)
+                        judgeLine.YControls = YControl.Default;
+                }
+            }
             /// <summary>
             /// 序列化为Json
             /// </summary>
@@ -23,51 +55,15 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <returns>Json</returns>
             public string ExportToJson(bool format)
             {
-                foreach (var judgeLine in JudgeLineList)
-                {
-                    // 如果这个判定线层级上有null层级，移除它们
-                    judgeLine.EventLayers.RemoveAll(layer => layer == null);
-                    // 对所有判定线的所有事件层级执行Anticipation()方法
-                    foreach (var eventlayer in judgeLine.EventLayers)
-                    {
-                        eventlayer.Anticipation();
-                        eventlayer.Sort();
-                    }
-
-                    judgeLine.Extended.Anticipation();
-                    // 如果判定线上有任何类型的Control组为空或null，则设定一个默认值
-                    if (judgeLine.AlphaControls == null || judgeLine.AlphaControls.Count == 0)
-                        judgeLine.AlphaControls = AlphaControl.Default;
-                    if (judgeLine.PositionControls == null || judgeLine.PositionControls.Count == 0)
-                        judgeLine.PositionControls = XControl.Default;
-                }
-
+                Anticipation();
                 return JsonConvert.SerializeObject(this, format ? Formatting.Indented : Formatting.None);
             }
 
-            public async Task ExportToJsonStreamAsync(System.IO.Stream stream, bool format)
+            public async Task ExportToJsonStreamAsync(Stream stream, bool format)
             {
-                foreach (var judgeLine in JudgeLineList)
-                {
-                    // 如果这个判定线层级上有null层级，移除它们
-                    judgeLine.EventLayers.RemoveAll(layer => layer == null);
-                    // 对所有判定线的所有事件层级执行Anticipation()方法
-                    foreach (var eventlayer in judgeLine.EventLayers)
-                    {
-                        eventlayer.Anticipation();
-                        eventlayer.Sort();
-                    }
-
-                    judgeLine.Extended.Anticipation();
-                    // 如果判定线上有任何类型的Control组为空或null，则设定一个默认值
-                    if (judgeLine.AlphaControls == null || judgeLine.AlphaControls.Count == 0)
-                        judgeLine.AlphaControls = AlphaControl.Default;
-                    if (judgeLine.PositionControls == null || judgeLine.PositionControls.Count == 0)
-                        judgeLine.PositionControls = XControl.Default;
-                }
-
+                Anticipation();
                 await using var streamWriter =
-                    new System.IO.StreamWriter(stream, System.Text.Encoding.UTF8, 1024, leaveOpen: true);
+                    new StreamWriter(stream, System.Text.Encoding.UTF8, 1024, leaveOpen: true);
                 using var jsonWriter = new JsonTextWriter(streamWriter);
                 var serializer = new Newtonsoft.Json.JsonSerializer
                 {
@@ -107,21 +103,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             public string ExportToJsonStj(bool format)
             {
-                foreach (var judgeLine in JudgeLineList)
-                {
-                    judgeLine.EventLayers.RemoveAll(layer => layer == null);
-                    foreach (var eventlayer in judgeLine.EventLayers)
-                    {
-                        eventlayer.Anticipation();
-                        eventlayer.Sort();
-                    }
-
-                    judgeLine.Extended.Anticipation();
-                    if (judgeLine.AlphaControls == null || judgeLine.AlphaControls.Count == 0)
-                        judgeLine.AlphaControls = AlphaControl.Default;
-                    if (judgeLine.PositionControls == null || judgeLine.PositionControls.Count == 0)
-                        judgeLine.PositionControls = XControl.Default;
-                }
+                Anticipation();
 
                 var options = new JsonSerializerOptions
                 {
@@ -138,23 +120,9 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <summary>
             /// 使用 System.Text.Json 流式序列化到流（防止OOM）
             /// </summary>
-            public void ExportToJsonStjStream(System.IO.Stream stream, bool format)
+            public void ExportToJsonStjStream(Stream stream, bool format)
             {
-                foreach (var judgeLine in JudgeLineList)
-                {
-                    judgeLine.EventLayers.RemoveAll(layer => layer == null);
-                    foreach (var eventlayer in judgeLine.EventLayers)
-                    {
-                        eventlayer.Anticipation();
-                        eventlayer.Sort();
-                    }
-
-                    judgeLine.Extended.Anticipation();
-                    if (judgeLine.AlphaControls == null || judgeLine.AlphaControls.Count == 0)
-                        judgeLine.AlphaControls = AlphaControl.Default;
-                    if (judgeLine.PositionControls == null || judgeLine.PositionControls.Count == 0)
-                        judgeLine.PositionControls = XControl.Default;
-                }
+                Anticipation();
 
                 var options = new JsonSerializerOptions
                 {
@@ -172,23 +140,9 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <summary>
             /// 使用 System.Text.Json 异步流式序列化到流（防止OOM）
             /// </summary>
-            public async Task ExportToJsonStjStreamAsync(System.IO.Stream stream, bool format)
+            public async Task ExportToJsonStjStreamAsync(Stream stream, bool format)
             {
-                foreach (var judgeLine in JudgeLineList)
-                {
-                    judgeLine.EventLayers.RemoveAll(layer => layer == null);
-                    foreach (var eventlayer in judgeLine.EventLayers)
-                    {
-                        eventlayer.Anticipation();
-                        eventlayer.Sort();
-                    }
-
-                    judgeLine.Extended.Anticipation();
-                    if (judgeLine.AlphaControls == null || judgeLine.AlphaControls.Count == 0)
-                        judgeLine.AlphaControls = AlphaControl.Default;
-                    if (judgeLine.PositionControls == null || judgeLine.PositionControls.Count == 0)
-                        judgeLine.PositionControls = XControl.Default;
-                }
+                Anticipation();
 
                 var options = new JsonSerializerOptions
                 {
@@ -252,7 +206,7 @@ namespace PhiFanmade.Core.RePhiEdit
 
             public Chart Clone()
             {
-                return new Chart()
+                return new Chart
                 {
                     BpmList = BpmList.ConvertAll(bpm => bpm.Clone()),
                     Meta = Meta.Clone(),
@@ -282,7 +236,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             [JsonProperty("BPMList")]
 #if !NETSTANDARD2_1
-            [System.Text.Json.Serialization.JsonPropertyName("BPMList")]
+            [JsonPropertyName("BPMList")]
 #endif
             public List<Bpm> BpmList = new List<Bpm>
             {
@@ -294,7 +248,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             [JsonProperty("META")]
 #if !NETSTANDARD2_1
-            [System.Text.Json.Serialization.JsonPropertyName("META")]
+            [JsonPropertyName("META")]
 #endif
             public Meta Meta = new Meta();
 
@@ -303,7 +257,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             [JsonProperty("judgeLineList")]
 #if !NETSTANDARD2_1
-            [System.Text.Json.Serialization.JsonPropertyName("judgeLineList")]
+            [JsonPropertyName("judgeLineList")]
 #endif
             public List<JudgeLine> JudgeLineList = new List<JudgeLine>();
 
@@ -312,7 +266,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             [JsonProperty("chartTime")]
 #if !NETSTANDARD2_1
-            [System.Text.Json.Serialization.JsonPropertyName("chartTime")]
+            [JsonPropertyName("chartTime")]
 #endif
             public double ChartTime = 0d;
 
@@ -321,7 +275,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             [JsonProperty("judgeLineGroup")]
 #if !NETSTANDARD2_1
-            [System.Text.Json.Serialization.JsonPropertyName("judgeLineGroup")]
+            [JsonPropertyName("judgeLineGroup")]
 #endif
             public string[] JudgeLineGroup = { "Default" };
 
@@ -330,7 +284,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             [JsonProperty("multiLineString")]
 #if !NETSTANDARD2_1
-            [System.Text.Json.Serialization.JsonPropertyName("multiLineString")]
+            [JsonPropertyName("multiLineString")]
 #endif
             public string MultiLineString = "1";
 
@@ -339,7 +293,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             [JsonProperty("multiScale")]
 #if !NETSTANDARD2_1
-            [System.Text.Json.Serialization.JsonPropertyName("multiScale")]
+            [JsonPropertyName("multiScale")]
 #endif
             public float MultiScale = 1.0f;
 
@@ -348,7 +302,7 @@ namespace PhiFanmade.Core.RePhiEdit
             /// </summary>
             [JsonProperty("xybind")]
 #if !NETSTANDARD2_1
-            [System.Text.Json.Serialization.JsonPropertyName("xybind")]
+            [JsonPropertyName("xybind")]
 #endif
             public bool XyBind = true;
         }

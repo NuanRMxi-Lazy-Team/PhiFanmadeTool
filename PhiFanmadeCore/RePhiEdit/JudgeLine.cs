@@ -124,7 +124,8 @@ namespace PhiFanmade.Core.RePhiEdit
             [JsonProperty("attachUI", NullValueHandling = NullValueHandling.Ignore)]
             [Newtonsoft.Json.JsonConverter(typeof(AttachUiConverter))]
 #if !NETSTANDARD2_1
-            [System.Text.Json.Serialization.JsonPropertyName("attachUI"), System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull), System.Text.Json.Serialization.JsonConverter(typeof(StjAttachUiConverter))]
+            [System.Text.Json.Serialization.JsonPropertyName("attachUI")]
+            [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull), System.Text.Json.Serialization.JsonConverter(typeof(StjAttachUiConverter))]
 #endif
             public AttachUi? AttachUi = null; // 绑定UI名，当不绑定时为null
 

@@ -16,8 +16,8 @@ public sealed class WorkspaceService
 
     public string Root => _rootDir;
 
-    public IEnumerable<string> List() => Directory.EnumerateDirectories(_rootDir).Select(Path.GetFileName)!
-        .Concat(_charts.Keys).Distinct();
+    public IEnumerable<string> List() => Directory.EnumerateDirectories(_rootDir).Select(Path.GetFileName)
+        .Concat(_charts.Keys).Distinct()!;
 
     public async Task LoadAsync(string id, string chartPath)
     {

@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace PhiFanmade.OpenTool.Cli.Parsing;
+﻿namespace PhiFanmade.OpenTool.Cli.Parsing;
 
 /// <summary>
-/// 通用选项解析工具集。负责从 argv 中提取选项值、标志位与重复参数。
+/// 通用选项解析工具集。负责从 argv 中提取选项值、标志位和重复参数。
 /// 说明：仅做解析，不做校验与本地化文案输出。
 /// </summary>
 public static class OptionParser

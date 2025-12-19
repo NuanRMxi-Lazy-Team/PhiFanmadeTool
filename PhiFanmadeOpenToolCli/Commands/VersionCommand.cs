@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Threading.Tasks;
 using PhiFanmade.OpenTool.Cli.Infrastructure;
 using PhiFanmade.OpenTool.Localization;
 

@@ -1,7 +1,26 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Spectre.Console;
 
 namespace PhiFanmade.OpenTool.Cli.Infrastructure;
+
+/// <summary>
+/// JSON 序列化上下文，用于 AOT 和 trimming 支持。
+/// </summary>
+[JsonSourceGenerationOptions(WriteIndented = false)]
+[JsonSerializable(typeof(LogMessage))]
+internal partial class ConsoleWriterJsonContext : JsonSerializerContext
+{
+}
+
+/// <summary>
+/// 日志消息模型。
+/// </summary>
+internal sealed class LogMessage
+{
+    public string Level { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+}
 
 /// <summary>
 /// 控制台输出封装。支持彩色文本与 JSON 两种输出形式。
@@ -22,7 +41,9 @@ public sealed class ConsoleWriter
     {
         if (Json)
         {
-            System.Console.WriteLine(JsonSerializer.Serialize(new { level = "info", message }));
+            Console.WriteLine(JsonSerializer.Serialize(
+                new LogMessage { Level = "info", Message = message },
+                ConsoleWriterJsonContext.Default.LogMessage));
         }
         else
         {
@@ -37,7 +58,9 @@ public sealed class ConsoleWriter
     {
         if (Json)
         {
-            System.Console.WriteLine(JsonSerializer.Serialize(new { level = "warn", message }));
+            Console.WriteLine(JsonSerializer.Serialize(
+                new LogMessage { Level = "warn", Message = message },
+                ConsoleWriterJsonContext.Default.LogMessage));
         }
         else
         {
@@ -52,7 +75,9 @@ public sealed class ConsoleWriter
     {
         if (Json)
         {
-            System.Console.WriteLine(JsonSerializer.Serialize(new { level = "error", message }));
+            Console.WriteLine(JsonSerializer.Serialize(
+                new LogMessage { Level = "error", Message = message },
+                ConsoleWriterJsonContext.Default.LogMessage));
         }
         else
         {
