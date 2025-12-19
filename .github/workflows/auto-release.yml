@@ -71,6 +71,15 @@ jobs:
           }
 
 
+          # 函数：判断 TFM 是否允许 AOT（按需扩展/收缩）
+          is_aot_supported_tfm() {
+            local tfm=$1
+            case "$tfm" in
+              net8.0|net9.0|net10.0) echo "true" ;;
+              *) echo "false" ;;
+            esac
+          }
+
           # 函数：构建 CLI 多目标版本
           build_cli() {
             local csproj_path=$1
@@ -100,6 +109,12 @@ jobs:
           
             # 构建 AOT 版本
             for framework in "${frameworks[@]}"; do
+              # 避免传入不支持 AOT 的框架（例如 netstandard2.1）
+              if [ "$(is_aot_supported_tfm "$framework")" != "true" ]; then
+                echo "Skipping AOT for unsupported TFM: $framework"
+                continue
+              fi
+
               for runtime in "${runtimes[@]}"; do
                 echo "Building $framework $runtime (AOT)..."
                 dotnet publish "$csproj_path" \
@@ -108,6 +123,10 @@ jobs:
                   -r "$runtime" \
                   --self-contained true \
                   -p:PublishAot=true \
+                  -p:SelfContained=true \
+                  -p:RuntimeIdentifier="$runtime" \
+                  -p:TargetFramework="$framework" \
+                  -p:BuildInParallel=false \
                   -o "$output_dir/$framework-$runtime-aot"
           
                 # 压缩输出
