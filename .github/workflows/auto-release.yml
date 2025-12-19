@@ -80,15 +80,65 @@ jobs:
             esac
           }
 
+          # 递归列出项目引用（csproj 路径）
+          list_project_refs_recursive() {
+            local root=$1
+            local seen_file="${RUNNER_TEMP:-/tmp}/refs-seen.txt"
+            : > "$seen_file"
+            
+            # 添加根项目本身
+            echo "$root" >> "$seen_file"
+
+            _walk() {
+              local proj=$1
+              local proj_dir=$(dirname "$proj")
+              
+              # 使用 grep 直接从 csproj 文件提取 ProjectReference
+              local refs
+              refs=$(grep -oP '<ProjectReference Include="\K[^"]+' "$proj" 2>/dev/null || true)
+              for r in $refs; do
+                # 转换相对路径为绝对路径
+                local full_path=$(cd "$proj_dir" && realpath "$r" 2>/dev/null || echo "")
+                if [ -n "$full_path" ] && [ -f "$full_path" ]; then
+                  if ! grep -Fxq "$full_path" "$seen_file"; then
+                    echo "$full_path" >> "$seen_file"
+                    _walk "$full_path"
+                  fi
+                fi
+              done
+            }
+
+            _walk "$(realpath "$root")"
+            cat "$seen_file"
+          }
+
+          # 检测引用树是否含 netstandard（任何 netstandard* 都视为不可 AOT）
+          has_netstandard_in_graph() {
+            local root=$1
+            local p
+            echo "Checking project graph for netstandard references..."
+            while IFS= read -r p; do
+              echo "  Checking: $p"
+              # 同时检查 TargetFramework / TargetFrameworks
+              if grep -Eq '<TargetFrameworks?>[^<]*netstandard' "$p" 2>/dev/null; then
+                echo "  Found netstandard in: $p"
+                echo "true"
+                return
+              fi
+            done < <(list_project_refs_recursive "$root")
+            echo "  No netstandard found in project graph"
+            echo "false"
+          }
+
           # 函数：构建 CLI 多目标版本
           build_cli() {
             local csproj_path=$1
             local output_dir="./artifacts/cli"
-          
+
             # 目标框架和运行时组合
             local frameworks=("net8.0" "net10.0")
             local runtimes=("win-x64" "win-x86" "linux-x64")
-          
+
             # 构建依赖框架版本
             for framework in "${frameworks[@]}"; do
               for runtime in "${runtimes[@]}"; do
@@ -108,8 +158,24 @@ jobs:
             done
           
             # 构建 AOT 版本
+            # 若引用树包含 netstandard，则跳过 AOT（避免 NETSDK1207 直接失败）
+            local netstandard_check
+            netstandard_check=$(has_netstandard_in_graph "$csproj_path")
+            # has_netstandard_in_graph 输出多行，取最后一行作为结果
+            local has_netstandard
+            has_netstandard=$(echo "$netstandard_check" | tail -n1)
+            
+            if [ "$has_netstandard" = "true" ]; then
+              echo "=============================================="
+              echo "Detected netstandard in project graph for $csproj_path"
+              echo "Skipping ALL AOT publishes to avoid NETSDK1207"
+              echo "=============================================="
+              echo "Built all CLI variants (FDD only)"
+              return
+            fi
+
             for framework in "${frameworks[@]}"; do
-              # 避免传入不支持 AOT 的框架（例如 netstandard2.1）
+              # 避免传入不支持 AOT 的框架
               if [ "$(is_aot_supported_tfm "$framework")" != "true" ]; then
                 echo "Skipping AOT for unsupported TFM: $framework"
                 continue
@@ -123,19 +189,15 @@ jobs:
                   -r "$runtime" \
                   --self-contained true \
                   -p:PublishAot=true \
-                  -p:SelfContained=true \
-                  -p:RuntimeIdentifier="$runtime" \
-                  -p:TargetFramework="$framework" \
-                  -p:BuildInParallel=false \
                   -o "$output_dir/$framework-$runtime-aot"
-          
+
                 # 压缩输出
                 cd "$output_dir/$framework-$runtime-aot"
                 zip -r "../PhiFanmade.OpenTool.Cli-$framework-$runtime-aot.zip" .
                 cd -
               done
             done
-          
+
             echo "Built all CLI variants"
           }
 
