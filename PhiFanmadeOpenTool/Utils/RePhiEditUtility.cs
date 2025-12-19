@@ -330,7 +330,10 @@ public class RePhiEditUtility
             var fatherLineCopy = allJudgeLinesCopy[judgeLineCopy.Father].Clone();
             if (fatherLineCopy.Father >= 0)
                 fatherLineCopy = FatherUnbindCore(fatherLineCopy.Father, allJudgeLinesCopy);
-
+            
+            // 并行合并事件层级前,先移除无用层级
+            judgeLineCopy.EventLayers = RemoveUnlessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
+            fatherLineCopy.EventLayers = RemoveUnlessLayer(fatherLineCopy.EventLayers) ?? fatherLineCopy.EventLayers;
             // 并行合并事件层级
             var targetLineNewXevents = new List<RePhiEdit.Event<float>>();
             var targetLineNewYevents = new List<RePhiEdit.Event<float>>();
