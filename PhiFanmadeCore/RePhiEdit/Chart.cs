@@ -166,6 +166,7 @@ namespace PhiFanmade.Core.RePhiEdit
                 options.TypeInfoResolver = RePhiEditJsonContext.Default;
 
                 System.Text.Json.JsonSerializer.Serialize(stream, this, options);
+                stream.Flush();
             }
 
             /// <summary>
@@ -199,6 +200,7 @@ namespace PhiFanmade.Core.RePhiEdit
                 options.TypeInfoResolver = RePhiEditJsonContext.Default;
 
                 await System.Text.Json.JsonSerializer.SerializeAsync(stream, this, typeof(Chart), options);
+                await stream.FlushAsync();
             }
 
             /// <summary>

@@ -33,10 +33,7 @@ public sealed class RpeUnbindFatherCommand : ICommandHandler
         var chartCopy = chart.Clone();
         for (var index = 0; index < chart.JudgeLineList.Count; index++)
         {
-            // 调试，仅处理27 31index的线
-            if (index != 27 && index != 31)
-                continue;
-            Console.Write(index);
+            Console.WriteLine(index);
             var jl = chart.JudgeLineList[index];
             if (jl.Father != -1)
             {
@@ -52,12 +49,12 @@ public sealed class RpeUnbindFatherCommand : ICommandHandler
         }
         
         // 使用流式序列化（ExportToJsonStjStreamAsync）防止OOM
-        //var stream = new FileStream(output,FileMode.Create);
-        //if (!dryRun)
-        //    await chartCopy.ExportToJsonStjStreamAsync(stream, true);
-
+        var stream = new FileStream(output,FileMode.Create);
         if (!dryRun)
-            await File.WriteAllTextAsync(output!, await chartCopy.ExportToJsonStjAsync(true));
+            await chartCopy.ExportToJsonStjStreamAsync(stream, true);
+
+        //if (!dryRun)
+        //    await File.WriteAllTextAsync(output!, await chartCopy.ExportToJsonStjAsync(true));
         writer.Info(loc["msg.written"].Replace("{path}", output!));
         return 0;
     }

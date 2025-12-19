@@ -264,7 +264,8 @@ public class RePhiEditUtility
         }
     }
 
-    public static List<RePhiEdit.Event<float>> EventListCompress(List<RePhiEdit.Event<float>> events)
+    public static List<RePhiEdit.Event<float>> EventListCompress(List<RePhiEdit.Event<float>> events,
+        double tolerance = 5)
     {
         if (events == null || events.Count == 0)
             return new List<RePhiEdit.Event<float>>();
@@ -284,9 +285,9 @@ public class RePhiEditUtility
                 var currentRate = (currentEvent.EndValue - currentEvent.StartValue) /
                                   (currentEvent.EndBeat - currentEvent.StartBeat);
 
-                if (Math.Abs(lastRate - currentRate) < 1e-6 &&
+                if (Math.Abs(lastRate - currentRate) < tolerance &&
                     lastEvent.EndBeat == currentEvent.StartBeat &&
-                    Math.Abs(lastEvent.EndValue - currentEvent.StartValue) < 1e-6)
+                    Math.Abs(lastEvent.EndValue - currentEvent.StartValue) < tolerance)
                 {
                     // 合并事件
                     lastEvent.EndBeat = currentEvent.EndBeat;
@@ -330,7 +331,7 @@ public class RePhiEditUtility
             var fatherLineCopy = allJudgeLinesCopy[judgeLineCopy.Father].Clone();
             if (fatherLineCopy.Father >= 0)
                 fatherLineCopy = FatherUnbindCore(fatherLineCopy.Father, allJudgeLinesCopy);
-            
+
             // 并行合并事件层级前,先移除无用层级
             judgeLineCopy.EventLayers = RemoveUnlessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
             fatherLineCopy.EventLayers = RemoveUnlessLayer(fatherLineCopy.EventLayers) ?? fatherLineCopy.EventLayers;
