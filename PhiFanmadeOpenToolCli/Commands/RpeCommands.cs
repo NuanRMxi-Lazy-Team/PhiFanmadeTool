@@ -2,6 +2,7 @@
 using PhiFanmade.OpenTool.Cli.Parsing;
 using PhiFanmade.OpenTool.Localization;
 using PhiFanmade.OpenTool.Utils;
+using PhiFanmade.OpenTool.Utils.RePhiEditUtility;
 using static PhiFanmade.Core.RePhiEdit.RePhiEdit;
 
 namespace PhiFanmade.OpenTool.Cli.Commands;
@@ -37,7 +38,7 @@ public sealed class RpeUnbindFatherCommand : ICommandHandler
             var jl = chart.JudgeLineList[index];
             if (jl.Father != -1)
             {
-                chartCopy.JudgeLineList[index] = await RePhiEditUtility.FatherUnbindAsync(index, chart.JudgeLineList);
+                chartCopy.JudgeLineList[index] = await RePhiEditHelper.FatherUnbindAsync(index, chart.JudgeLineList);
             }
         }
 
@@ -91,7 +92,7 @@ public sealed class RpeLayerMergeCommand : ICommandHandler
             {
                 if (jl.EventLayers is { Count: > 1 })
                 {
-                    var merged = RePhiEditUtility.LayerMerge(jl.EventLayers);
+                    var merged = RePhiEditHelper.LayerMerge(jl.EventLayers);
                     jl.EventLayers = [merged];
                 }
             }
