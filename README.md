@@ -24,7 +24,8 @@ PhiFanmadeOpenTool: .NET8.0, .NET9.0, .NET10.0
 PhiFanmadeOpenToolCli: .NET8.0, .NET10.0  
 
 ## 招新
-本项目需要更多人开发与维护，欢迎发送邮件到 nrlt@nuanr-mxi.com 来加入开发！
+本项目需要更多人开发与维护，欢迎发送邮件到 nrlt@nuanr-mxi.com 来加入开发！  
+也欢迎加入我的小群！QQ群号: 821169450
 
 ## 开源许可证
 [GNU AFFERO GENERAL PUBLIC LICENSE](https://www.gnu.org/licenses/agpl-3.0.html)
