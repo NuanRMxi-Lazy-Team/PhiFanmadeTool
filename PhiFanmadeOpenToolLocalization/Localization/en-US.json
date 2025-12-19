@@ -1,14 +1,14 @@
 ﻿{
-  "app.title": "PhiFanmade OpenSource Tool CLI",
-  "msg.loaded": "Dropped your lovely chart into workspace: {workspace}",
-  "msg.saved": "All set! Workspace '{workspace}' is saved to: {path}",
-  "msg.cleared": "Sweep sweep~ All workspaces are squeaky clean now!",
-  "msg.written": "Done writing: {path}",
-  "msg.help": "Please read README.md for help~",
-  "warn.pe.convert": "PE convert is putting on makeup… please wait a tiny bit~",
-  "err.unknown": "Hmm? I don't know this command yet. Try 'version' or peek the README~",
-  "err.unimplemented":"This function has not been fully implemented yet",
-  "err.input.required": "Please provide --input, or use --workspace~",
-  "err.output.required": "Please provide --output so I can save it nicely~",
-  "err.workspace.missing": "Oops, workspace not found: {workspace}"
+  "cli.app.title": "PhiFanmade Open Source Toolkit CLI",
+  "cli.msg.loaded": "Successfully loaded the chart into workspace {workspace}!",
+  "cli.msg.saved": "Done! Saved workspace '{workspace}' to '{path}'!",
+  "cli.msg.cleared": "Whoosh~ All workspaces have been cleaned up!",
+  "cli.msg.written": "Written successfully! {path}",
+  "cli.msg.help": "See README.md for details!",
+  "cli.warn.rpe.convert": "RPE conversion is still in progress, please wait a moment~",
+  "cli.err.unknown": "Oops? I don't recognize this command yet, try 'version' or check the README~",
+  "cli.err.unimplemented": "This command feature is not fully implemented yet...",
+  "cli.err.input.required": "Please provide --input, or you can use --workspace as an alternative~",
+  "cli.err.output.required": "Please provide --output so I can save it for you~",
+  "cli.err.workspace.missing": "Workspace {workspace} not found..."
 }

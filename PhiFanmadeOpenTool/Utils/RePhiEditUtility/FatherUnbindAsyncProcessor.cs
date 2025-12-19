@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using static PhiFanmade.Core.RePhiEdit.RePhiEdit;
+
 namespace PhiFanmade.OpenTool.Utils.RePhiEditUtility;
 
 /// <summary>
@@ -12,15 +13,17 @@ internal static class FatherUnbindAsyncProcessor
     /// </summary>
     /// <param name="targetJudgeLineIndex">需要解绑的判定线索引</param>
     /// <param name="allJudgeLines">所有判定线</param>
+    /// <param name="precision">切割精度，默认64分之一拍</param>
+    /// <param name="tolerance">拟合容差，越大拟合精细度越低</param>
     /// <returns></returns>
     public static async Task<JudgeLine> FatherUnbindAsync(int targetJudgeLineIndex,
-        List<JudgeLine> allJudgeLines)
+        List<JudgeLine> allJudgeLines, double precision = 64d, double tolerance = 5d)
     {
-        return await Task.Run(() => FatherUnbindCore(targetJudgeLineIndex, allJudgeLines));
+        return await Task.Run(() => FatherUnbindCore(targetJudgeLineIndex, allJudgeLines, precision, tolerance));
     }
 
     public static JudgeLine FatherUnbindCore(int targetJudgeLineIndex,
-        List<JudgeLine> allJudgeLines)
+        List<JudgeLine> allJudgeLines, double precision = 64d, double tolerance = 5d)
     {
         var judgeLineCopy = allJudgeLines[targetJudgeLineIndex].Clone();
         var allJudgeLinesCopy = allJudgeLines.Select(jl => jl.Clone()).ToList();
@@ -28,7 +31,7 @@ internal static class FatherUnbindAsyncProcessor
         {
             if (judgeLineCopy.Father <= -1)
             {
-                //RePhiEditUtility.OnWarning.Invoke("FatherUnbind: judgeLine has no father.");
+                RePhiEditHelper.OnWarning.Invoke("FatherUnbind: judgeLine has no father.");
                 return judgeLineCopy;
             }
 
@@ -37,8 +40,10 @@ internal static class FatherUnbindAsyncProcessor
                 fatherLineCopy = FatherUnbindCore(fatherLineCopy.Father, allJudgeLinesCopy);
 
             // 并行合并事件层级前,先移除无用层级
-            judgeLineCopy.EventLayers = LayerProcessor.RemoveUnlessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
-            fatherLineCopy.EventLayers = LayerProcessor.RemoveUnlessLayer(fatherLineCopy.EventLayers) ?? fatherLineCopy.EventLayers;
+            judgeLineCopy.EventLayers =
+                LayerProcessor.RemoveUnlessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
+            fatherLineCopy.EventLayers = LayerProcessor.RemoveUnlessLayer(fatherLineCopy.EventLayers) ??
+                                         fatherLineCopy.EventLayers;
             // 并行合并事件层级
             var targetLineNewXevents = new List<Event<float>>();
             var targetLineNewYevents = new List<Event<float>>();
@@ -122,14 +127,19 @@ internal static class FatherUnbindAsyncProcessor
             var cutTasks = new[]
             {
                 Task.Run(() =>
-                    EventProcessor.CutEventsInRange(targetLineNewXevents, targetLineXEventsMinBeat!, targetLineXEventsMaxBeat!)),
+                    EventProcessor.CutEventsInRange(targetLineNewXevents, targetLineXEventsMinBeat!,
+                        targetLineXEventsMaxBeat!)),
                 Task.Run(() =>
-                    EventProcessor.CutEventsInRange(targetLineNewYevents, targetLineYEventsMinBeat!, targetLineYEventsMaxBeat!)),
+                    EventProcessor.CutEventsInRange(targetLineNewYevents, targetLineYEventsMinBeat!,
+                        targetLineYEventsMaxBeat!)),
                 Task.Run(() =>
-                    EventProcessor.CutEventsInRange(fatherLineNewXevents, fatherLineXEventsMinBeat!, fatherLineXEventsMaxBeat!)),
+                    EventProcessor.CutEventsInRange(fatherLineNewXevents, fatherLineXEventsMinBeat!,
+                        fatherLineXEventsMaxBeat!)),
                 Task.Run(() =>
-                    EventProcessor.CutEventsInRange(fatherLineNewYevents, fatherLineYEventsMinBeat!, fatherLineYEventsMaxBeat!)),
-                Task.Run(() => EventProcessor.CutEventsInRange(fatherLineNewRotateEvents, fatherLineRotateEventsMinBeat!,
+                    EventProcessor.CutEventsInRange(fatherLineNewYevents, fatherLineYEventsMinBeat!,
+                        fatherLineYEventsMaxBeat!)),
+                Task.Run(() => EventProcessor.CutEventsInRange(fatherLineNewRotateEvents,
+                    fatherLineRotateEventsMinBeat!,
                     fatherLineRotateEventsMaxBeat!))
             };
 
@@ -147,7 +157,7 @@ internal static class FatherUnbindAsyncProcessor
             var overallMaxBeat = new Beat(Math.Max(
                 Math.Max(targetLineXEventsMaxBeat!, targetLineYEventsMaxBeat!),
                 Math.Max(fatherLineXEventsMaxBeat!, fatherLineYEventsMaxBeat!)));
-            var cutLength = new Beat(1d / 64d);
+            var cutLength = new Beat(1d / precision);
 
             // 并行处理每个拍段
             var currentBeat = overallMinBeat;
@@ -248,33 +258,36 @@ internal static class FatherUnbindAsyncProcessor
                 judgeLineCopy.EventLayers[i].MoveYEvents.Clear();
             }
 
+            // 确保至少有一个层级存在
             if (judgeLineCopy.EventLayers.Count == 0)
             {
                 judgeLineCopy.EventLayers.Add(new EventLayer());
             }
 
-            judgeLineCopy.EventLayers[0].MoveXEvents = EventProcessor.EventListCompress(sortedXEvents);
-            judgeLineCopy.EventLayers[0].MoveYEvents = EventProcessor.EventListCompress(sortedYEvents);
+            // 赋值压缩后的事件列表
+            judgeLineCopy.EventLayers[0].MoveXEvents = EventProcessor.EventListCompress(sortedXEvents, tolerance);
+            judgeLineCopy.EventLayers[0].MoveYEvents = EventProcessor.EventListCompress(sortedYEvents,tolerance);
 
             if (judgeLineCopy.RotateWithFather)
             {
                 judgeLineCopy.EventLayers[0].RotateEvents =
-                    EventProcessor.EventListCompress(EventProcessor.EventMerge(judgeLineCopy.EventLayers[0].RotateEvents, fatherLineNewRotateEvents));
+                    EventProcessor.EventListCompress(
+                        EventProcessor.EventMerge(judgeLineCopy.EventLayers[0].RotateEvents,
+                            fatherLineNewRotateEvents),tolerance);
             }
 
             judgeLineCopy.Father = -1;
             return judgeLineCopy;
         }
-        catch (NullReferenceException)
+        catch (NullReferenceException nullReferenceException)
         {
-            //RePhiEditUtility.OnWarning.Invoke("FatherUnbind: It seems that something is null.");
+            RePhiEditHelper.OnError.Invoke("FatherUnbind: It seems that something is null:" + nullReferenceException);
             return judgeLineCopy;
         }
         catch (Exception e)
         {
-            //RePhiEditUtility.OnWarning.Invoke("FatherUnbind: Unknown error: " + e.Message);
+            RePhiEditHelper.OnError.Invoke("FatherUnbind: Unknown error: " + e.Message);
             return judgeLineCopy;
         }
     }
 }
-

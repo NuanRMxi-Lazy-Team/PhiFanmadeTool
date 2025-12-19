@@ -9,7 +9,7 @@ public sealed class VersionCommand : ICommandHandler
     public Task<int> ExecuteAsync(string[] args, ConsoleWriter writer, ILocalizer loc)
     {
         var ver = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
-        writer.Info($"{loc["app.title"]} v{ver}");
+        writer.Info($"{loc["cli.app.title"]} v{ver}");
         return Task.FromResult(0);
     }
 }

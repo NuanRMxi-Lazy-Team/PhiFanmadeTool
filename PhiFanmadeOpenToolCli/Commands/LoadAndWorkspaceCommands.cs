@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using PhiFanmade.OpenTool.Cli.Infrastructure;
+﻿using PhiFanmade.OpenTool.Cli.Infrastructure;
 using PhiFanmade.OpenTool.Localization;
 using PhiFanmade.OpenTool.Cli.Parsing;
 
@@ -16,7 +14,7 @@ public sealed class LoadCommand : ICommandHandler
             throw new ArgumentException(loc["err.input.required"]);
         var ws = new WorkspaceService();
         await ws.LoadAsync(workspace, input);
-        writer.Info(loc["msg.loaded"].Replace("{workspace}", workspace));
+        writer.Info(loc["cli.msg.loaded"].Replace("{workspace}", workspace));
         return 0;
     }
 }
@@ -31,7 +29,7 @@ public sealed class SaveCommand : ICommandHandler
             throw new ArgumentException(loc["err.output.required"]);
         var ws = new WorkspaceService();
         await ws.SaveAsync(workspace, output!);
-        writer.Info(loc["msg.saved"].Replace("{workspace}", workspace).Replace("{path}", output!));
+        writer.Info(loc["cli.msg.saved"].Replace("{workspace}", workspace).Replace("{path}", output!));
         return 0;
     }
 }
@@ -55,7 +53,7 @@ public sealed class WorkspaceClearCommand : ICommandHandler
     {
         var ws = new WorkspaceService();
         ws.Clear();
-        writer.Info(loc["msg.cleared"]);
+        writer.Info(loc["cli.msg.cleared"]);
         return Task.FromResult(0);
     }
 }

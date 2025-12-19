@@ -15,11 +15,14 @@ public sealed class CommandRouter
     // 标准命令键 -> 别名列表（含多语言）。不区分大小写。
     private static readonly Dictionary<string, string[]> Aliases = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["version"] = ["version", "ver", "版本"], ["load"] = ["load", "载入"], ["save"] = ["save", "保存"],
+        ["version"] = ["version", "ver", "版本"],
+        ["load"] = ["load", "载入"],
+        ["save"] = ["save", "保存"],
         ["workspace.list"] = ["workspace.list", "workspace ls", "workspace list", "工作区 列表", "工作区 list"],
         ["workspace.clear"] = ["workspace.clear", "workspace clear", "工作区 清理"],
         ["rpe.unbind-father"] = ["rpe.unbind-father", "rpe.unbind", "解绑父级"],
-        ["rpe.layer-merge"] = ["rpe.layer-merge", "合并所有事件层级"], ["pe.convert"] = ["pe.convert", "转换为PE谱面"],
+        ["rpe.layer-merge"] = ["rpe.layer-merge", "合并所有事件层级"],
+        ["rpe.convert"] = ["rpe.convert", "转换RPE谱面"],
         ["help"] = ["help", "帮助"]
     };
 
@@ -34,7 +37,7 @@ public sealed class CommandRouter
         var key = ResolveKey(args);
         if (key is null)
         {
-            _writer.Error(_loc["err.unknown"]);
+            _writer.Error(_loc["cli.err.unknown"]);
             return 1;
         }
 
@@ -74,7 +77,7 @@ public sealed class CommandRouter
         "workspace.clear" => new WorkspaceClearCommand(),
         "rpe.unbind-father" => new RpeUnbindFatherCommand(),
         "rpe.layer-merge" => new RpeLayerMergeCommand(),
-        "pe.convert" => new PeConvertCommand(),
+        "rpe.convert" => new RpeConvertCommand(),
         "help" => new HelpCommand(),
         _ => new UnknownCommand()
     };

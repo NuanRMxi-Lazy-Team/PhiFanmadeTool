@@ -12,7 +12,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\PhiFanmadeCore\PhiFanmadeCore.csproj" />
-        <ProjectReference Include="..\PhiFanmadeOpenToolLocalization/PhiFanmadeOpenToolLocalization.csproj"/>
     </ItemGroup>
 
 </Project>

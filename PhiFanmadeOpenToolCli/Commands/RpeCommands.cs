@@ -2,7 +2,6 @@
 using PhiFanmade.OpenTool.Cli.Parsing;
 using PhiFanmade.OpenTool.Localization;
 using PhiFanmade.OpenTool.Utils;
-using PhiFanmade.OpenTool.Utils.RePhiEditUtility;
 using static PhiFanmade.Core.RePhiEdit.RePhiEdit;
 
 namespace PhiFanmade.OpenTool.Cli.Commands;
@@ -13,7 +12,9 @@ public sealed class RpeUnbindFatherCommand : ICommandHandler
     {
         var input = OptionParser.GetOption(args, "-i", "--input", "--输入");
         var output = OptionParser.GetOption(args, "-o", "--output", "--输出");
-        var workspace = OptionParser.GetOption(args, "--workspace", "--工作区");
+        var workspace = OptionParser.GetOption(args, "--workspace", "-wk", "--工作区");
+        var precision = OptionParser.GetOption(args, "--precision", "-p", "--精度");
+        var tolerance = OptionParser.GetOption(args, "--tolerance", "-t", "--容差");
         var dryRun = OptionParser.HasFlag(args, "--dry-run");
 
         Chart? chart;
@@ -21,15 +22,24 @@ public sealed class RpeUnbindFatherCommand : ICommandHandler
         {
             var ws = new WorkspaceService();
             chart = await ws.GetAsync(workspace!) ?? throw new InvalidOperationException(
-                loc["err.workspace.missing"].Replace("{workspace}", workspace!));
+                loc["cli.err.workspace.missing"].Replace("{workspace}", workspace!));
         }
         else
         {
             if (string.IsNullOrWhiteSpace(input))
-                throw new ArgumentException(loc["err.input.required"]);
+                throw new ArgumentException(loc["cli.err.input.required"]);
             var text = await File.ReadAllTextAsync(input);
             chart = await Chart.LoadFromJsonStjAsync(text);
         }
+
+        // 检查precision和tolerance参数，如果有则解析为double，没有则使用默认值64和5
+        double precisionValue = 64d;
+        double toleranceValue = 5d;
+        if (!string.IsNullOrWhiteSpace(precision) && double.TryParse(precision, out var p))
+            precisionValue = p;
+        if (!string.IsNullOrWhiteSpace(tolerance) && double.TryParse(tolerance, out var t))
+            toleranceValue = t;
+
 
         var chartCopy = chart.Clone();
         for (var index = 0; index < chart.JudgeLineList.Count; index++)
@@ -38,7 +48,8 @@ public sealed class RpeUnbindFatherCommand : ICommandHandler
             var jl = chart.JudgeLineList[index];
             if (jl.Father != -1)
             {
-                chartCopy.JudgeLineList[index] = await RePhiEditHelper.FatherUnbindAsync(index, chart.JudgeLineList);
+                chartCopy.JudgeLineList[index] = await RePhiEditHelper.FatherUnbindAsync(index, chart.JudgeLineList,
+                    precisionValue, toleranceValue);
             }
         }
 
@@ -48,15 +59,12 @@ public sealed class RpeUnbindFatherCommand : ICommandHandler
             output = Path.Combine(Path.GetDirectoryName(source) ?? ".",
                 Path.GetFileNameWithoutExtension(source) + "_PFC.json");
         }
-        
+
         // 使用流式序列化（ExportToJsonStjStreamAsync）防止OOM
-        var stream = new FileStream(output,FileMode.Create);
+        var stream = new FileStream(output, FileMode.Create);
         if (!dryRun)
             await chartCopy.ExportToJsonStjStreamAsync(stream, true);
-
-        //if (!dryRun)
-        //    await File.WriteAllTextAsync(output!, await chartCopy.ExportToJsonStjAsync(true));
-        writer.Info(loc["msg.written"].Replace("{path}", output!));
+        writer.Info(loc["cli.msg.written"].Replace("{path}", output!));
         return 0;
     }
 }
@@ -70,6 +78,8 @@ public sealed class RpeLayerMergeCommand : ICommandHandler
             var input = OptionParser.GetOption(args, "-i", "--input", "--输入");
             var output = OptionParser.GetOption(args, "-o", "--output", "--输出");
             var workspace = OptionParser.GetOption(args, "--workspace", "-wk", "--工作区");
+            var precision = OptionParser.GetOption(args, "--precision", "-p", "--精度");
+            var tolerance = OptionParser.GetOption(args, "--tolerance", "-t", "--容差");
             var dryRun = OptionParser.HasFlag(args, "--dry-run");
 
             Chart? chart;
@@ -77,24 +87,30 @@ public sealed class RpeLayerMergeCommand : ICommandHandler
             {
                 var ws = new WorkspaceService();
                 chart = await ws.GetAsync(workspace) ?? throw new InvalidOperationException(
-                    loc["err.workspace.missing"].Replace("{workspace}", workspace!));
+                    loc["cli.err.workspace.missing"].Replace("{workspace}", workspace!));
             }
             else
             {
                 if (string.IsNullOrWhiteSpace(input))
-                    throw new ArgumentException(loc["err.input.required"]);
+                    throw new ArgumentException(loc["cli.err.input.required"]);
                 var text = await File.ReadAllTextAsync(input);
                 chart = await Chart.LoadFromJsonStjAsync(text);
             }
 
+            // 检查precision和tolerance参数，如果有则解析为double，没有则使用默认值64和5
+            double precisionValue = 64d;
+            double toleranceValue = 5d;
+            if (!string.IsNullOrWhiteSpace(precision) && double.TryParse(precision, out var p))
+                precisionValue = p;
+            if (!string.IsNullOrWhiteSpace(tolerance) && double.TryParse(tolerance, out var t))
+                toleranceValue = t;
+
             var chartCopy = chart.Clone();
             foreach (var jl in chartCopy.JudgeLineList)
             {
-                if (jl.EventLayers is { Count: > 1 })
-                {
-                    var merged = RePhiEditHelper.LayerMerge(jl.EventLayers);
-                    jl.EventLayers = [merged];
-                }
+                if (jl.EventLayers is not { Count: > 1 }) continue;
+                var merged = RePhiEditHelper.LayerMerge(jl.EventLayers, precisionValue, toleranceValue);
+                jl.EventLayers = [merged];
             }
 
             if (string.IsNullOrWhiteSpace(output))
@@ -106,7 +122,7 @@ public sealed class RpeLayerMergeCommand : ICommandHandler
 
             if (!dryRun)
                 await File.WriteAllTextAsync(output, await chartCopy.ExportToJsonStjAsync(true));
-            writer.Info(loc["msg.written"].Replace("{path}", output!));
+            writer.Info(loc["cli.msg.written"].Replace("{path}", output!));
             return 0;
         }
         catch (Exception e)
@@ -114,15 +130,14 @@ public sealed class RpeLayerMergeCommand : ICommandHandler
             Console.WriteLine(e);
             throw;
         }
-        
     }
 }
 
-public sealed class PeConvertCommand : ICommandHandler
+public sealed class RpeConvertCommand : ICommandHandler
 {
     public Task<int> ExecuteAsync(string[] args, ConsoleWriter writer, ILocalizer loc)
     {
-        writer.Warn(loc["warn.pe.convert"]);
+        writer.Warn(loc["cli.warn.rpe.convert"]);
         return Task.FromResult(2);
     }
 }
@@ -131,7 +146,7 @@ public sealed class UnknownCommand : ICommandHandler
 {
     public Task<int> ExecuteAsync(string[] args, ConsoleWriter writer, ILocalizer loc)
     {
-        writer.Error(loc["err.unknown"]);
+        writer.Error(loc["cli.err.unknown"]);
         return Task.FromResult(1);
     }
 }

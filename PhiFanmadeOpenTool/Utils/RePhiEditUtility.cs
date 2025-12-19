@@ -1,7 +1,5 @@
 ﻿using PhiFanmade.Core.PhiEdit;
 using PhiFanmade.Core.RePhiEdit;
-using PhiFanmade.OpenTool.Localization;
-using System.Collections.Concurrent;
 
 namespace PhiFanmade.OpenTool.Utils;
 
@@ -42,7 +40,7 @@ public static class RePhiEditHelper
     /// <param name="lineX">当前线相对于父线的X轴坐标</param>
     /// <param name="lineY">当前线相对于父线的Y轴坐标</param>
     /// <returns>当前线绝对坐标</returns>
-    public static (double,double) GetLinePos(double fatherLineX, double fatherLineY, double angleDegrees,
+    public static (double, double) GetLinePos(double fatherLineX, double fatherLineY, double angleDegrees,
         double lineX, double lineY)
     {
         return RePhiEditUtility.FatherUnbindProcessor.GetLinePos(fatherLineX, fatherLineY, angleDegrees, lineX, lineY);
@@ -55,9 +53,11 @@ public static class RePhiEditHelper
     /// <param name="targetJudgeLineIndex">需要解绑的判定线索引</param>
     /// <param name="allJudgeLines">所有判定线</param>
     /// <returns></returns>
-    public static RePhiEdit.JudgeLine FatherUnbind(int targetJudgeLineIndex, List<RePhiEdit.JudgeLine> allJudgeLines)
+    public static RePhiEdit.JudgeLine FatherUnbind(int targetJudgeLineIndex, List<RePhiEdit.JudgeLine> allJudgeLines,
+        double precision = 64d, double tolerance = 5d)
     {
-        return RePhiEditUtility.FatherUnbindProcessor.FatherUnbind(targetJudgeLineIndex, allJudgeLines);
+        return RePhiEditUtility.FatherUnbindProcessor.FatherUnbind(targetJudgeLineIndex, allJudgeLines,
+            precision, tolerance);
     }
 
     public static List<RePhiEdit.Event<float>> EventListCompress(List<RePhiEdit.Event<float>> events,
@@ -73,9 +73,10 @@ public static class RePhiEditHelper
     /// <param name="allJudgeLines">所有判定线</param>
     /// <returns></returns>
     public static async Task<RePhiEdit.JudgeLine> FatherUnbindAsync(int targetJudgeLineIndex,
-        List<RePhiEdit.JudgeLine> allJudgeLines)
+        List<RePhiEdit.JudgeLine> allJudgeLines, double precision = 64d, double tolerance = 5d)
     {
-        return await RePhiEditUtility.FatherUnbindAsyncProcessor.FatherUnbindAsync(targetJudgeLineIndex, allJudgeLines);
+        return await RePhiEditUtility.FatherUnbindAsyncProcessor.FatherUnbindAsync(targetJudgeLineIndex, allJudgeLines,
+            precision, tolerance);
     }
 
     /// <summary>
@@ -86,13 +87,13 @@ public static class RePhiEditHelper
     /// <typeparam name="T">呃</typeparam>
     /// <returns>已合并的事件列表</returns>
     public static List<RePhiEdit.Event<T>> EventMerge<T>(
-        List<RePhiEdit.Event<T>> toEvents, List<RePhiEdit.Event<T>> formEvents)
-    {
-        return RePhiEditUtility.EventProcessor.EventMerge(toEvents, formEvents);
-    }
+        List<RePhiEdit.Event<T>> toEvents, List<RePhiEdit.Event<T>> formEvents, double precision = 64d,
+        double tolerance = 5d)
+        => RePhiEditUtility.EventProcessor.EventMerge(toEvents, formEvents, precision, tolerance);
 
-    public static RePhiEdit.EventLayer LayerMerge(List<RePhiEdit.EventLayer> layers)
+
+    public static RePhiEdit.EventLayer LayerMerge(List<RePhiEdit.EventLayer> layers, double precision = 64d, double tolerance = 5d)
     {
-        return RePhiEditUtility.LayerProcessor.LayerMerge(layers);
+        return RePhiEditUtility.LayerProcessor.LayerMerge(layers, precision, tolerance);
     }
 }

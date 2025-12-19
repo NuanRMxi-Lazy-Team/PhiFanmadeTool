@@ -16,7 +16,7 @@ internal static class FatherUnbindProcessor
     /// <param name="lineX">当前线相对于父线的X轴坐标</param>
     /// <param name="lineY">当前线相对于父线的Y轴坐标</param>
     /// <returns>当前线绝对坐标</returns>
-    internal static (double,double) GetLinePos(double fatherLineX, double fatherLineY, double angleDegrees,
+    internal static (double, double) GetLinePos(double fatherLineX, double fatherLineY, double angleDegrees,
         double lineX, double lineY)
     {
         // 将角度转换为弧度
@@ -34,12 +34,14 @@ internal static class FatherUnbindProcessor
     }
 
     /// <summary>
-    /// 将判定线与自己的父判定线解绑，并保持行为一致
+    /// 将判定线与自己的父判定线解绑，并保持行为一致。
     /// </summary>
     /// <param name="targetJudgeLineIndex">需要解绑的判定线索引</param>
     /// <param name="allJudgeLines">所有判定线</param>
+    /// <param name="precision">切割精度，默认64分之一拍</param>
+    /// <param name="tolerance">拟合容差，越大拟合精细度越低</param>
     /// <returns></returns>
     public static JudgeLine FatherUnbind(int targetJudgeLineIndex,
-        List<JudgeLine> allJudgeLines) => FatherUnbindAsyncProcessor.FatherUnbindCore(targetJudgeLineIndex, allJudgeLines);
+        List<JudgeLine> allJudgeLines, double precision = 64d, double tolerance = 5d) =>
+        FatherUnbindAsyncProcessor.FatherUnbindCore(targetJudgeLineIndex, allJudgeLines, precision, tolerance);
 }
-
