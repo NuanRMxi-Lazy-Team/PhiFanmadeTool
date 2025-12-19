@@ -50,14 +50,18 @@ jobs:
             fi
           }
 
-          # 函数：构建 NuGet 包
+          # 函数:构建 NuGet 包
           build_nuget() {
             local csproj_path=$1
             local project_name=$2
-          
-            dotnet pack "$csproj_path" -c Release -o ./artifacts
+
+            # 先构建项目
+            dotnet build "$csproj_path" -c Release
+            # 再打包
+            dotnet pack "$csproj_path" -c Release --no-build -o ./artifacts
             echo "Built NuGet package for $project_name"
           }
+
 
           # 函数：构建 CLI 多目标版本
           build_cli() {
