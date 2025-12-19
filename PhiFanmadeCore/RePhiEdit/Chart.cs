@@ -19,21 +19,6 @@ namespace PhiFanmade.Core.RePhiEdit
             /// <summary>
             /// 序列化为Json
             /// </summary>
-            /// <returns>Json</returns>
-            [Obsolete("请使用 ExportToJson 方法代替")]
-            public string ToJson() => ExportToJson(true);
-
-            /// <summary>
-            /// 从Json反序列化
-            /// </summary>
-            /// <param name="json">谱面Json数据</param>
-            /// <returns>谱面对象</returns>
-            [Obsolete("请使用 LoadFromJson 方法代替")]
-            public static Chart FromJson(string json) => LoadFromJson(json);
-
-            /// <summary>
-            /// 序列化为Json
-            /// </summary>
             /// <param name="format">是否需要格式化</param>
             /// <returns>Json</returns>
             public string ExportToJson(bool format)
@@ -58,6 +43,39 @@ namespace PhiFanmade.Core.RePhiEdit
                 }
 
                 return JsonConvert.SerializeObject(this, format ? Formatting.Indented : Formatting.None);
+            }
+
+            public async Task ExportToJsonStreamAsync(System.IO.Stream stream, bool format)
+            {
+                foreach (var judgeLine in JudgeLineList)
+                {
+                    // 如果这个判定线层级上有null层级，移除它们
+                    judgeLine.EventLayers.RemoveAll(layer => layer == null);
+                    // 对所有判定线的所有事件层级执行Anticipation()方法
+                    foreach (var eventlayer in judgeLine.EventLayers)
+                    {
+                        eventlayer.Anticipation();
+                        eventlayer.Sort();
+                    }
+
+                    judgeLine.Extended.Anticipation();
+                    // 如果判定线上有任何类型的Control组为空或null，则设定一个默认值
+                    if (judgeLine.AlphaControls == null || judgeLine.AlphaControls.Count == 0)
+                        judgeLine.AlphaControls = AlphaControl.Default;
+                    if (judgeLine.PositionControls == null || judgeLine.PositionControls.Count == 0)
+                        judgeLine.PositionControls = XControl.Default;
+                }
+
+                await using var streamWriter =
+                    new System.IO.StreamWriter(stream, System.Text.Encoding.UTF8, 1024, leaveOpen: true);
+                using var jsonWriter = new JsonTextWriter(streamWriter);
+                var serializer = new Newtonsoft.Json.JsonSerializer
+                {
+                    Formatting = format ? Formatting.Indented : Formatting.None
+                };
+
+                await Task.Run(() => serializer.Serialize(jsonWriter, this));
+                await jsonWriter.FlushAsync();
             }
 
 
@@ -112,19 +130,9 @@ namespace PhiFanmade.Core.RePhiEdit
                     IncludeFields = true,
                     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // 保持中文等非 ASCII 字符不转义
                 };
-                // 使用源生成上下文以适配 AOT，并注册必要的转换器
                 options.TypeInfoResolver = RePhiEditJsonContext.Default;
-                // 注意：StjBoolConverter 只应用于标注了该特性的字段，不应全局注册
-                /*
-                options.Converters.Add(new RePhiEdit.StjColorConverter()); // byte[] 颜色
-                options.Converters.Add(new RePhiEdit.StjNoteTypeConverter());
-                options.Converters.Add(new RePhiEdit.StjAttachUiConverter());
-                options.Converters.Add(new RePhiEdit.StjColorEventsConverter());
-                options.Converters.Add(new RePhiEdit.StjBeatJsonConverter());
-                options.Converters.Add(new RePhiEdit.StjEasingJsonConverter());
-                */
 
-                return System.Text.Json.JsonSerializer.Serialize(this, typeof(Chart), options);
+                return System.Text.Json.JsonSerializer.Serialize(this, options);
             }
 
             /// <summary>
@@ -156,17 +164,8 @@ namespace PhiFanmade.Core.RePhiEdit
                     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                 };
                 options.TypeInfoResolver = RePhiEditJsonContext.Default;
-                /*
-                options.Converters.Add(new RePhiEdit.StjBoolConverter());
-                options.Converters.Add(new RePhiEdit.StjColorConverter());
-                options.Converters.Add(new RePhiEdit.StjNoteTypeConverter());
-                options.Converters.Add(new RePhiEdit.StjAttachUiConverter());
-                options.Converters.Add(new RePhiEdit.StjColorEventsConverter());
-                options.Converters.Add(new RePhiEdit.StjBeatJsonConverter());
-                options.Converters.Add(new RePhiEdit.StjEasingJsonConverter());
-                */
 
-                System.Text.Json.JsonSerializer.Serialize(stream, this, typeof(Chart), options);
+                System.Text.Json.JsonSerializer.Serialize(stream, this, options);
             }
 
             /// <summary>
@@ -198,15 +197,6 @@ namespace PhiFanmade.Core.RePhiEdit
                     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                 };
                 options.TypeInfoResolver = RePhiEditJsonContext.Default;
-                /*
-                options.Converters.Add(new RePhiEdit.StjBoolConverter());
-                options.Converters.Add(new RePhiEdit.StjColorConverter());
-                options.Converters.Add(new RePhiEdit.StjNoteTypeConverter());
-                options.Converters.Add(new RePhiEdit.StjAttachUiConverter());
-                options.Converters.Add(new RePhiEdit.StjColorEventsConverter());
-                options.Converters.Add(new RePhiEdit.StjBeatJsonConverter());
-                options.Converters.Add(new RePhiEdit.StjEasingJsonConverter());
-                */
 
                 await System.Text.Json.JsonSerializer.SerializeAsync(stream, this, typeof(Chart), options);
             }
@@ -222,16 +212,6 @@ namespace PhiFanmade.Core.RePhiEdit
                     IncludeFields = true
                 };
                 options.TypeInfoResolver = RePhiEditJsonContext.Default;
-                // 注意：StjBoolConverter 只应用于标注了该特性的字段，不应全局注册
-                /*
-                options.Converters.Add(new RePhiEdit.StjColorConverter());
-                options.Converters.Add(new RePhiEdit.StjNoteTypeConverter());
-                options.Converters.Add(new RePhiEdit.StjAttachUiConverter());
-                options.Converters.Add(new RePhiEdit.StjColorEventsConverter());
-                options.Converters.Add(new RePhiEdit.StjBeatJsonConverter());
-                options.Converters.Add(new RePhiEdit.StjEasingJsonConverter());
-                */
-
                 var chart = System.Text.Json.JsonSerializer.Deserialize<Chart>(json, options) ??
                             throw new InvalidOperationException("Failed to deserialize Chart from JSON.");
                 foreach (var judgeLine in chart.JudgeLineList)

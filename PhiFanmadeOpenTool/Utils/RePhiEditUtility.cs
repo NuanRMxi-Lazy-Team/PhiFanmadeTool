@@ -1,6 +1,7 @@
 ﻿using PhiFanmade.Core.PhiEdit;
 using PhiFanmade.Core.RePhiEdit;
 using PhiFanmade.OpenTool.Localization;
+using System.Collections.Concurrent;
 
 namespace PhiFanmade.OpenTool.Utils;
 
@@ -27,10 +28,37 @@ public class RePhiEditUtility
         }
     }
 
-    public static Action<string> OnInfo = s => { }; 
+    public static Action<string> OnInfo = s => { };
     public static Action<string> OnWarning = s => { };
     public static Action<string> OnError = s => { };
     public static Action<string> OnDebug = s => { };
+
+    /// <summary>
+    /// 在有父线的情况下，获得一条判定线的绝对位置
+    /// </summary>
+    /// <param name="fatherLineX">父线X轴坐标</param>
+    /// <param name="fatherLineY">父线Y轴坐标</param>
+    /// <param name="angleDegrees">父线旋转角度</param>
+    /// <param name="lineX">当前线相对于父线的X轴坐标</param>
+    /// <param name="lineY">当前线相对于父线的Y轴坐标</param>
+    /// <returns>当前线绝对坐标</returns>
+    public static Tuple<double, double> GetLinePos(double fatherLineX, double fatherLineY, double angleDegrees,
+        double lineX, double lineY)
+    {
+        // 将角度转换为弧度
+        double angleRadians = (angleDegrees % 360) * Math.PI / 180f;
+
+        // 计算旋转后的坐标
+        double rotatedX = lineX * Math.Cos(angleRadians) + lineY * Math.Sin(angleRadians);
+        double rotatedY = -lineX * Math.Sin(angleRadians) + lineY * Math.Cos(angleRadians);
+
+        // 计算绝对坐标
+        double absoluteX = fatherLineX + rotatedX;
+        double absoluteY = fatherLineY + rotatedY;
+
+        return new(absoluteX, absoluteY);
+    }
+
 
     /// <summary>
     /// 将判定线与自己的父判定线解绑，并保持行为一致，注意，此函数不会将原有的所有层级合并。
@@ -50,52 +78,491 @@ public class RePhiEditUtility
                 return judgeLineCopy;
             }
 
-            var fatherLine = allJudgeLinesCopy[judgeLineCopy.Father];
-            // 复制一份fatherLine的EventLayers
-            var fatherEventLayers = fatherLine.EventLayers.ToList();
-            // 层级合并
-            fatherEventLayers.RemoveAll(layer => layer == null);
-            if (fatherEventLayers.Count <= 1)
+            var fatherLineCopy = allJudgeLinesCopy[judgeLineCopy.Father].Clone();
+            if (fatherLineCopy.Father >= 0)
+                fatherLineCopy = FatherUnbind(fatherLineCopy.Father, allJudgeLinesCopy);
+            // 合并judgeLineCopy的所有层级的XEvent和YEvent
+            var targetLineNewXevents = new List<RePhiEdit.Event<float>>();
+            var targetLineNewYevents = new List<RePhiEdit.Event<float>>();
+            foreach (var layer in judgeLineCopy.EventLayers)
             {
-                OnWarning.Invoke(
-                    "FatherUnbind: Father JudgeLine layers count less than or equal to 1, no need to merge.");
+                targetLineNewXevents = EventMerge(targetLineNewXevents, layer.MoveXEvents);
+                targetLineNewYevents = EventMerge(targetLineNewYevents, layer.MoveYEvents);
+            }
+
+            // 合并fatherLineCopy的所有层级的XEvent和YEvent，额外合并RotateEvents
+            var fatherLineNewXevents = new List<RePhiEdit.Event<float>>();
+            var fatherLineNewYevents = new List<RePhiEdit.Event<float>>();
+            var fatherLineNewRotateEvents = new List<RePhiEdit.Event<float>>();
+            foreach (var layer in fatherLineCopy.EventLayers)
+            {
+                fatherLineNewXevents = EventMerge(fatherLineNewXevents, layer.MoveXEvents);
+                fatherLineNewYevents = EventMerge(fatherLineNewYevents, layer.MoveYEvents);
+                fatherLineNewRotateEvents = EventMerge(fatherLineNewRotateEvents, layer.RotateEvents);
+            }
+
+            // 全部Cut，从头Cut到尾，调用CutEventsInRange方法
+            // 得到targetLineNewXevents的最小开始拍，使用LINQ
+            var targetLineXEventsMinBeat = targetLineNewXevents.Count > 0
+                ? targetLineNewXevents.Min(e => e.StartBeat)
+                : new RePhiEdit.Beat(0);
+            var targetLineXEventsMaxBeat = targetLineNewXevents.Count > 0
+                ? targetLineNewXevents.Max(e => e.EndBeat)
+                : new RePhiEdit.Beat(0);
+            // YEvents
+            var targetLineYEventsMinBeat = targetLineNewYevents.Count > 0
+                ? targetLineNewYevents.Min(e => e.StartBeat)
+                : new RePhiEdit.Beat(0);
+            var targetLineYEventsMaxBeat = targetLineNewYevents.Count > 0
+                ? targetLineNewYevents.Max(e => e.EndBeat)
+                : new RePhiEdit.Beat(0);
+            targetLineNewXevents =
+                CutEventsInRange(targetLineNewXevents, targetLineXEventsMinBeat!, targetLineXEventsMaxBeat!);
+            targetLineNewYevents =
+                CutEventsInRange(targetLineNewYevents, targetLineYEventsMinBeat!, targetLineYEventsMaxBeat!);
+            // 然后是fatherLineNewXevents
+            var fatherLineXEventsMinBeat = fatherLineNewXevents.Count > 0
+                ? fatherLineNewXevents.Min(e => e.StartBeat)
+                : new RePhiEdit.Beat(0);
+            var fatherLineXEventsMaxBeat = fatherLineNewXevents.Count > 0
+                ? fatherLineNewXevents.Max(e => e.EndBeat)
+                : new RePhiEdit.Beat(0);
+            // YEvents
+            var fatherLineYEventsMinBeat = fatherLineNewYevents.Count > 0
+                ? fatherLineNewYevents.Min(e => e.StartBeat)
+                : new RePhiEdit.Beat(0);
+            var fatherLineYEventsMaxBeat = fatherLineNewYevents.Count > 0
+                ? fatherLineNewYevents.Max(e => e.EndBeat)
+                : new RePhiEdit.Beat(0);
+            // RotateEvents
+            var fatherLineRotateEventsMinBeat = fatherLineNewRotateEvents.Count > 0
+                ? fatherLineNewRotateEvents.Min(e => e.StartBeat)
+                : new RePhiEdit.Beat(0);
+            var fatherLineRotateEventsMaxBeat = fatherLineNewRotateEvents.Count > 0
+                ? fatherLineNewRotateEvents.Max(e => e.EndBeat)
+                : new RePhiEdit.Beat(0);
+            fatherLineNewXevents =
+                CutEventsInRange(fatherLineNewXevents, fatherLineXEventsMinBeat!, fatherLineXEventsMaxBeat!);
+            fatherLineNewYevents =
+                CutEventsInRange(fatherLineNewYevents, fatherLineYEventsMinBeat!, fatherLineYEventsMaxBeat!);
+            fatherLineNewRotateEvents =
+                CutEventsInRange(fatherLineNewRotateEvents, fatherLineRotateEventsMinBeat!,
+                    fatherLineRotateEventsMaxBeat!);
+            var previousFatherXValue = 0.0f;
+            var previousFatherYValue = 0.0f;
+            var previousFatherRotateValue = 0.0f;
+            var previousTargetXValue = 0.0f;
+            var previousTargetYValue = 0.0f;
+            // minBeat在targetLineXEventsMinBeat targetLineYEventsMinBeat fatherLineXEventsMinBeat fatherLineYEventsMinBeat中最小的
+            var overallMinBeat = new RePhiEdit.Beat(Math.Min(
+                Math.Min(targetLineXEventsMinBeat!, targetLineYEventsMinBeat!),
+                Math.Min(fatherLineXEventsMinBeat!, fatherLineYEventsMinBeat!)));
+            // maxBeat在targetLineXEventsMaxBeat targetLineYEventsMaxBeat fatherLineXEventsMaxBeat fatherLineYEventsMaxBeat中最大的
+            var overallMaxBeat = new RePhiEdit.Beat(Math.Max(
+                Math.Max(targetLineXEventsMaxBeat!, targetLineYEventsMaxBeat!),
+                Math.Max(fatherLineXEventsMaxBeat!, fatherLineYEventsMaxBeat!)));
+            var cutLength = new RePhiEdit.Beat(1d / 64d); // 1/64拍
+            var currentBeat = overallMinBeat;
+            var targetLineXEventResult = new List<RePhiEdit.Event<float>>();
+            var targetLineYEventResult = new List<RePhiEdit.Event<float>>();
+            while (currentBeat <= overallMaxBeat)
+            {
+                var nextBeat = currentBeat + cutLength;
+                // 获得fatherLine在currentBeat的X和Y值，也有可能没有事件，则使用previousFather*EndValue，事件的StartBeat需要等于currentBeat，EndBeat需要等于currentBeat + cutLength
+                var fatherXevent =
+                    fatherLineNewXevents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
+                var fatherYevent =
+                    fatherLineNewYevents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
+                var fatherXStartValue = fatherXevent != null ? fatherXevent.StartValue : previousFatherXValue;
+                var fatherYStartValue = fatherYevent != null ? fatherYevent.StartValue : previousFatherYValue;
+                var fatherXEndValue = fatherXevent != null ? fatherXevent.EndValue : previousFatherXValue;
+                var fatherYEndValue = fatherYevent != null ? fatherYevent.EndValue : previousFatherYValue;
+                // 获得fatherLine在currentBeat的Rotate值
+                var fatherRotateEvent =
+                    fatherLineNewRotateEvents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
+                var fatherRotateStartValue =
+                    fatherRotateEvent != null ? fatherRotateEvent.StartValue : previousFatherRotateValue;
+                var fatherRotateEndValue =
+                    fatherRotateEvent != null ? fatherRotateEvent.EndValue : previousFatherRotateValue;
+                // 获得targetLine在currentBeat的X和Y值，也有可能没有事件，则使用previousTarget*EndValue
+                var targetXevent =
+                    targetLineNewXevents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
+                var targetYevent =
+                    targetLineNewYevents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
+                var targetXStartValue = targetXevent != null ? targetXevent.StartValue : previousTargetXValue;
+                var targetYStartValue = targetYevent != null ? targetYevent.StartValue : previousTargetYValue;
+                var targetXEndValue = targetXevent != null ? targetXevent.EndValue : previousTargetXValue;
+                var targetYEndValue = targetYevent != null ? targetYevent.EndValue : previousTargetYValue;
+                // 统一更新prev
+                previousFatherXValue = fatherXEndValue;
+                previousFatherYValue = fatherYEndValue;
+                previousFatherRotateValue = fatherRotateEndValue;
+                previousTargetXValue = targetXEndValue;
+                previousTargetYValue = targetYEndValue;
+                // 计算绝对位置
+                var (absStartX, absStartY) = GetLinePos(fatherXStartValue, fatherYStartValue,
+                    fatherRotateStartValue, targetXStartValue, targetYStartValue);
+                var (absEndX, absEndY) = GetLinePos(fatherXEndValue, fatherYEndValue,
+                    fatherRotateEndValue, targetXEndValue, targetYEndValue);
+                // 新建事件，长度为cutLength，起始拍为currentBeat，结束拍为currentBeat + cutLength
+                var newXEvent = new RePhiEdit.Event<float>
+                {
+                    StartBeat = currentBeat,
+                    EndBeat = nextBeat,
+                    StartValue = (float)absStartX,
+                    EndValue = (float)absEndX,
+                };
+                var newYEvnt = new RePhiEdit.Event<float>
+                {
+                    StartBeat = currentBeat,
+                    EndBeat = nextBeat,
+                    StartValue = (float)absStartY,
+                    EndValue = (float)absEndY,
+                };
+                // 添加到结果列表
+                targetLineXEventResult.Add(newXEvent);
+                targetLineYEventResult.Add(newYEvnt);
+                currentBeat += cutLength;
+            }
+
+            // 清除judgeLineCopy其它层级的XEvent和YEvent，保留第一个层级，然后将计算得到的结果赋值给第一个层级
+            for (var i = 1; i < judgeLineCopy.EventLayers.Count; i++)
+            {
+                judgeLineCopy.EventLayers[i].MoveXEvents.Clear();
+                judgeLineCopy.EventLayers[i].MoveYEvents.Clear();
+            }
+
+            if (judgeLineCopy.EventLayers.Count == 0)
+            {
+                judgeLineCopy.EventLayers.Add(new RePhiEdit.EventLayer());
+            }
+
+            judgeLineCopy.EventLayers[0].MoveXEvents = targetLineXEventResult;
+            judgeLineCopy.EventLayers[0].MoveYEvents = targetLineYEventResult;
+            // 还有RotateWithFather字段，此字段为true的时候，需要给targetLineCopy累加父线的Rotate事件
+            if (judgeLineCopy.RotateWithFather)
+            {
+                // 把fatherLineNewRotateEvents合并给judgeLineCopy的第一个层级
+                judgeLineCopy.EventLayers[0].RotateEvents =
+                    EventMerge(judgeLineCopy.EventLayers[0].RotateEvents, fatherLineNewRotateEvents);
+            }
+
+
+            // 解绑father
+            judgeLineCopy.Father = -1;
+            return judgeLineCopy;
+        }
+        catch (NullReferenceException)
+        {
+            OnWarning.Invoke("FatherUnbind: It seems that something is null.");
+            return judgeLineCopy;
+        }
+        catch (Exception e)
+        {
+            OnWarning.Invoke("FatherUnbind: Unknown error: " + e.Message);
+            return judgeLineCopy;
+        }
+    }
+
+    public static List<RePhiEdit.Event<float>> EventListCompress(List<RePhiEdit.Event<float>> events)
+    {
+        if (events == null || events.Count == 0)
+            return new List<RePhiEdit.Event<float>>();
+
+        var compressed = new List<RePhiEdit.Event<float>> { events[0] };
+
+        for (int i = 1; i < events.Count; i++)
+        {
+            var lastEvent = compressed[^1];
+            var currentEvent = events[i];
+
+            // 两个事件必须为线性事件，且两个事件数值变化率相同，且结束拍起始拍相连，且结束数值起始数值相等
+            if (lastEvent.Easing == 1 && currentEvent.Easing == 1)
+            {
+                var lastRate = (lastEvent.EndValue - lastEvent.StartValue) /
+                               (lastEvent.EndBeat - lastEvent.StartBeat);
+                var currentRate = (currentEvent.EndValue - currentEvent.StartValue) /
+                                  (currentEvent.EndBeat - currentEvent.StartBeat);
+
+                if (Math.Abs(lastRate - currentRate) < 1e-6 &&
+                    lastEvent.EndBeat == currentEvent.StartBeat &&
+                    Math.Abs(lastEvent.EndValue - currentEvent.StartValue) < 1e-6)
+                {
+                    // 合并事件
+                    lastEvent.EndBeat = currentEvent.EndBeat;
+                    lastEvent.EndValue = currentEvent.EndValue;
+                    continue;
+                }
+            }
+
+            // 无法合并时，添加当前事件
+            compressed.Add(currentEvent);
+        }
+
+        return compressed;
+    }
+
+    /// <summary>
+    /// 将判定线与自己的父判定线解绑，并保持行为一致，注意，此函数不会将原有的所有层级合并。(异步多线程版本)
+    /// </summary>
+    /// <param name="targetJudgeLineIndex">需要解绑的判定线索引</param>
+    /// <param name="allJudgeLines">所有判定线</param>
+    /// <returns></returns>
+    public static async Task<RePhiEdit.JudgeLine> FatherUnbindAsync(int targetJudgeLineIndex,
+        List<RePhiEdit.JudgeLine> allJudgeLines)
+    {
+        return await Task.Run(() => FatherUnbindCore(targetJudgeLineIndex, allJudgeLines));
+    }
+
+    private static RePhiEdit.JudgeLine FatherUnbindCore(int targetJudgeLineIndex,
+        List<RePhiEdit.JudgeLine> allJudgeLines)
+    {
+        var judgeLineCopy = allJudgeLines[targetJudgeLineIndex].Clone();
+        var allJudgeLinesCopy = allJudgeLines.Select(jl => jl.Clone()).ToList();
+        try
+        {
+            if (judgeLineCopy.Father <= -1)
+            {
+                OnWarning.Invoke("FatherUnbind: judgeLine has no father.");
                 return judgeLineCopy;
             }
 
-            var mergedLayer = new RePhiEdit.EventLayer();
-            foreach (var layer in fatherEventLayers)
+            var fatherLineCopy = allJudgeLinesCopy[judgeLineCopy.Father].Clone();
+            if (fatherLineCopy.Father >= 0)
+                fatherLineCopy = FatherUnbindCore(fatherLineCopy.Father, allJudgeLinesCopy);
+
+            // 并行合并事件层级
+            var targetLineNewXevents = new List<RePhiEdit.Event<float>>();
+            var targetLineNewYevents = new List<RePhiEdit.Event<float>>();
+            var fatherLineNewXevents = new List<RePhiEdit.Event<float>>();
+            var fatherLineNewYevents = new List<RePhiEdit.Event<float>>();
+            var fatherLineNewRotateEvents = new List<RePhiEdit.Event<float>>();
+
+            // 使用 ConcurrentBag 来收集并行处理的结果
+            var targetXBag = new ConcurrentBag<List<RePhiEdit.Event<float>>>();
+            var targetYBag = new ConcurrentBag<List<RePhiEdit.Event<float>>>();
+
+            Parallel.ForEach(judgeLineCopy.EventLayers, layer =>
             {
-                if (layer.MoveXEvents.Count > 0)
-                    mergedLayer.MoveXEvents = EventMerge(layer.MoveXEvents, mergedLayer.MoveXEvents);
-                if (layer.MoveYEvents.Count > 0)
-                    mergedLayer.MoveYEvents = EventMerge(layer.MoveYEvents, mergedLayer.MoveYEvents);
-                if (layer.RotateEvents.Count > 0 && judgeLineCopy.RotateWithFather)
-                    mergedLayer.RotateEvents = EventMerge(layer.RotateEvents, mergedLayer.RotateEvents);
+                if (layer.MoveXEvents != null && layer.MoveXEvents.Count > 0)
+                    targetXBag.Add(layer.MoveXEvents);
+                if (layer.MoveYEvents != null && layer.MoveYEvents.Count > 0)
+                    targetYBag.Add(layer.MoveYEvents);
+            });
+
+            foreach (var events in targetXBag)
+                targetLineNewXevents = EventMerge(targetLineNewXevents, events);
+            foreach (var events in targetYBag)
+                targetLineNewYevents = EventMerge(targetLineNewYevents, events);
+
+            // 并行处理父线事件
+            var fatherXBag = new ConcurrentBag<List<RePhiEdit.Event<float>>>();
+            var fatherYBag = new ConcurrentBag<List<RePhiEdit.Event<float>>>();
+            var fatherRotateBag = new ConcurrentBag<List<RePhiEdit.Event<float>>>();
+
+            Parallel.ForEach(fatherLineCopy.EventLayers, layer =>
+            {
+                if (layer.MoveXEvents != null && layer.MoveXEvents.Count > 0)
+                    fatherXBag.Add(layer.MoveXEvents);
+                if (layer.MoveYEvents != null && layer.MoveYEvents.Count > 0)
+                    fatherYBag.Add(layer.MoveYEvents);
+                if (layer.RotateEvents != null && layer.RotateEvents.Count > 0)
+                    fatherRotateBag.Add(layer.RotateEvents);
+            });
+
+            foreach (var events in fatherXBag)
+                fatherLineNewXevents = EventMerge(fatherLineNewXevents, events);
+            foreach (var events in fatherYBag)
+                fatherLineNewYevents = EventMerge(fatherLineNewYevents, events);
+            foreach (var events in fatherRotateBag)
+                fatherLineNewRotateEvents = EventMerge(fatherLineNewRotateEvents, events);
+
+            // 计算拍范围
+            var targetLineXEventsMinBeat = targetLineNewXevents.Count > 0
+                ? targetLineNewXevents.Min(e => e.StartBeat)
+                : new RePhiEdit.Beat(0);
+            var targetLineXEventsMaxBeat = targetLineNewXevents.Count > 0
+                ? targetLineNewXevents.Max(e => e.EndBeat)
+                : new RePhiEdit.Beat(0);
+            var targetLineYEventsMinBeat = targetLineNewYevents.Count > 0
+                ? targetLineNewYevents.Min(e => e.StartBeat)
+                : new RePhiEdit.Beat(0);
+            var targetLineYEventsMaxBeat = targetLineNewYevents.Count > 0
+                ? targetLineNewYevents.Max(e => e.EndBeat)
+                : new RePhiEdit.Beat(0);
+
+            var fatherLineXEventsMinBeat = fatherLineNewXevents.Count > 0
+                ? fatherLineNewXevents.Min(e => e.StartBeat)
+                : new RePhiEdit.Beat(0);
+            var fatherLineXEventsMaxBeat = fatherLineNewXevents.Count > 0
+                ? fatherLineNewXevents.Max(e => e.EndBeat)
+                : new RePhiEdit.Beat(0);
+            var fatherLineYEventsMinBeat = fatherLineNewYevents.Count > 0
+                ? fatherLineNewYevents.Min(e => e.StartBeat)
+                : new RePhiEdit.Beat(0);
+            var fatherLineYEventsMaxBeat = fatherLineNewYevents.Count > 0
+                ? fatherLineNewYevents.Max(e => e.EndBeat)
+                : new RePhiEdit.Beat(0);
+            var fatherLineRotateEventsMinBeat = fatherLineNewRotateEvents.Count > 0
+                ? fatherLineNewRotateEvents.Min(e => e.StartBeat)
+                : new RePhiEdit.Beat(0);
+            var fatherLineRotateEventsMaxBeat = fatherLineNewRotateEvents.Count > 0
+                ? fatherLineNewRotateEvents.Max(e => e.EndBeat)
+                : new RePhiEdit.Beat(0);
+
+            // 并行切割事件
+            var cutTasks = new[]
+            {
+                Task.Run(() =>
+                    CutEventsInRange(targetLineNewXevents, targetLineXEventsMinBeat!, targetLineXEventsMaxBeat!)),
+                Task.Run(() =>
+                    CutEventsInRange(targetLineNewYevents, targetLineYEventsMinBeat!, targetLineYEventsMaxBeat!)),
+                Task.Run(() =>
+                    CutEventsInRange(fatherLineNewXevents, fatherLineXEventsMinBeat!, fatherLineXEventsMaxBeat!)),
+                Task.Run(() =>
+                    CutEventsInRange(fatherLineNewYevents, fatherLineYEventsMinBeat!, fatherLineYEventsMaxBeat!)),
+                Task.Run(() => CutEventsInRange(fatherLineNewRotateEvents, fatherLineRotateEventsMinBeat!,
+                    fatherLineRotateEventsMaxBeat!))
+            };
+
+            Task.WaitAll(cutTasks);
+
+            targetLineNewXevents = cutTasks[0].Result;
+            targetLineNewYevents = cutTasks[1].Result;
+            fatherLineNewXevents = cutTasks[2].Result;
+            fatherLineNewYevents = cutTasks[3].Result;
+            fatherLineNewRotateEvents = cutTasks[4].Result;
+            /*
+            // DEBUG START
+            // 将targetLineNewXevents替换到judgeLineCopy的第一个层级的MoveXEvents、将targetLineNewYevents替换到judgeLineCopy的第一个层级的MoveYEvents，替换前进行精简
+            judgeLineCopy.EventLayers[0].MoveXEvents = EventListCompress(targetLineNewXevents);
+            judgeLineCopy.EventLayers[0].MoveYEvents = EventListCompress(targetLineNewYevents);
+            // 直接return，调试
+            return judgeLineCopy;
+            // DEBUG END
+            */
+
+            var overallMinBeat = new RePhiEdit.Beat(Math.Min(
+                Math.Min(targetLineXEventsMinBeat!, targetLineYEventsMinBeat!),
+                Math.Min(fatherLineXEventsMinBeat!, fatherLineYEventsMinBeat!)));
+            var overallMaxBeat = new RePhiEdit.Beat(Math.Max(
+                Math.Max(targetLineXEventsMaxBeat!, targetLineYEventsMaxBeat!),
+                Math.Max(fatherLineXEventsMaxBeat!, fatherLineYEventsMaxBeat!)));
+            var cutLength = new RePhiEdit.Beat(1d / 64d);
+
+            // 并行处理每个拍段
+            var currentBeat = overallMinBeat;
+            var beatSegments = new List<RePhiEdit.Beat>();
+            while (currentBeat <= overallMaxBeat)
+            {
+                beatSegments.Add(currentBeat);
+                currentBeat += cutLength;
             }
 
-            // 检查judgeLine的EventLayers的Count是否大于等于4，如果大于等于4，则将mergedLayer与最后一个EventLayer合并，否则直接添加mergedLayer
-            if (judgeLineCopy.EventLayers.Count >= 4)
+            var targetLineXEventResult = new ConcurrentBag<(int index, RePhiEdit.Event<float> evt)>();
+            var targetLineYEventResult = new ConcurrentBag<(int index, RePhiEdit.Event<float> evt)>();
+
+            Parallel.For(0, beatSegments.Count, i =>
             {
-                var lastLayer = judgeLineCopy.EventLayers.Last();
-                if (lastLayer.MoveXEvents.Count > 0)
-                    lastLayer.MoveXEvents = EventMerge(mergedLayer.MoveXEvents, lastLayer.MoveXEvents);
-                else
-                    lastLayer.MoveXEvents = mergedLayer.MoveXEvents;
-                if (lastLayer.MoveYEvents.Count > 0)
-                    lastLayer.MoveYEvents = EventMerge(mergedLayer.MoveYEvents, lastLayer.MoveYEvents);
-                else
-                    lastLayer.MoveYEvents = mergedLayer.MoveYEvents;
-                if (lastLayer.RotateEvents.Count > 0 && judgeLineCopy.RotateWithFather)
-                    lastLayer.RotateEvents = EventMerge(mergedLayer.RotateEvents, lastLayer.RotateEvents);
-                else
-                    lastLayer.RotateEvents = mergedLayer.RotateEvents;
-            }
-            else
+                var beat = beatSegments[i];
+                var nextBeat = beat + cutLength;
+
+                var previousFatherXValue = 0.0f;
+                var previousFatherYValue = 0.0f;
+                var previousFatherRotateValue = 0.0f;
+                var previousTargetXValue = 0.0f;
+                var previousTargetYValue = 0.0f;
+
+                // 获取之前的值
+                if (i > 0)
+                {
+                    var prevFatherX = fatherLineNewXevents.LastOrDefault(e => e.EndBeat <= beat);
+                    var prevFatherY = fatherLineNewYevents.LastOrDefault(e => e.EndBeat <= beat);
+                    var prevFatherRotate = fatherLineNewRotateEvents.LastOrDefault(e => e.EndBeat <= beat);
+                    var prevTargetX = targetLineNewXevents.LastOrDefault(e => e.EndBeat <= beat);
+                    var prevTargetY = targetLineNewYevents.LastOrDefault(e => e.EndBeat <= beat);
+
+                    previousFatherXValue = prevFatherX?.EndValue ?? 0.0f;
+                    previousFatherYValue = prevFatherY?.EndValue ?? 0.0f;
+                    previousFatherRotateValue = prevFatherRotate?.EndValue ?? 0.0f;
+                    previousTargetXValue = prevTargetX?.EndValue ?? 0.0f;
+                    previousTargetYValue = prevTargetY?.EndValue ?? 0.0f;
+                }
+
+                var fatherXevent =
+                    fatherLineNewXevents.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == nextBeat);
+                var fatherYevent =
+                    fatherLineNewYevents.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == nextBeat);
+                var fatherXStartValue = fatherXevent != null ? fatherXevent.StartValue : previousFatherXValue;
+                var fatherYStartValue = fatherYevent != null ? fatherYevent.StartValue : previousFatherYValue;
+                var fatherXEndValue = fatherXevent != null ? fatherXevent.EndValue : previousFatherXValue;
+                var fatherYEndValue = fatherYevent != null ? fatherYevent.EndValue : previousFatherYValue;
+
+                var fatherRotateEvent =
+                    fatherLineNewRotateEvents.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == nextBeat);
+                var fatherRotateStartValue =
+                    fatherRotateEvent != null ? fatherRotateEvent.StartValue : previousFatherRotateValue;
+                var fatherRotateEndValue =
+                    fatherRotateEvent != null ? fatherRotateEvent.EndValue : previousFatherRotateValue;
+
+                var targetXevent =
+                    targetLineNewXevents.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == nextBeat);
+                var targetYevent =
+                    targetLineNewYevents.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == nextBeat);
+                var targetXStartValue = targetXevent != null ? targetXevent.StartValue : previousTargetXValue;
+                var targetYStartValue = targetYevent != null ? targetYevent.StartValue : previousTargetYValue;
+                var targetXEndValue = targetXevent != null ? targetXevent.EndValue : previousTargetXValue;
+                var targetYEndValue = targetYevent != null ? targetYevent.EndValue : previousTargetYValue;
+
+                var (absStartX, absStartY) = GetLinePos(fatherXStartValue, fatherYStartValue,
+                    fatherRotateStartValue, targetXStartValue, targetYStartValue);
+                var (absEndX, absEndY) = GetLinePos(fatherXEndValue, fatherYEndValue,
+                    fatherRotateEndValue, targetXEndValue, targetYEndValue);
+
+                var newXEvent = new RePhiEdit.Event<float>
+                {
+                    StartBeat = beat,
+                    EndBeat = nextBeat,
+                    StartValue = (float)absStartX,
+                    EndValue = (float)absEndX,
+                };
+                var newYEvent = new RePhiEdit.Event<float>
+                {
+                    StartBeat = beat,
+                    EndBeat = nextBeat,
+                    StartValue = (float)absStartY,
+                    EndValue = (float)absEndY,
+                };
+
+                targetLineXEventResult.Add((i, newXEvent));
+                targetLineYEventResult.Add((i, newYEvent));
+            });
+
+            // 排序并转换为列表
+            var sortedXEvents = targetLineXEventResult.OrderBy(x => x.index).Select(x => x.evt).ToList();
+            var sortedYEvents = targetLineYEventResult.OrderBy(x => x.index).Select(x => x.evt).ToList();
+
+            // 清除其它层级
+            for (var i = 1; i < judgeLineCopy.EventLayers.Count; i++)
             {
-                judgeLineCopy.EventLayers.Add(mergedLayer);
+                judgeLineCopy.EventLayers[i].MoveXEvents.Clear();
+                judgeLineCopy.EventLayers[i].MoveYEvents.Clear();
             }
 
-            // 解绑father
+            if (judgeLineCopy.EventLayers.Count == 0)
+            {
+                judgeLineCopy.EventLayers.Add(new RePhiEdit.EventLayer());
+            }
+
+            judgeLineCopy.EventLayers[0].MoveXEvents = EventListCompress(sortedXEvents);
+            judgeLineCopy.EventLayers[0].MoveYEvents = EventListCompress(sortedYEvents);
+
+            if (judgeLineCopy.RotateWithFather)
+            {
+                judgeLineCopy.EventLayers[0].RotateEvents =
+                    EventListCompress(EventMerge(judgeLineCopy.EventLayers[0].RotateEvents, fatherLineNewRotateEvents));
+            }
+
             judgeLineCopy.Father = -1;
             return judgeLineCopy;
         }
@@ -123,6 +590,60 @@ public class RePhiEditUtility
         if (typeof(T) == typeof(double))
             return (T)(object)((double)(object)a! + (double)(object)b!);
         throw new NotSupportedException($"Type {typeof(T)} is not supported for addition");
+    }
+
+    /// <summary>
+    /// 在指定的拍范围内切割事件列表
+    /// </summary>
+    /// <param name="events">要切割的事件列表</param>
+    /// <param name="startBeat">开始拍</param>
+    /// <param name="endBeat">结束拍</param>
+    /// <param name="cutLength">切割长度（默认0.015625拍）</param>
+    /// <typeparam name="T">事件值类型</typeparam>
+    /// <returns>切割后的事件列表</returns>
+    private static List<RePhiEdit.Event<T>> CutEventsInRange<T>(
+        List<RePhiEdit.Event<T>> events,
+        RePhiEdit.Beat startBeat,
+        RePhiEdit.Beat endBeat,
+        RePhiEdit.Beat? cutLength = null)
+    {
+        var length = cutLength ?? new RePhiEdit.Beat(1d / 64d);
+        var cutedEvents = new List<RePhiEdit.Event<T>>();
+
+        // 找到在指定范围内的事件
+        var eventsToCut = events.Where(e => e.StartBeat < endBeat && e.EndBeat > startBeat).ToList();
+
+        foreach (var evt in eventsToCut)
+        {
+            var cutStart = evt.StartBeat < startBeat ? startBeat : evt.StartBeat;
+            var cutEnd = evt.EndBeat > endBeat ? endBeat : evt.EndBeat;
+
+            // 计算需要切割的段数，避免浮点累加误差
+            var totalBeats = cutEnd - cutStart;
+            var segmentCount = (int)Math.Ceiling(totalBeats / length);
+
+            for (int i = 0; i < segmentCount; i++)
+            {
+                // 使用索引计算位置，而不是累加
+                var currentBeat = new RePhiEdit.Beat(cutStart + (length * i));
+                var segmentEnd = new RePhiEdit.Beat(cutStart + (length * (i + 1)));
+
+                // 最后一段可能需要调整
+                if (segmentEnd > cutEnd)
+                    segmentEnd = cutEnd;
+
+                var newEvent = new RePhiEdit.Event<T>
+                {
+                    StartBeat = currentBeat,
+                    EndBeat = segmentEnd,
+                    StartValue = evt.GetValueAtBeat(currentBeat),
+                    EndValue = evt.GetValueAtBeat(segmentEnd),
+                };
+                cutedEvents.Add(newEvent);
+            }
+        }
+
+        return cutedEvents;
     }
 
     /// <summary>
@@ -223,32 +744,7 @@ public class RePhiEditUtility
                 return 0;
             });
 
-            var normalized = new List<(RePhiEdit.Beat Start, RePhiEdit.Beat End)>();
-            foreach (var interval in overlapIntervals)
-            {
-                if (normalized.Count == 0)
-                {
-                    normalized.Add(interval);
-                    continue;
-                }
-
-                var last = normalized[^1];
-                if (interval.Start < last.End && interval.End > last.Start)
-                {
-                    var mergedStart = last.Start < interval.Start ? last.Start : interval.Start;
-                    var mergedEnd = last.End > interval.End ? last.End : interval.End;
-                    normalized[^1] = (mergedStart, mergedEnd);
-                }
-                else
-                {
-                    normalized.Add(interval);
-                }
-            }
-
-            overlapIntervals = normalized;
-
             // 先把未重合的事件加入newEvents（注意需要加上另一侧最近结束值的偏移）
-
             foreach (var toEvent in toEventsCopy)
             {
                 var isInOverlap = overlapIntervals.Any(interval =>
@@ -308,62 +804,24 @@ public class RePhiEditUtility
             var cutedFormEvents = new List<RePhiEdit.Event<T>>();
             foreach (var (start, end) in overlapIntervals)
             {
-                // 切割toEvents内的事件
-                var toEventsToCut = toEventsCopy.Where(e => e.StartBeat < end && e.EndBeat > start).ToList();
-                foreach (var toEvent in toEventsToCut)
-                {
-                    toEventsCopy.Remove(toEvent);
-                    var cutStart = toEvent.StartBeat < start ? start : toEvent.StartBeat;
-                    var cutEnd = toEvent.EndBeat > end ? end : toEvent.EndBeat;
-                    var currentBeat = cutStart;
-                    while (currentBeat < cutEnd)
-                    {
-                        var segmentEnd = currentBeat + cutLength;
-                        if (segmentEnd > cutEnd)
-                            segmentEnd = cutEnd;
-                        var newEvent = new RePhiEdit.Event<T>
-                        {
-                            StartBeat = currentBeat,
-                            EndBeat = segmentEnd,
-                            StartValue = toEvent.GetValueAtBeat(currentBeat),
-                            EndValue = toEvent.GetValueAtBeat(segmentEnd),
-                        };
-                        cutedToEvents.Add(newEvent);
-                        currentBeat = segmentEnd;
-                    }
-                }
+                // 使用新方法切割toEvents内的事件
+                var cutToInRange = CutEventsInRange(toEventsCopy, start, end, cutLength);
+                cutedToEvents.AddRange(cutToInRange);
 
-                // 切割formEvents内的事件
-                var formEventsToCut = formEventsCopy.Where(e => e.StartBeat < end && e.EndBeat > start).ToList();
-                foreach (var formEvent in formEventsToCut)
-                {
-                    formEventsCopy.Remove(formEvent);
-                    var cutStart = formEvent.StartBeat < start ? start : formEvent.StartBeat;
-                    var cutEnd = formEvent.EndBeat > end ? end : formEvent.EndBeat;
-                    var currentBeat = cutStart;
-                    while (currentBeat < cutEnd)
-                    {
-                        var segmentEnd = currentBeat + cutLength;
-                        if (segmentEnd > cutEnd)
-                            segmentEnd = cutEnd;
-                        var newEvent = new RePhiEdit.Event<T>
-                        {
-                            StartBeat = currentBeat,
-                            EndBeat = segmentEnd,
-                            StartValue = formEvent.GetValueAtBeat(currentBeat),
-                            EndValue = formEvent.GetValueAtBeat(segmentEnd),
-                        };
-                        cutedFormEvents.Add(newEvent);
-                        currentBeat = segmentEnd;
-                    }
-                }
+                // 使用新方法切割formEvents内的事件
+                var cutFormInRange = CutEventsInRange(formEventsCopy, start, end, cutLength);
+                cutedFormEvents.AddRange(cutFormInRange);
+
+                // 从原列表中移除已切割的事件
+                toEventsCopy.RemoveAll(e => e.StartBeat < end && e.EndBeat > start);
+                formEventsCopy.RemoveAll(e => e.StartBeat < end && e.EndBeat > start);
             }
 
             // 再次合并，现在所有事件长度都一致了，但是要注意，两个事件列表的当前值总和为最终值，无事件的地方使用上一个事件的结束值，没有上一个事件则使用默认值，如果合并不当会导致数值跳变
             var allCutedEvents = new List<RePhiEdit.Event<T>>();
             var formOverlapEventLastEndValue = default(T);
             var toOverlapEventLastEndValue = default(T);
-            // 以0.125拍为采样大小，遍历每一个重合区间
+            // 以0.015625拍为采样大小，遍历每一个重合区间
             for (var index = 0; index < overlapIntervals.Count; index++)
             {
                 var (start, end) = overlapIntervals[index];
@@ -395,8 +853,8 @@ public class RePhiEditUtility
                     {
                         StartBeat = currentBeat,
                         EndBeat = nextBeat,
-                        StartValue = startValue,
-                        EndValue = endValue,
+                        StartValue = startValue!,
+                        EndValue = endValue!,
                     };
 
                     allCutedEvents.Add(newEvent);
@@ -424,8 +882,6 @@ public class RePhiEditUtility
         }
         else // 如果没有重合事件,直接合并
         {
-            //toEvents.AddRange(formEvents);
-
             foreach (var formEvent in formEventsCopy)
             {
                 var previousToEvent = toEventsCopy.FindLast(e => e.EndBeat <= formEvent.StartBeat);
@@ -468,7 +924,24 @@ public class RePhiEditUtility
         {
             eventsCopy.RemoveAt(0);
         }
+
         return eventsCopy;
+    }
+
+    private static List<RePhiEdit.EventLayer>? RemoveUnlessLayer(List<RePhiEdit.EventLayer>? layers)
+    {
+        if (layers == null || layers.Count <= 1) return layers;
+        var layersCopy = layers.Select(l => l.Clone()).ToList();
+        // index非1 layer头部的0值事件去除
+        foreach (var layer in layersCopy)
+        {
+            layer.AlphaEvents = RemoveUnlessEvent(layer.AlphaEvents);
+            layer.MoveXEvents = RemoveUnlessEvent(layer.MoveXEvents);
+            layer.MoveYEvents = RemoveUnlessEvent(layer.MoveYEvents);
+            layer.RotateEvents = RemoveUnlessEvent(layer.RotateEvents);
+        }
+
+        return layersCopy;
     }
 
     public static RePhiEdit.EventLayer LayerMerge(List<RePhiEdit.EventLayer> layers)
@@ -484,14 +957,7 @@ public class RePhiEditUtility
         }
 
         // index非1 layer头部的0值事件去除
-        
-        foreach (var layer in layers)
-        {
-            layer.AlphaEvents = RemoveUnlessEvent(layer.AlphaEvents);
-            layer.MoveXEvents = RemoveUnlessEvent(layer.MoveXEvents);
-            layer.MoveYEvents = RemoveUnlessEvent(layer.MoveYEvents);
-            layer.RotateEvents = RemoveUnlessEvent(layer.RotateEvents);
-        }
+        layers = RemoveUnlessLayer(layers) ?? layers;
 
         var mergedLayer = new RePhiEdit.EventLayer();
         foreach (var layer in layers)

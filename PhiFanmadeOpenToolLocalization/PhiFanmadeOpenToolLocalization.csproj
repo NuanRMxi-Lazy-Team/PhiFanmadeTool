@@ -6,6 +6,8 @@
         <Nullable>enable</Nullable>
         <AssemblyName>PhiFanmade.OpenTool.Localization</AssemblyName>
         <RootNamespace>PhiFanmade.OpenTool.Localization</RootNamespace>
+        <Configurations>Debug;Release</Configurations>
+        <Platforms>AnyCPU;x64</Platforms>
     </PropertyGroup>
     
     <ItemGroup>

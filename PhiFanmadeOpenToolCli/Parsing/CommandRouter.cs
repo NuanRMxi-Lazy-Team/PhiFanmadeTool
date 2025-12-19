@@ -24,7 +24,7 @@ public sealed class CommandRouter
         ["save"] = new[] { "save", "保存" },
         ["workspace.list"] = new[] { "workspace.list", "workspace ls", "workspace list", "工作区 列表", "工作区 list" },
         ["workspace.clear"] = new[] { "workspace.clear", "workspace clear", "工作区 清理" },
-        ["rpe.unbind-father"] = new[] { "rpe.unbind-father", "unbind", "解绑父级" },
+        ["rpe.unbind-father"] = new[] { "rpe.unbind-father", "rpe.unbind", "解绑父级" },
         ["rpe.layer-merge"] = new[] { "rpe.layer-merge", "合并所有事件层级" },
         ["pe.convert"] = new[] { "pe.convert", "转换为PE谱面" },
         ["help"] = ["help", "帮助"]

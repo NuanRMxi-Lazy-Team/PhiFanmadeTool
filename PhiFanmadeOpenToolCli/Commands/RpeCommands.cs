@@ -10,8 +10,6 @@ public sealed class RpeUnbindFatherCommand : ICommandHandler
 {
     public async Task<int> ExecuteAsync(string[] args, ConsoleWriter writer, ILocalizer loc)
     {
-        writer.Warn(loc["err.unimplemented"]);
-        return 2;
         var input = OptionParser.GetOption(args, "-i", "--input", "--输入");
         var output = OptionParser.GetOption(args, "-o", "--output", "--输出");
         var workspace = OptionParser.GetOption(args, "--workspace", "--工作区");
@@ -29,16 +27,20 @@ public sealed class RpeUnbindFatherCommand : ICommandHandler
             if (string.IsNullOrWhiteSpace(input))
                 throw new ArgumentException(loc["err.input.required"]);
             var text = await File.ReadAllTextAsync(input);
-            chart = await Chart.LoadFromJsonAsync(text);
+            chart = await Chart.LoadFromJsonStjAsync(text);
         }
 
         var chartCopy = chart.Clone();
         for (var index = 0; index < chart.JudgeLineList.Count; index++)
         {
+            // 调试，仅处理27 31index的线
+            if (index != 27 && index != 31)
+                continue;
+            Console.Write(index);
             var jl = chart.JudgeLineList[index];
             if (jl.Father != -1)
             {
-                chartCopy.JudgeLineList[index] = RePhiEditUtility.FatherUnbind(index, chart.JudgeLineList);
+                chartCopy.JudgeLineList[index] = await RePhiEditUtility.FatherUnbindAsync(index, chart.JudgeLineList);
             }
         }
 
@@ -48,9 +50,14 @@ public sealed class RpeUnbindFatherCommand : ICommandHandler
             output = Path.Combine(Path.GetDirectoryName(source) ?? ".",
                 Path.GetFileNameWithoutExtension(source) + "_PFC.json");
         }
+        
+        // 使用流式序列化（ExportToJsonStjStreamAsync）防止OOM
+        //var stream = new FileStream(output,FileMode.Create);
+        //if (!dryRun)
+        //    await chartCopy.ExportToJsonStjStreamAsync(stream, true);
 
         if (!dryRun)
-            await File.WriteAllTextAsync(output!, await chartCopy.ExportToJsonAsync(true));
+            await File.WriteAllTextAsync(output!, await chartCopy.ExportToJsonStjAsync(true));
         writer.Info(loc["msg.written"].Replace("{path}", output!));
         return 0;
     }
