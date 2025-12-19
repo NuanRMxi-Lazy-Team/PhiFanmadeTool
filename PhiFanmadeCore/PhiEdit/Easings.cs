@@ -189,106 +189,44 @@ namespace PhiFanmade.Core.PhiEdit
             // Overload, using int to specify the corresponding EasingFunction
             public static double Evaluate(int easingType, double start, double end, double t)
             {
-                EasingFunction function;
-                switch (easingType)
+                EasingFunction function = easingType switch
                 {
-                    case 1:
-                        function = Linear;
-                        break;
-                    case 2:
-                        function = EaseOutSine;
-                        break;
-                    case 3:
-                        function = EaseInSine;
-                        break;
-                    case 4:
-                        function = EaseOutQuad;
-                        break;
-                    case 5:
-                        function = EaseInQuad;
-                        break;
-                    case 6:
-                        function = EaseInOutSine;
-                        break;
-                    case 7:
-                        function = EaseInOutQuad;
-                        break;
-                    case 8:
-                        function = EaseOutCubic;
-                        break;
-                    case 9:
-                        function = EaseInCubic;
-                        break;
-                    case 10:
-                        function = EaseOutQuart;
-                        break;
-                    case 11:
-                        function = EaseInQuart;
-                        break;
-                    case 12:
-                        function = EaseInOutCubic;
-                        break;
-                    case 13:
-                        function = EaseInOutQuart;
-                        break;
-                    case 14:
-                        function = EaseOutQuint;
-                        break;
-                    case 15:
-                        function = EaseInQuint;
-                        break;
-                    case 16:
-                        function = EaseOutExpo;
-                        break;
-                    case 17:
-                        function = EaseInExpo;
-                        break;
-                    case 18:
-                        function = EaseOutCirc;
-                        break;
-                    case 19:
-                        function = EaseInCirc;
-                        break;
-                    case 20:
-                        function = EaseOutBack;
-                        break;
-                    case 21:
-                        function = EaseInBack;
-                        break;
-                    case 22:
-                        function = EaseInOutCirc;
-                        break;
-                    case 23:
-                        function = EaseInOutBack;
-                        break;
-                    case 24:
-                        function = EaseOutElastic;
-                        break;
-                    case 25:
-                        function = EaseInElastic;
-                        break;
-                    case 26:
-                        function = EaseOutBounce;
-                        break;
-                    case 27:
-                        function = EaseInBounce;
-                        break;
-                    case 28:
-                        function = EaseInOutBounce;
-                        break;
-                    case 29:
-                        function = EaseInOutElastic;
-                        break;
-                    default:
-                        function = Linear;
-                        break;
-                }
+                    1 => Linear,
+                    2 => EaseOutSine,
+                    3 => EaseInSine,
+                    4 => EaseOutQuad,
+                    5 => EaseInQuad,
+                    6 => EaseInOutSine,
+                    7 => EaseInOutQuad,
+                    8 => EaseOutCubic,
+                    9 => EaseInCubic,
+                    10 => EaseOutQuart,
+                    11 => EaseInQuart,
+                    12 => EaseInOutCubic,
+                    13 => EaseInOutQuart,
+                    14 => EaseOutQuint,
+                    15 => EaseInQuint,
+                    16 => EaseOutExpo,
+                    17 => EaseInExpo,
+                    18 => EaseOutCirc,
+                    19 => EaseInCirc,
+                    20 => EaseOutBack,
+                    21 => EaseInBack,
+                    22 => EaseInOutCirc,
+                    23 => EaseInOutBack,
+                    24 => EaseOutElastic,
+                    25 => EaseInElastic,
+                    26 => EaseOutBounce,
+                    27 => EaseInBounce,
+                    28 => EaseInOutBounce,
+                    29 => EaseInOutElastic,
+                    _ => Linear
+                };
 
                 return Evaluate(function, start, end, t);
             }
         }
-
-        [JsonConverter(typeof(EasingJsonConverter))]
+        
         public class Easing
         {
             public Easing(int easingNumber)
@@ -314,22 +252,6 @@ namespace PhiFanmade.Core.PhiEdit
 
             // 以int访问时，返回缓动编号
             public static implicit operator int(Easing easing) => easing._easingNumber;
-        }
-
-        public class EasingJsonConverter : JsonConverter<Easing>
-        {
-            public override void WriteJson(JsonWriter writer, Easing value, JsonSerializer serializer)
-            {
-                serializer.Serialize(writer, value);
-            }
-
-            public override Easing ReadJson(JsonReader reader, Type objectType, Easing existingValue,
-                bool hasExistingValue,
-                JsonSerializer serializer)
-            {
-                var easingNumber = serializer.Deserialize<int>(reader);
-                return new Easing(easingNumber);
-            }
         }
     }
 }
