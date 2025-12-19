@@ -8,6 +8,13 @@ on:
       - 'PhiFanmadeCore/PhiFanmadeCore.csproj'
       - 'PhiFanmadeOpenTool/PhiFanmadeOpenTool.csproj'
       - 'PhiFanmadeOpenToolCli/PhiFanmadeOpenToolCli.csproj'
+  workflow_dispatch:
+    inputs:
+      test_build:
+        description: '仅用于测试构建（不发版）'
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   check-and-release:
@@ -30,6 +37,7 @@ jobs:
       - name: Check version changes and create releases
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_TEST_BUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.test_build == true }}
         run: |
           # 函数：从 csproj 文件中提取版本号
           get_version() {
@@ -119,6 +127,23 @@ jobs:
             local csproj_path=$3
             local tag="${project_name} v${version}"
 
+            # 如果是测试构建，跳过 tag 检查和发版
+            if [ "$IS_TEST_BUILD" = "true" ]; then
+              echo "Test build mode - skipping release creation for $project_name"
+              mkdir -p ./artifacts
+
+              # 根据项目类型构建
+              case "$project_name" in
+                "Core"|"Tool")
+                  build_nuget "$csproj_path" "$project_name"
+                  ;;
+                "Cli")
+                  build_cli "$csproj_path"
+                  ;;
+              esac
+              return
+            fi
+
             # 检查 tag 是否已存在
             if git rev-parse "$tag" >/dev/null 2>&1; then
               echo "Tag $tag already exists, skipping..."
@@ -180,3 +205,14 @@ jobs:
           if [ ! -z "$CLI_VERSION" ]; then
             create_release "Cli" "$CLI_VERSION" "PhiFanmadeOpenToolCli/PhiFanmadeOpenToolCli.csproj"
           fi
+
+      - name: Upload build artifacts
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            ./artifacts/*.nupkg
+            ./artifacts/cli/*.zip
+          if-no-files-found: warn
+          retention-days: 7
