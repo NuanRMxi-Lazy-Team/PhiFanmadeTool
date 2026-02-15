@@ -11,7 +11,12 @@ on:
   workflow_dispatch:
     inputs:
       test_build:
-        description: '仅用于测试构建（不发版）'
+        description: '仅测试构建（不发版）'
+        required: false
+        default: false
+        type: boolean
+      create_release:
+        description: '创建 Release 发版'
         required: false
         default: true
         type: boolean
@@ -38,6 +43,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IS_TEST_BUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.test_build == true }}
+          SHOULD_RELEASE: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.create_release == true && inputs.test_build == false) }}
         run: |
           # 函数：从 csproj 文件中提取版本号
           get_version() {
@@ -105,7 +111,8 @@ jobs:
             local project_name=$1
             local version=$2
             local csproj_path=$3
-            local tag="${project_name} v${version}"
+            local tag="${project_name}-v${version}"
+            local display_name="${project_name} v${version}"
 
             # 如果是测试构建，跳过 tag 检查和发版
             if [ "$IS_TEST_BUILD" = "true" ]; then
@@ -143,6 +150,12 @@ jobs:
                 ;;
             esac
 
+            # 如果不需要发版，仅构建
+            if [ "$SHOULD_RELEASE" != "true" ]; then
+              echo "Skipping release creation (build only mode)"
+              return
+            fi
+
             # 创建 tag
             git tag "$tag"
             git push origin "$tag"
@@ -150,7 +163,7 @@ jobs:
             # 创建 release 并上传构建产物
             local release_args=(
               "$tag"
-              --title "$tag"
+              --title "$display_name"
               --notes "自动发布 $project_name 版本 $version"
             )
           
@@ -165,7 +178,7 @@ jobs:
 
             gh release create "${release_args[@]}"
 
-            echo "Created release: $tag (prerelease: $prerelease)"
+            echo "Created release: $display_name (prerelease: $prerelease)"
           }
 
           # 检查 PhiFanmadeCore
