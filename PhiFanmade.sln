@@ -1,12 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmadeCore", "PhiFanmadeCore\PhiFanmadeCore.csproj", "{832E0B60-8DCC-4E10-A090-32B7258829C4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmade.Core", "PhiFanmade.Core\PhiFanmade.Core.csproj", "{832E0B60-8DCC-4E10-A090-32B7258829C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmadeOpenTool", "PhiFanmadeOpenTool\PhiFanmadeOpenTool.csproj", "{65D83983-76C2-4F64-95BE-FE04E0BCA8B4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmade.Tool", "PhiFanmade.Tool\PhiFanmade.Tool.csproj", "{65D83983-76C2-4F64-95BE-FE04E0BCA8B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmadeOpenToolCli", "PhiFanmadeOpenToolCli\PhiFanmadeOpenToolCli.csproj", "{05F42F98-A797-480B-9994-9FE5CA23A8D4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmade.Tool.Cli", "PhiFanmade.Tool.Cli\PhiFanmade.Tool.Cli.csproj", "{05F42F98-A797-480B-9994-9FE5CA23A8D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmadeOpenToolLocalization", "PhiFanmadeOpenToolLocalization\PhiFanmadeOpenToolLocalization.csproj", "{E68B6C62-910B-4321-8994-2E04F5939C50}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmade.Tool.Localization", "PhiFanmade.Tool.Localization\PhiFanmade.Tool.Localization.csproj", "{E68B6C62-910B-4321-8994-2E04F5939C50}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

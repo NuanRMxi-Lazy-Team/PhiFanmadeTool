@@ -1,0 +1,112 @@
+﻿name: Release Tool
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'PhiFanmade.Tool/PhiFanmade.Tool.csproj'
+  workflow_dispatch:
+    inputs:
+      test_build:
+        description: '仅测试构建（不发版）'
+        required: false
+        default: false
+        type: boolean
+      create_release:
+        description: '创建 Release 发版'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release-tool:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Build and release Tool
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_TEST_BUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.test_build == true }}
+          SHOULD_RELEASE: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.create_release == true && inputs.test_build == false) }}
+        run: |
+          CSPROJ="PhiFanmade.Tool/PhiFanmade.Tool.csproj"
+
+          get_version() {
+            grep -oP '<Version>\K[^<]+' "$1" || grep -oP '<AssemblyVersion>\K[^<]+' "$1"
+          }
+
+          is_prerelease() {
+            local patch=$(echo "$1" | cut -d'.' -f3)
+            local build=$(echo "$1" | cut -d'.' -f4)
+            if [ "$patch" != "0" ] || [ ! -z "$build" -a "$build" != "0" ]; then echo "true"; else echo "false"; fi
+          }
+
+          VERSION=$(get_version "$CSPROJ")
+          if [ -z "$VERSION" ]; then echo "Could not extract version, skipping."; exit 0; fi
+
+          TAG="Tool-v${VERSION}"
+          mkdir -p ./artifacts
+
+          if [ "$IS_TEST_BUILD" = "true" ]; then
+            echo "Test build mode - skipping release for Tool"
+            dotnet build "$CSPROJ" -c Release
+            dotnet pack "$CSPROJ" -c Release --no-build -o ./artifacts
+            exit 0
+          fi
+
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping..."
+            exit 0
+          fi
+
+          dotnet build "$CSPROJ" -c Release
+          dotnet pack "$CSPROJ" -c Release --no-build -o ./artifacts
+
+          if [ "$SHOULD_RELEASE" != "true" ]; then
+            echo "Skipping release creation (build only mode)"
+            exit 0
+          fi
+
+          PRERELEASE=$(is_prerelease "$VERSION")
+          git tag "$TAG"
+          git push origin "$TAG" --force
+
+          RELEASE_ARGS=("$TAG" --title "Tool v${VERSION}" --notes "自动发布 Tool 版本 $VERSION")
+          [ "$PRERELEASE" = "true" ] && RELEASE_ARGS+=(--prerelease) || RELEASE_ARGS+=(--latest)
+          RELEASE_ARGS+=(./artifacts/*.nupkg)
+
+          gh release create "${RELEASE_ARGS[@]}"
+          echo "Created release: Tool v${VERSION} (prerelease: $PRERELEASE)"
+
+      - name: Upload build artifacts
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tool-artifacts
+          path: ./artifacts/*.nupkg
+          if-no-files-found: warn
+          retention-days: 7
+

@@ -27,6 +27,23 @@ PhiFanmadeOpenToolCli: .NET8.0, .NET10.0
 本项目需要更多人开发与维护，欢迎发送邮件到 nrlt@nuanr-mxi.com 来加入开发！  
 也欢迎加入我的小群！QQ群号: 821169450
 
+## TODO
+- [ ] RePhiEdit反序列化功能
+- [x] RePhiEdit序列化功能
+- [x] RePhiEdit基础父子线解绑
+- [x] RePhiEdit旋转跟随父子线解绑
+- [x] RePhiEdit层级合并
+- [x] PhiEdit反序列化
+- [ ] PhiEdit序列化
+- [ ] PhiFans反序列化
+- [ ] PhiFans序列化
+- [ ] PhiChain反序列化
+- [ ] PhiChain序列化
+- [ ] 本家谱面反序列化
+- [ ] 本家谱面序列化
+
+
+
 ## 开源许可证
 [GNU AFFERO GENERAL PUBLIC LICENSE](https://www.gnu.org/licenses/agpl-3.0.html)
 

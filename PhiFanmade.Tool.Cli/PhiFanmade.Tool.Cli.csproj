@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AssemblyVersion>0.1.1.0</AssemblyVersion>
+        <IsPackable>false</IsPackable>
+        <Configurations>Debug;Release</Configurations>
+        <Platforms>AnyCPU;x64</Platforms>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\PhiFanmade.Core\PhiFanmade.Core.csproj" />
+        <ProjectReference Include="..\PhiFanmade.Tool\PhiFanmade.Tool.csproj" />
+        <ProjectReference Include="..\PhiFanmade.Tool.Localization\PhiFanmade.Tool.Localization.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Spectre.Console" Version="0.54.1-alpha.0.37" />
+    </ItemGroup>
+</Project>
