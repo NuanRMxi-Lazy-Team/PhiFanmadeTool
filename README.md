@@ -9,13 +9,13 @@
 ## CLI使用
 打开命令行，进入PhiFanmadeOpenToolCli所在目录，执行以下命令：  
 ```pwsh
-./PhiFanmde.OpenTool.Cli.exe <命令> [参数]
-./PhiFanmde.OpenTool.Cli.exe rpe unbind --input <输入文件路径> --output <输出文件路径> #解绑父线，可选参数：--precision <切割精度> --tolerance <拟合容差> --workspace <工作区名称，有此选项时不需要input与output> --dry-run 仅运行不输出
-./PhiFanmde.OpenTool.Cli.exe rpe layer-merge --input <输入文件路径> --output <输出文件路径> #合并所有判定线层级，可选参数：--precision <切割精度> --tolerance <拟合容差> --workspace <工作区名称，有此选项时不需要input与output> --dry-run 仅运行不输出
-./PhiFanmde.OpenTool.Cli.exe load --input <输入文件路径> --workspace <工作区名称> #加载文件到工作区
-./PhiFanmde.OpenTool.Cli.exe save --output <输出文件路径> --workspace <工作区名称> #保存工作区到文件
-./PhiFanmde.OpenTool.Cli.exe workspace list #列出所有工作区
-./PhiFanmde.OpenTool.Cli.exe workspace clear #清除所有工作区
+./PhiFanmade.OpenTool.Cli.exe <命令> [参数]
+./PhiFanmade.OpenTool.Cli.exe rpe unbind --input <输入文件路径> --output <输出文件路径> #解绑父线，可选参数：--precision <切割精度> --tolerance <拟合容差> --workspace <工作区名称，有此选项时不需要input与output> --dry-run 仅运行不输出
+./PhiFanmade.OpenTool.Cli.exe rpe layer-merge --input <输入文件路径> --output <输出文件路径> #合并所有判定线层级，可选参数：--precision <切割精度> --tolerance <拟合容差> --workspace <工作区名称，有此选项时不需要input与output> --dry-run 仅运行不输出
+./PhiFanmade.OpenTool.Cli.exe load --input <输入文件路径> --workspace <工作区名称> #加载文件到工作区
+./PhiFanmade.OpenTool.Cli.exe save --output <输出文件路径> --workspace <工作区名称> #保存工作区到文件
+./PhiFanmade.OpenTool.Cli.exe workspace list #列出所有工作区
+./PhiFanmade.OpenTool.Cli.exe workspace clear #清除所有工作区
 ```
 
 ## .NET版本
