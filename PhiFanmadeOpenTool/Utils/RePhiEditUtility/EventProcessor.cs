@@ -102,9 +102,11 @@ internal static class EventProcessor
                 var currentRate = (currentEvent.EndValue - currentEvent.StartValue) /
                                   (currentEvent.EndBeat - currentEvent.StartBeat);
 
-                if (Math.Abs((double)(lastRate - currentRate)) < tolerance &&
+                if (Math.Abs((double)(lastRate - currentRate)) <= tolerance *
+                    (Math.Abs((double)lastRate) + Math.Abs((double)currentRate)) / 2.0 / 100.0 &&
                     lastEvent.EndBeat == currentEvent.StartBeat &&
-                    Math.Abs((double)(lastEvent.EndValue - currentEvent.StartValue)) < tolerance)
+                    Math.Abs((double)(lastEvent.EndValue - currentEvent.StartValue)) <=
+                    tolerance * (Math.Abs((double)lastEvent.EndValue) + 1e-9) / 100.0)
                 {
                     // 合并事件
                     lastEvent.EndBeat = currentEvent.EndBeat;

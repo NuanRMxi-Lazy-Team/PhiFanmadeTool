@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <AssemblyName>PhiFanmade.OpenTool</AssemblyName>
         <RootNamespace>PhiFanmade.OpenTool</RootNamespace>
-        <Version>0.1.1</Version>
+        <Version>0.1.2</Version>
         <Configurations>Debug;Release</Configurations>
         <Platforms>AnyCPU;x64</Platforms>
     </PropertyGroup>
