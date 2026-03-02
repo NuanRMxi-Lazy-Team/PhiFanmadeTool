@@ -54,7 +54,7 @@ public abstract class RpeOperationSettings : BaseSettings
         }
 
         var text = await File.ReadAllTextAsync(Input!);
-        return await Rpe.Chart.LoadFromJsonStjAsync(text);
+        return await Rpe.Chart.LoadFromJsonAsync(text);
     }
 
     /// <summary>根据 Input/Workspace 自动计算输出路径。</summary>
@@ -93,7 +93,7 @@ public sealed class RpeUnbindFatherCommand : AsyncCommand<RpeUnbindFatherCommand
         if (!settings.DryRun)
         {
             await using var stream = new FileStream(output, FileMode.Create);
-            await chartCopy.ExportToJsonStjStreamAsync(stream, true);
+            await chartCopy.ExportToJsonStreamAsync(stream, true);
         }
 
         writer.Info(string.Format(Strings.cli_msg_written, output));
@@ -122,7 +122,7 @@ public sealed class RpeLayerMergeCommand : AsyncCommand<RpeLayerMergeCommand.Set
 
         var output = settings.ResolveOutputPath();
         if (!settings.DryRun)
-            await File.WriteAllTextAsync(output, await chartCopy.ExportToJsonStjAsync(true));
+            await File.WriteAllTextAsync(output, await chartCopy.ExportToJsonAsync(true), cancellationToken);
 
         writer.Info(string.Format(Strings.cli_msg_written, output));
         return 0;

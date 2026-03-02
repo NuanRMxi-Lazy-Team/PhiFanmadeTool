@@ -1,29 +1,30 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using PhiFanmade.Core.Common;
 
 namespace PhiFanmade.Core.RePhiEdit
 {
-    public class Bpm
+    public class BpmItem
     {
         [JsonProperty("bpm")]
-#if !NETSTANDARD2_1
-        [System.Text.Json.Serialization.JsonPropertyName("bpm")]
-#endif
         public float BeatPerMinute = 120f;
+        [JsonIgnore]
+        public float Bpm => BeatPerMinute;
 
         [JsonProperty("startTime")]
-#if !NETSTANDARD2_1
-        [System.Text.Json.Serialization.JsonPropertyName("startTime")]
-#endif
         public Beat StartTime = new Beat(new[] { 0, 0, 1 });
 
-        public Bpm Clone()
+        public BpmItem Clone()
         {
-            return new Bpm()
+            return new BpmItem()
             {
                 BeatPerMinute = BeatPerMinute,
                 StartTime = new Beat((int[])StartTime)
             };
         }
     }
+
+    [Obsolete("由于Bpm类名容易产生争议，请改用BpmItem", false)]
+    public class Bpm : BpmItem
+    { }
 }

@@ -58,76 +58,72 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-
   <!-- ── app ───────────────────────────────────────────────────────────────── -->
   <data name="cli_app_title" xml:space="preserve">
     <value>PhiFanmade Open Source Toolkit CLI</value>
   </data>
-
   <!-- ── command / branch descriptions ────────────────────────────────────── -->
   <data name="cli_cmd_version_desc" xml:space="preserve">
-    <value></value>
+    <value>Show current version number</value>
   </data>
   <data name="cli_cmd_load_desc" xml:space="preserve">
-    <value></value>
+    <value>Load the chart file into the workspace for subsequent operations.</value>
   </data>
   <data name="cli_cmd_save_desc" xml:space="preserve">
-    <value></value>
+    <value>Save the chart from the workspace to a file.</value>
   </data>
   <data name="cli_branch_workspace_desc" xml:space="preserve">
-    <value></value>
+    <value>Workspace Management</value>
   </data>
   <data name="cli_cmd_workspace_list_desc" xml:space="preserve">
-    <value></value>
+    <value>List all workspace IDs</value>
   </data>
   <data name="cli_cmd_workspace_clear_desc" xml:space="preserve">
-    <value></value>
+    <value>Clear workspace cache (use --id to clear a single one)</value>
   </data>
   <data name="cli_branch_rpe_desc" xml:space="preserve">
-    <value></value>
+    <value>RPE Chart Operation</value>
   </data>
   <data name="cli_cmd_rpe_unbind_father_desc" xml:space="preserve">
-    <value></value>
+    <value>Bake and flatten the parenting hierarchy of the judgment lines, unbinding the Father field.</value>
   </data>
   <data name="cli_cmd_rpe_layer_merge_desc" xml:space="preserve">
-    <value></value>
+    <value>Merge multiple event layers of all judgment lines into a single layer.</value>
   </data>
   <data name="cli_cmd_rpe_convert_desc" xml:space="preserve">
-    <value></value>
+    <value>Converting RPE charts to other formats (not yet fully implemented)</value>
   </data>
-
   <!-- ── option descriptions ───────────────────────────────────────────────── -->
   <data name="cli_opt_input_phiedit_desc" xml:space="preserve">
-    <value></value>
+    <value>Input RPE/PhiEdit chart file path</value>
   </data>
   <data name="cli_opt_workspace_default_desc" xml:space="preserve">
-    <value></value>
+    <value>Workspace ID (default: default)</value>
   </data>
   <data name="cli_opt_output_path_desc" xml:space="preserve">
-    <value></value>
+    <value>Output file path</value>
   </data>
   <data name="cli_opt_workspace_clear_id_desc" xml:space="preserve">
-    <value></value>
+    <value>Only clean the specified workspace (leave blank to clean all).</value>
   </data>
   <data name="cli_opt_input_rpe_desc" xml:space="preserve">
-    <value></value>
+    <value>Input RPE chart file path (mutually exclusive with --workspace)</value>
   </data>
   <data name="cli_opt_output_auto_desc" xml:space="preserve">
-    <value></value>
+    <value>Output file path (leave blank to automatically generate with _PFC.json suffix)</value>
   </data>
   <data name="cli_opt_workspace_rpe_desc" xml:space="preserve">
-    <value></value>
+    <value>Workspace ID (choose either this or --input)</value>
   </data>
   <data name="cli_opt_precision_desc" xml:space="preserve">
-    <value></value>
+    <value>Sampling precision (subdivisions per beat, default: 64, meaning each sample step is a sixty-fourth of a beat)</value>
   </data>
   <data name="cli_opt_tolerance_desc" xml:space="preserve">
-    <value></value>
+    <value>Fit tolerance (default: 5)</value>
   </data>
   <data name="cli_opt_dry_run_desc" xml:space="preserve">
-    <value></value>
+    <value>Test run mode, no files written.</value>
   </data>
-
   <!-- ── messages ─────────────────────────────────────────────────────────── -->
   <data name="cli_msg_loaded" xml:space="preserve">
     <value>Successfully loaded the chart into workspace {0}!</value>
@@ -147,12 +143,10 @@
   <data name="cli_msg_help" xml:space="preserve">
     <value>See README.md for details!</value>
   </data>
-
   <!-- ── warnings ─────────────────────────────────────────────────────────── -->
   <data name="cli_warn_rpe_convert" xml:space="preserve">
     <value>RPE conversion is still in progress, please wait a moment~</value>
   </data>
-
   <!-- ── errors ────────────────────────────────────────────────────────────── -->
   <data name="cli_err_unknown" xml:space="preserve">
     <value>Oops? I don't recognize this command yet, try 'version' or check the README~</value>
@@ -171,7 +165,7 @@
     <comment>{0} = workspace name</comment>
   </data>
   <data name="cli_err_ukerr" xml:space="preserve">
-    <value>Sorry! The software encountered an unknown error! Please send the following information to https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool/issues and we will fix it as soon as possible!&#10;{0}</value>
+    <value>Sorry! The software encountered an unknown error! Please send the following information to https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool/issues and we will fix it as soon as possible!
+{0}</value>
   </data>
 </root>
-

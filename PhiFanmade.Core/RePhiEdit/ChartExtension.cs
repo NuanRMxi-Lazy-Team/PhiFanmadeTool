@@ -4,11 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Text;
-#if !NETSTANDARD2_1
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-#endif
 
 namespace PhiFanmade.Core.RePhiEdit
 {
@@ -99,96 +94,6 @@ namespace PhiFanmade.Core.RePhiEdit
 
             return chart;
         }
-
-#if !NETSTANDARD2_1
-        /// <summary>
-        /// 使用 System.Text.Json 序列化谱面
-        /// </summary>
-        public string ExportToJsonStj(bool format)
-        {
-            Anticipation();
-
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = format,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                IncludeFields = true,
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // 保持中文等非 ASCII 字符不转义
-            };
-            options.TypeInfoResolver = RePhiEditJsonContext.Default;
-
-            return System.Text.Json.JsonSerializer.Serialize(this, options);
-        }
-
-        /// <summary>
-        /// 使用 System.Text.Json 流式序列化到谱面
-        /// </summary>
-        public void ExportToJsonStjStream(Stream stream, bool format)
-        {
-            Anticipation();
-
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = format,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                IncludeFields = true,
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                TypeInfoResolver = RePhiEditJsonContext.Default
-            };
-
-            System.Text.Json.JsonSerializer.Serialize(stream, this, options);
-            stream.Flush();
-        }
-
-        /// <summary>
-        /// 使用 System.Text.Json 异步流式序列化到谱面
-        /// </summary>
-        public async Task ExportToJsonStjStreamAsync(Stream stream, bool format)
-        {
-            Anticipation();
-
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = format,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                IncludeFields = true,
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                TypeInfoResolver = RePhiEditJsonContext.Default
-            };
-
-            await System.Text.Json.JsonSerializer.SerializeAsync(stream, this, options);
-            await stream.FlushAsync();
-        }
-
-        /// <summary>
-        /// 使用 System.Text.Json 从Json反序列化
-        /// </summary>
-        public static Chart LoadFromJsonStj(string json)
-        {
-            var options = new JsonSerializerOptions
-            {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                IncludeFields = true,
-                TypeInfoResolver = RePhiEditJsonContext.Default
-            };
-            var chart = System.Text.Json.JsonSerializer.Deserialize<Chart>(json, options) ??
-                        throw new InvalidOperationException("Failed to deserialize Chart from JSON.");
-            foreach (var judgeLine in chart.JudgeLineList)
-            {
-                judgeLine.EventLayers.RemoveAll(layer => layer == null);
-                foreach (var eventLayer in judgeLine.EventLayers)
-                    eventLayer.Sort();
-            }
-
-            return chart;
-        }
-
-        public Task<string> ExportToJsonStjAsync(bool format)
-            => Task.Run(() => ExportToJsonStj(format));
-
-        public static Task<Chart> LoadFromJsonStjAsync(string json)
-            => Task.Run(() => LoadFromJsonStj(json));
-#endif
 
         /// <summary>
         /// 异步序列化为Json

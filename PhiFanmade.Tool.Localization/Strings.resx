@@ -58,12 +58,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-
   <!-- ── app ───────────────────────────────────────────────────────────────── -->
   <data name="cli_app_title" xml:space="preserve">
     <value>PhiFanmade 开源工具集</value>
   </data>
-
   <!-- ── command / branch descriptions ────────────────────────────────────── -->
   <data name="cli_cmd_version_desc" xml:space="preserve">
     <value>显示当前版本号</value>
@@ -95,7 +93,6 @@
   <data name="cli_cmd_rpe_convert_desc" xml:space="preserve">
     <value>将 RPE 谱面转换为其他格式（尚未完整实现）</value>
   </data>
-
   <!-- ── option descriptions ───────────────────────────────────────────────── -->
   <!-- 注意：以下条目对应 [Description] 特性，因 C# 特性需要编译时常量，          -->
   <!-- 代码中暂保留硬编码字符串；此处作为翻译参考与唯一文本来源。                    -->
@@ -139,7 +136,6 @@
     <value>试运行模式，不写入文件</value>
     <comment>RpeOperationSettings --dry-run 选项</comment>
   </data>
-
   <!-- ── messages ─────────────────────────────────────────────────────────── -->
   <data name="cli_msg_loaded" xml:space="preserve">
     <value>已经把小可爱谱面塞进 {0} 工作区啦！</value>
@@ -153,18 +149,16 @@
     <value>哗啦啦~ 所有工作区都打扫干净了喵！</value>
   </data>
   <data name="cli_msg_written" xml:space="preserve">
-    <value>写好了哟！{0}</value>
+    <value>文件已经成功输出到 {0} 了！</value>
     <comment>{0} = 输出路径</comment>
   </data>
   <data name="cli_msg_help" xml:space="preserve">
     <value>还没想好怎么写喵...所以详见README.md喵...</value>
   </data>
-
   <!-- ── warnings ─────────────────────────────────────────────────────────── -->
   <data name="cli_warn_rpe_convert" xml:space="preserve">
     <value>RPE 转换还在化妆中，稍等一下下~</value>
   </data>
-
   <!-- ── errors ────────────────────────────────────────────────────────────── -->
   <data name="cli_err_unknown" xml:space="preserve">
     <value>咦？这条指令我还不认识呢，试试 'version' 或看看 README 喵~</value>
@@ -183,7 +177,8 @@
     <comment>{0} = 工作区名</comment>
   </data>
   <data name="cli_err_ukerr" xml:space="preserve">
-    <value>すみません！软件遇到了未知错误！请将以下信息发送到https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool/issues 我们会尽快修复这个问题！&#10;{0}</value>
+    <value>すみません！软件遇到了未知错误！请将以下信息发送到https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool/issues 我们会尽快修复这个问题！
+{0}</value>
+    <comment>{0} = 错误</comment>
   </data>
 </root>
-

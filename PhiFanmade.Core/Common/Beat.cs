@@ -10,7 +10,7 @@ namespace PhiFanmade.Core.Common
     /// 使用int[]隐式转换时，返回原始数组
     /// </summary>
     [JsonConverter(typeof(BeatJsonConverter))]
-    public partial class Beat : IComparable<Beat>
+    public class Beat : IComparable<Beat>
     {
         [JsonIgnore]
         private readonly int[] _beat;
