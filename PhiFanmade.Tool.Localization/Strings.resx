@@ -85,7 +85,7 @@
     <value>RPE 谱面操作</value>
   </data>
   <data name="cli_cmd_rpe_unbind_father_desc" xml:space="preserve">
-    <value>将判定线的父子关系烘焙展开，解绑 Father 字段</value>
+    <value>将判定线与父级解绑</value>
   </data>
   <data name="cli_cmd_rpe_layer_merge_desc" xml:space="preserve">
     <value>将所有判定线的多个事件层级合并为单一层级</value>
@@ -129,7 +129,7 @@
     <comment>RpeOperationSettings --precision 选项</comment>
   </data>
   <data name="cli_opt_tolerance_desc" xml:space="preserve">
-    <value>拟合容差（默认：5）</value>
+    <value>拟合容差百分比（默认：5）</value>
     <comment>RpeOperationSettings --tolerance 选项</comment>
   </data>
   <data name="cli_opt_dry_run_desc" xml:space="preserve">
@@ -142,7 +142,7 @@
   </data>
   <!-- ── messages ─────────────────────────────────────────────────────────── -->
   <data name="cli_msg_loaded" xml:space="preserve">
-    <value>已经把小可爱谱面塞进 {0} 工作区啦！</value>
+    <value>已经将文件送入 {0} 工作区啦！</value>
     <comment>{0} = 工作区名</comment>
   </data>
   <data name="cli_msg_saved" xml:space="preserve">
@@ -165,7 +165,10 @@
   </data>
   <!-- ── errors ────────────────────────────────────────────────────────────── -->
   <data name="cli_err_unknown" xml:space="preserve">
-    <value>咦？这条指令我还不认识呢，试试 'version' 或看看 README 喵~</value>
+    <value>咦？这条指令我还不认识呢！</value>
+  </data>
+  <data name="cli_hint_use_help" xml:space="preserve">
+    <value>可以用 --help 查看所有可用命令哦，或者看看 README 喵~</value>
   </data>
   <data name="cli_err_unimplemented" xml:space="preserve">
     <value>这个命令功能还未完全实现呢...</value>
@@ -180,6 +183,145 @@
     <value>没有找到工作区 {0} 喵...</value>
     <comment>{0} = 工作区名</comment>
   </data>
+  <!-- ── GUI ───────────────────────────────────────────────────────────────── -->
+  <data name="gui_app_subtitle" xml:space="preserve">
+    <value>开源工具集</value>
+  </data>
+  <data name="gui_version_label" xml:space="preserve">
+    <value>v0.1.x — GUI 版</value>
+  </data>
+  <!-- nav -->
+  <data name="gui_nav_rpe_unbind_father" xml:space="preserve">
+    <value>RPE 解绑父级</value>
+  </data>
+  <data name="gui_nav_rpe_layer_merge" xml:space="preserve">
+    <value>RPE 层级合并</value>
+  </data>
+  <data name="gui_nav_workspace" xml:space="preserve">
+    <value>工作区管理</value>
+  </data>
+  <!-- page subtitles -->
+  <data name="gui_page_unbind_subtitle" xml:space="preserve">
+    <value>将判定线与其父级解绑，并保持运动行为不变</value>
+  </data>
+  <data name="gui_page_merge_subtitle" xml:space="preserve">
+    <value>将判定线的所有事件层级合并为单一层级</value>
+  </data>
+  <data name="gui_page_workspace_subtitle" xml:space="preserve">
+    <value>载入、保存和管理 RPE 谱面工作区</value>
+  </data>
+  <!-- section headers -->
+  <data name="gui_section_input_source" xml:space="preserve">
+    <value>输入来源</value>
+  </data>
+  <data name="gui_section_output" xml:space="preserve">
+    <value>输出</value>
+  </data>
+  <data name="gui_section_params" xml:space="preserve">
+    <value>参数</value>
+  </data>
+  <data name="gui_section_run_log" xml:space="preserve">
+    <value>运行日志</value>
+  </data>
+  <data name="gui_section_op_log" xml:space="preserve">
+    <value>操作日志</value>
+  </data>
+  <data name="gui_section_load_chart" xml:space="preserve">
+    <value>载入谱面</value>
+  </data>
+  <data name="gui_section_save_workspace" xml:space="preserve">
+    <value>保存工作区</value>
+  </data>
+  <data name="gui_section_workspace_list" xml:space="preserve">
+    <value>工作区列表</value>
+  </data>
+  <!-- field labels -->
+  <data name="gui_label_file_path" xml:space="preserve">
+    <value>文件路径</value>
+  </data>
+  <data name="gui_label_workspace_id" xml:space="preserve">
+    <value>工作区 ID</value>
+  </data>
+  <data name="gui_label_output_path" xml:space="preserve">
+    <value>输出路径</value>
+  </data>
+  <data name="gui_label_precision" xml:space="preserve">
+    <value>采样精度</value>
+  </data>
+  <data name="gui_label_tolerance" xml:space="preserve">
+    <value>容差 %</value>
+  </data>
+  <data name="gui_label_clear_id" xml:space="preserve">
+    <value>清理 ID</value>
+  </data>
+  <!-- watermarks -->
+  <data name="gui_watermark_input_from_workspace" xml:space="preserve">
+    <value>留空则从工作区读取</value>
+  </data>
+  <data name="gui_watermark_workspace_or_file" xml:space="preserve">
+    <value>（与文件路径二选一）</value>
+  </data>
+  <data name="gui_watermark_output_auto" xml:space="preserve">
+    <value>留空则自动生成 _PFC.json 后缀</value>
+  </data>
+  <data name="gui_watermark_workspace_default" xml:space="preserve">
+    <value>default</value>
+  </data>
+  <data name="gui_watermark_select_json" xml:space="preserve">
+    <value>选择 RPE 谱面 JSON 文件</value>
+  </data>
+  <data name="gui_watermark_select_output" xml:space="preserve">
+    <value>选择输出文件位置</value>
+  </data>
+  <data name="gui_watermark_clear_all" xml:space="preserve">
+    <value>留空则清理全部</value>
+  </data>
+  <!-- tooltips -->
+  <data name="gui_tooltip_precision" xml:space="preserve">
+    <value>每拍细分数，默认 64（每步进 1/64 拍）</value>
+  </data>
+  <data name="gui_tooltip_tolerance" xml:space="preserve">
+    <value>拟合容差百分比，默认 5</value>
+  </data>
+  <!-- checkboxes -->
+  <data name="gui_check_dry_run" xml:space="preserve">
+    <value>试运行（不写入文件）</value>
+  </data>
+  <data name="gui_check_stream_output" xml:space="preserve">
+    <value>流式输出（减少内存占用）</value>
+  </data>
+  <!-- buttons -->
+  <data name="gui_btn_browse" xml:space="preserve">
+    <value>浏览</value>
+  </data>
+  <data name="gui_btn_clear_log" xml:space="preserve">
+    <value>清空</value>
+  </data>
+  <data name="gui_btn_cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="gui_btn_start_unbind" xml:space="preserve">
+    <value>开始解绑</value>
+  </data>
+  <data name="gui_btn_start_merge" xml:space="preserve">
+    <value>开始合并</value>
+  </data>
+  <data name="gui_btn_load_to_workspace" xml:space="preserve">
+    <value>载入到工作区</value>
+  </data>
+  <data name="gui_btn_save_to_file" xml:space="preserve">
+    <value>保存到文件</value>
+  </data>
+  <data name="gui_btn_refresh" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data name="gui_btn_clear" xml:space="preserve">
+    <value>清理</value>
+  </data>
+  <!-- status -->
+  <data name="gui_status_ready" xml:space="preserve">
+    <value>就绪</value>
+  </data>
   <data name="cli_err_ukerr" xml:space="preserve">
     <value>すみません！软件遇到了未知错误！请将以下信息发送到https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool/issues 我们会尽快修复这个问题！
 {0}</value>
@@ -189,5 +331,29 @@
     <value>输出的结果可能有些大哦~请试着添加“--stream”选项来减少内存占用！若这没有解决你的问题，请将以下信息发送到https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool/issues，我们会尽快修复这个问题！
 {0}</value>
     <comment>{0} = 错误</comment>
+  </data>
+  <data name="gui_page_start" xml:space="preserve">
+    <value>导入谱面</value>
+  </data>
+  <data name="gui_status_loading" xml:space="preserve">
+    <value>正在加载…</value>
+  </data>
+  <data name="gui_status_load_success" xml:space="preserve">
+    <value>谱面加载成功！现在可以使用其他功能了。</value>
+  </data>
+  <data name="gui_status_load_error" xml:space="preserve">
+    <value>加载失败：{0}</value>
+  </data>
+  <data name="gui_page_start_subtitle" xml:space="preserve">
+    <value>请先导入一份谱面文件，然后才能使用其他功能</value>
+  </data>
+  <data name="gui_btn_load_chart" xml:space="preserve">
+    <value>载入谱面</value>
+  </data>
+  <data name="gui_label_chart_file" xml:space="preserve">
+    <value>谱面文件</value>
+  </data>
+  <data name="gui_hint_nav_locked" xml:space="preserve">
+    <value>请先在「导入谱面」页面载入谱面</value>
   </data>
 </root>

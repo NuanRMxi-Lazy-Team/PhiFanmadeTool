@@ -1,0 +1,112 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PhiFanmade.Tool.Gui.ViewModels"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:loc="clr-namespace:PhiFanmade.Tool.Localization;assembly=PhiFanmade.Tool.Localization"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="PhiFanmade.Tool.Gui.Views.StartView"
+             x:DataType="vm:StartViewModel">
+
+    <DockPanel>
+
+        <!-- ── 顶部标题栏 ── -->
+        <Border DockPanel.Dock="Top"
+                Padding="24,18,24,14"
+                BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+            <StackPanel Spacing="4">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <mi:MaterialIcon Kind="MusicNote" Width="26" Height="26" VerticalAlignment="Center"/>
+                    <TextBlock Text="{x:Static loc:Strings.gui_page_start}"
+                               FontSize="20" FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock Text="{x:Static loc:Strings.gui_page_start_subtitle}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           FontSize="12" Margin="36,0,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── 主内容区 ── -->
+        <ScrollViewer Padding="16,12,16,8">
+            <StackPanel Spacing="14" MaxWidth="600" HorizontalAlignment="Center">
+
+                <!-- 文件选取卡片 -->
+                <Border Classes="card" Padding="16,14">
+                    <StackPanel Spacing="10">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                            <mi:MaterialIcon Kind="FolderOpen" Width="16" Height="16" VerticalAlignment="Center"/>
+                            <TextBlock Text="{x:Static loc:Strings.gui_section_load_chart}"
+                                       FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock Grid.Column="0"
+                                       Text="{x:Static loc:Strings.gui_label_chart_file}"
+                                       Width="80" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBox   Grid.Column="1"
+                                       Text="{Binding ChartPath}"
+                                       Watermark="{x:Static loc:Strings.gui_watermark_select_json}"
+                                       Margin="0,0,6,0"
+                                       IsEnabled="{Binding !IsBusy}"/>
+                            <Button    Grid.Column="2"
+                                       Command="{Binding BrowseCommand}"
+                                       IsEnabled="{Binding !IsBusy}">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <mi:MaterialIcon Kind="FolderOpen" Width="14" Height="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{x:Static loc:Strings.gui_btn_browse}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- 状态 + 执行按钮行 -->
+                <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <mi:MaterialIcon Kind="InformationOutline" Width="14" Height="14"
+                                         Opacity="0.6" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding Status}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   FontSize="12" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" FontSize="14" Padding="22,8"
+                            Command="{Binding LoadChartCommand}">
+                        <Button.Styles>
+                            <Style Selector="Button">
+                                <Setter Property="Background" Value="#5b5bdb"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Style>
+                            <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                <Setter Property="Background" Value="#7070e8"/>
+                            </Style>
+                            <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+                                <Setter Property="Background" Value="#404060"/>
+                            </Style>
+                        </Button.Styles>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <mi:MaterialIcon Kind="PlayCircleOutline" Width="18" Height="18" VerticalAlignment="Center"/>
+                            <TextBlock Text="{x:Static loc:Strings.gui_btn_load_chart}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <!-- 成功后显示的提示条 -->
+                <Border Classes="card" Padding="14,10"
+                        IsVisible="{Binding IsChartLoaded}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <mi:MaterialIcon Kind="CheckCircleOutline" Width="20" Height="20"
+                                         Foreground="#4caf50" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding Status}"
+                                   VerticalAlignment="Center"
+                                   Foreground="#4caf50"
+                                   FontSize="13"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>
+

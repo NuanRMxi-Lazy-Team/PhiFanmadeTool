@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-// STJ 特性使用完全限定名
-
 namespace PhiFanmade.Core.RePhiEdit
 {
     public class JudgeLine
@@ -43,7 +41,16 @@ namespace PhiFanmade.Core.RePhiEdit
         /// <summary>
         /// 判定线音符列表
         /// </summary>
-        [JsonProperty("notes")] public List<Note> Notes = new List<Note>(); // note列表
+        [JsonProperty("notes", DefaultValueHandling = DefaultValueHandling.Ignore,
+            NullValueHandling = NullValueHandling.Ignore)]
+        public List<Note> Notes
+        {
+            get => _notes;
+            set => _notes = value ?? new List<Note>();
+        } // note列表
+
+        private List<Note> _notes = new List<Note>();
+
 
         /// <summary>
         /// Note总数量(包含 FakeNote，不包含任何形式的Hold)。
@@ -250,6 +257,4 @@ namespace PhiFanmade.Core.RePhiEdit
             return clone;
         }
     }
-
-    
 }

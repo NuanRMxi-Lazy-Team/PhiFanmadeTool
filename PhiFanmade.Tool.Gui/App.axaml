@@ -1,0 +1,43 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PhiFanmade.Tool.Gui.App"
+             xmlns:local="using:PhiFanmade.Tool.Gui"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             RequestedThemeVariant="Default"
+             >
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+  
+    <Application.Styles>
+        <FluentTheme />
+        <mi:MaterialIconStyles />
+
+        <!-- 卡片面板 -->
+        <Style Selector="Border.card">
+            <Setter Property="Background"     Value="{DynamicResource SystemControlPageBackgroundAltHighBrush}"/>
+            <Setter Property="CornerRadius"   Value="8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush"    Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+        </Style>
+
+        <!-- 侧边栏 ListBoxItem 覆盖：透明 + 白色文字 -->
+        <Style Selector="ListBox.nav ListBoxItem">
+            <Setter Property="Padding"    Value="14,10"/>
+            <Setter Property="Foreground" Value="#c8c8d8"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Margin" Value="6,2"/>
+        </Style>
+        <Style Selector="ListBox.nav ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#2a2a4a"/>
+        </Style>
+        <Style Selector="ListBox.nav ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#3d3d6b"/>
+        </Style>
+        <Style Selector="ListBox.nav ListBoxItem:selected">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Application.Styles>
+</Application>

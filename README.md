@@ -28,7 +28,7 @@ PhiFanmadeOpenToolCli: .NET8.0, .NET10.0
 也欢迎加入我的小群！QQ群号: 821169450
 
 ## TODO
-- [ ] RePhiEdit反序列化功能
+- [x] RePhiEdit反序列化功能
 - [x] RePhiEdit序列化功能
 - [x] RePhiEdit基础父子线解绑
 - [x] RePhiEdit旋转跟随父子线解绑
@@ -41,6 +41,8 @@ PhiFanmadeOpenToolCli: .NET8.0, .NET10.0
 - [ ] PhiChain序列化
 - [ ] 本家谱面反序列化
 - [ ] 本家谱面序列化
+- [ ] CLI工具（当前已初步可用）
+- [ ] GUI工具（完全不可用）
 
 
 

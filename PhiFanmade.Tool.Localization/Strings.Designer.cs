@@ -114,7 +114,7 @@ namespace PhiFanmade.Tool.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 将判定线的父子关系烘焙展开，解绑 Father 字段.
+        ///   Looks up a localized string similar to 将判定线与父级解绑.
         /// </summary>
         public static string cli_cmd_rpe_unbind_father_desc {
             get {
@@ -206,7 +206,7 @@ namespace PhiFanmade.Tool.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 咦？这条指令我还不认识呢，试试 &apos;version&apos; 或看看 README 喵~.
+        ///   Looks up a localized string similar to 咦？这条指令我还不认识呢！.
         /// </summary>
         public static string cli_err_unknown {
             get {
@@ -220,6 +220,15 @@ namespace PhiFanmade.Tool.Localization {
         public static string cli_err_workspace_missing {
             get {
                 return ResourceManager.GetString("cli_err_workspace_missing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 可以用 --help 查看所有可用命令哦，或者看看 README 喵~.
+        /// </summary>
+        public static string cli_hint_use_help {
+            get {
+                return ResourceManager.GetString("cli_hint_use_help", resourceCulture);
             }
         }
         
@@ -242,7 +251,7 @@ namespace PhiFanmade.Tool.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 已经把小可爱谱面塞进 {0} 工作区啦！.
+        ///   Looks up a localized string similar to 已经将文件送入 {0} 工作区啦！.
         /// </summary>
         public static string cli_msg_loaded {
             get {
@@ -332,7 +341,7 @@ namespace PhiFanmade.Tool.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 拟合容差（默认：5）.
+        ///   Looks up a localized string similar to 拟合容差百分比（默认：5）.
         /// </summary>
         public static string cli_opt_tolerance_desc {
             get {
@@ -373,6 +382,465 @@ namespace PhiFanmade.Tool.Localization {
         public static string cli_warn_rpe_convert {
             get {
                 return ResourceManager.GetString("cli_warn_rpe_convert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 开源工具集.
+        /// </summary>
+        public static string gui_app_subtitle {
+            get {
+                return ResourceManager.GetString("gui_app_subtitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 浏览.
+        /// </summary>
+        public static string gui_btn_browse {
+            get {
+                return ResourceManager.GetString("gui_btn_browse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 取消.
+        /// </summary>
+        public static string gui_btn_cancel {
+            get {
+                return ResourceManager.GetString("gui_btn_cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 清理.
+        /// </summary>
+        public static string gui_btn_clear {
+            get {
+                return ResourceManager.GetString("gui_btn_clear", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 清空.
+        /// </summary>
+        public static string gui_btn_clear_log {
+            get {
+                return ResourceManager.GetString("gui_btn_clear_log", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 载入谱面.
+        /// </summary>
+        public static string gui_btn_load_chart {
+            get {
+                return ResourceManager.GetString("gui_btn_load_chart", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 载入到工作区.
+        /// </summary>
+        public static string gui_btn_load_to_workspace {
+            get {
+                return ResourceManager.GetString("gui_btn_load_to_workspace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 刷新.
+        /// </summary>
+        public static string gui_btn_refresh {
+            get {
+                return ResourceManager.GetString("gui_btn_refresh", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 保存到文件.
+        /// </summary>
+        public static string gui_btn_save_to_file {
+            get {
+                return ResourceManager.GetString("gui_btn_save_to_file", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 开始合并.
+        /// </summary>
+        public static string gui_btn_start_merge {
+            get {
+                return ResourceManager.GetString("gui_btn_start_merge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 开始解绑.
+        /// </summary>
+        public static string gui_btn_start_unbind {
+            get {
+                return ResourceManager.GetString("gui_btn_start_unbind", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 试运行（不写入文件）.
+        /// </summary>
+        public static string gui_check_dry_run {
+            get {
+                return ResourceManager.GetString("gui_check_dry_run", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 流式输出（减少内存占用）.
+        /// </summary>
+        public static string gui_check_stream_output {
+            get {
+                return ResourceManager.GetString("gui_check_stream_output", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 请先在「导入谱面」页面载入谱面.
+        /// </summary>
+        public static string gui_hint_nav_locked {
+            get {
+                return ResourceManager.GetString("gui_hint_nav_locked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 谱面文件.
+        /// </summary>
+        public static string gui_label_chart_file {
+            get {
+                return ResourceManager.GetString("gui_label_chart_file", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 清理 ID.
+        /// </summary>
+        public static string gui_label_clear_id {
+            get {
+                return ResourceManager.GetString("gui_label_clear_id", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 文件路径.
+        /// </summary>
+        public static string gui_label_file_path {
+            get {
+                return ResourceManager.GetString("gui_label_file_path", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 输出路径.
+        /// </summary>
+        public static string gui_label_output_path {
+            get {
+                return ResourceManager.GetString("gui_label_output_path", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 采样精度.
+        /// </summary>
+        public static string gui_label_precision {
+            get {
+                return ResourceManager.GetString("gui_label_precision", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 容差 %.
+        /// </summary>
+        public static string gui_label_tolerance {
+            get {
+                return ResourceManager.GetString("gui_label_tolerance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 工作区 ID.
+        /// </summary>
+        public static string gui_label_workspace_id {
+            get {
+                return ResourceManager.GetString("gui_label_workspace_id", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to RPE 层级合并.
+        /// </summary>
+        public static string gui_nav_rpe_layer_merge {
+            get {
+                return ResourceManager.GetString("gui_nav_rpe_layer_merge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to RPE 解绑父级.
+        /// </summary>
+        public static string gui_nav_rpe_unbind_father {
+            get {
+                return ResourceManager.GetString("gui_nav_rpe_unbind_father", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 工作区管理.
+        /// </summary>
+        public static string gui_nav_workspace {
+            get {
+                return ResourceManager.GetString("gui_nav_workspace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 将判定线的所有事件层级合并为单一层级.
+        /// </summary>
+        public static string gui_page_merge_subtitle {
+            get {
+                return ResourceManager.GetString("gui_page_merge_subtitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 导入谱面.
+        /// </summary>
+        public static string gui_page_start {
+            get {
+                return ResourceManager.GetString("gui_page_start", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 请先导入一份谱面文件，然后才能使用其他功能.
+        /// </summary>
+        public static string gui_page_start_subtitle {
+            get {
+                return ResourceManager.GetString("gui_page_start_subtitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 将判定线与其父级解绑，并保持运动行为不变.
+        /// </summary>
+        public static string gui_page_unbind_subtitle {
+            get {
+                return ResourceManager.GetString("gui_page_unbind_subtitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 载入、保存和管理 RPE 谱面工作区.
+        /// </summary>
+        public static string gui_page_workspace_subtitle {
+            get {
+                return ResourceManager.GetString("gui_page_workspace_subtitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 输入来源.
+        /// </summary>
+        public static string gui_section_input_source {
+            get {
+                return ResourceManager.GetString("gui_section_input_source", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 载入谱面.
+        /// </summary>
+        public static string gui_section_load_chart {
+            get {
+                return ResourceManager.GetString("gui_section_load_chart", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 操作日志.
+        /// </summary>
+        public static string gui_section_op_log {
+            get {
+                return ResourceManager.GetString("gui_section_op_log", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 输出.
+        /// </summary>
+        public static string gui_section_output {
+            get {
+                return ResourceManager.GetString("gui_section_output", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 参数.
+        /// </summary>
+        public static string gui_section_params {
+            get {
+                return ResourceManager.GetString("gui_section_params", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 运行日志.
+        /// </summary>
+        public static string gui_section_run_log {
+            get {
+                return ResourceManager.GetString("gui_section_run_log", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 保存工作区.
+        /// </summary>
+        public static string gui_section_save_workspace {
+            get {
+                return ResourceManager.GetString("gui_section_save_workspace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 工作区列表.
+        /// </summary>
+        public static string gui_section_workspace_list {
+            get {
+                return ResourceManager.GetString("gui_section_workspace_list", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 加载失败：{0}.
+        /// </summary>
+        public static string gui_status_load_error {
+            get {
+                return ResourceManager.GetString("gui_status_load_error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 谱面加载成功！现在可以使用其他功能了。.
+        /// </summary>
+        public static string gui_status_load_success {
+            get {
+                return ResourceManager.GetString("gui_status_load_success", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 正在加载….
+        /// </summary>
+        public static string gui_status_loading {
+            get {
+                return ResourceManager.GetString("gui_status_loading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 就绪.
+        /// </summary>
+        public static string gui_status_ready {
+            get {
+                return ResourceManager.GetString("gui_status_ready", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 每拍细分数，默认 64（每步进 1/64 拍）.
+        /// </summary>
+        public static string gui_tooltip_precision {
+            get {
+                return ResourceManager.GetString("gui_tooltip_precision", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 拟合容差百分比，默认 5.
+        /// </summary>
+        public static string gui_tooltip_tolerance {
+            get {
+                return ResourceManager.GetString("gui_tooltip_tolerance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to v0.1.x — GUI 版.
+        /// </summary>
+        public static string gui_version_label {
+            get {
+                return ResourceManager.GetString("gui_version_label", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 留空则清理全部.
+        /// </summary>
+        public static string gui_watermark_clear_all {
+            get {
+                return ResourceManager.GetString("gui_watermark_clear_all", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 留空则从工作区读取.
+        /// </summary>
+        public static string gui_watermark_input_from_workspace {
+            get {
+                return ResourceManager.GetString("gui_watermark_input_from_workspace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 留空则自动生成 _PFC.json 后缀.
+        /// </summary>
+        public static string gui_watermark_output_auto {
+            get {
+                return ResourceManager.GetString("gui_watermark_output_auto", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 选择 RPE 谱面 JSON 文件.
+        /// </summary>
+        public static string gui_watermark_select_json {
+            get {
+                return ResourceManager.GetString("gui_watermark_select_json", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 选择输出文件位置.
+        /// </summary>
+        public static string gui_watermark_select_output {
+            get {
+                return ResourceManager.GetString("gui_watermark_select_output", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to default.
+        /// </summary>
+        public static string gui_watermark_workspace_default {
+            get {
+                return ResourceManager.GetString("gui_watermark_workspace_default", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to （与文件路径二选一）.
+        /// </summary>
+        public static string gui_watermark_workspace_or_file {
+            get {
+                return ResourceManager.GetString("gui_watermark_workspace_or_file", resourceCulture);
             }
         }
     }

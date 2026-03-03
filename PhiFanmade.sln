@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmade.Tool.Cli", "PhiF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmade.Tool.Localization", "PhiFanmade.Tool.Localization\PhiFanmade.Tool.Localization.csproj", "{E68B6C62-910B-4321-8994-2E04F5939C50}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhiFanmade.Tool.Gui", "PhiFanmade.Tool.Gui\PhiFanmade.Tool.Gui.csproj", "{2B59F026-5689-4A61-A5AA-ACE725D7D7B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,13 @@ Global
 		{E68B6C62-910B-4321-8994-2E04F5939C50}.Debug|x64.Build.0 = Debug|x64
 		{E68B6C62-910B-4321-8994-2E04F5939C50}.Release|x64.ActiveCfg = Release|x64
 		{E68B6C62-910B-4321-8994-2E04F5939C50}.Release|x64.Build.0 = Release|x64
+		{2B59F026-5689-4A61-A5AA-ACE725D7D7B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B59F026-5689-4A61-A5AA-ACE725D7D7B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B59F026-5689-4A61-A5AA-ACE725D7D7B1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2B59F026-5689-4A61-A5AA-ACE725D7D7B1}.Debug|x64.Build.0 = Debug|Any CPU
+		{2B59F026-5689-4A61-A5AA-ACE725D7D7B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B59F026-5689-4A61-A5AA-ACE725D7D7B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B59F026-5689-4A61-A5AA-ACE725D7D7B1}.Release|x64.ActiveCfg = Release|Any CPU
+		{2B59F026-5689-4A61-A5AA-ACE725D7D7B1}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

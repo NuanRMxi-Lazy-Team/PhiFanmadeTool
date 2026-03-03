@@ -18,6 +18,14 @@ app.Configure(config =>
     // 统一异常处理，保持与原先相同的错误输出风格
     config.SetExceptionHandler((ex, _) =>
     {
+        // 未知命令/参数：引导用户使用 --help
+        if (ex is CommandParseException)
+        {
+            var writer = new ConsoleWriter();
+            writer.Error(Strings.cli_err_unknown);
+            writer.Info(Strings.cli_hint_use_help);
+            return 1;
+        }
         // 如果是out of memory这种错误，应该提示使用--stream选项，而不是让其反馈
         if (ex is OutOfMemoryException)
         {
