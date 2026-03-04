@@ -18,7 +18,7 @@ internal static class FatherUnbindProcessor
         double lineX, double lineY)
     {
         // 将角度转换为弧度
-        double angleRadians = (angleDegrees % 360) * Math.PI / 180f;
+        double angleRadians = (angleDegrees % 360) * Math.PI / 180d;
 
         // 计算旋转后的坐标
         double rotatedX = lineX * Math.Cos(angleRadians) + lineY * Math.Sin(angleRadians);
@@ -42,5 +42,17 @@ internal static class FatherUnbindProcessor
     public static Rpe.JudgeLine FatherUnbind(int targetJudgeLineIndex,
         List<Rpe.JudgeLine> allJudgeLines, double precision = 64d, double tolerance = 5d) =>
         FatherUnbindAsyncProcessor.FatherUnbindCore(targetJudgeLineIndex, allJudgeLines, precision, tolerance);
+
+    /// <summary>
+    /// 将判定线与自己的父判定线解绑，并保持行为一致。(自适应采样节省性能版本)
+    /// </summary>
+    /// <param name="targetJudgeLineIndex">需要解绑的判定线索引</param>
+    /// <param name="allJudgeLines">所有判定线</param>
+    /// <param name="precision">切割精度，默认64分之一拍</param>
+    /// <param name="tolerance">拟合容差，越大拟合精细度越低</param>
+    /// <returns></returns>
+    public static Rpe.JudgeLine FatherUnbindPlus(int targetJudgeLineIndex,
+        List<Rpe.JudgeLine> allJudgeLines, double precision = 64d, double tolerance = 5d) =>
+        FatherUnbindAsyncProcessor.FatherUnbindCorePlus(targetJudgeLineIndex, allJudgeLines, precision, tolerance);
 }
 

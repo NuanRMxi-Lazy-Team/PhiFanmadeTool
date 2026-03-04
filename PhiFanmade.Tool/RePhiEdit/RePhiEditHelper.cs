@@ -58,6 +58,12 @@ public static class RePhiEditHelper
         return await FatherUnbindAsyncProcessor.FatherUnbindAsync(targetJudgeLineIndex, allJudgeLines,
             precision, tolerance);
     }
+    
+    public static async Task<JudgeLine> FatherUnbindPlusAsync(int targetJudgeLineIndex,List<JudgeLine> allJudgeLines, double precision = 64d, double tolerance = 5d)
+    {
+        return await FatherUnbindAsyncProcessor.FatherUnbindAsyncPlus(targetJudgeLineIndex, allJudgeLines,
+            precision, tolerance);
+    }
 
     /// <summary>
     /// 将两个事件列表合并，如果有重合事件则发出警告

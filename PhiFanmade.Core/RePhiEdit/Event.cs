@@ -6,8 +6,6 @@ using Newtonsoft.Json;
 using PhiFanmade.Core.Common;
 using PhiFanmade.Core.Utils;
 
-// STJ 特性使用完全限定名
-
 namespace PhiFanmade.Core.RePhiEdit
 {
     public class Event<T>

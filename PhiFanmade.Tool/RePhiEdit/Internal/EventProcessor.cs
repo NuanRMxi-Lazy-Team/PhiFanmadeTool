@@ -322,11 +322,33 @@ internal static class EventProcessor
         }
         else // 如果没有重合事件,直接合并
         {
+            var newEvents = new List<Rpe.Event<T>>();
+
+            // to-events 加上来自 formEventsCopy 的偏移（取该拍之前最近结束的 form 事件的 EndValue）
+            foreach (var toEvent in toEventsCopy)
+            {
+                var previousFormEvent = formEventsCopy.FindLast(e => e.EndBeat <= toEvent.StartBeat);
+                var formOffset = previousFormEvent != null ? previousFormEvent.EndValue : default;
+                newEvents.Add(new Rpe.Event<T>
+                {
+                    StartBeat = toEvent.StartBeat,
+                    EndBeat = toEvent.EndBeat,
+                    StartValue = (dynamic)toEvent.StartValue! + (dynamic)formOffset!,
+                    EndValue = (dynamic)toEvent.EndValue! + (dynamic)formOffset!,
+                    BezierPoints = toEvent.BezierPoints,
+                    Easing = toEvent.Easing,
+                    EasingLeft = toEvent.EasingLeft,
+                    EasingRight = toEvent.EasingRight,
+                    IsBezier = toEvent.IsBezier,
+                });
+            }
+
+            // form-events 加上来自原始 toEventsCopy 的偏移（避免使用已合并事件导致偏移叠加）
             foreach (var formEvent in formEventsCopy)
             {
                 var previousToEvent = toEventsCopy.FindLast(e => e.EndBeat <= formEvent.StartBeat);
                 var toEventValue = previousToEvent != null ? previousToEvent.EndValue : default;
-                var mergedEvent = new Rpe.Event<T>
+                newEvents.Add(new Rpe.Event<T>
                 {
                     StartBeat = formEvent.StartBeat,
                     EndBeat = formEvent.EndBeat,
@@ -337,13 +359,12 @@ internal static class EventProcessor
                     EasingLeft = formEvent.EasingLeft,
                     EasingRight = formEvent.EasingRight,
                     IsBezier = formEvent.IsBezier,
-                };
-                toEventsCopy.Add(mergedEvent);
+                });
             }
 
-
             // 合并后按开始拍排序
-            toEventsCopy.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
+            newEvents.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
+            toEventsCopy = newEvents;
         }
 
         return toEventsCopy;
@@ -383,6 +404,9 @@ internal static class EventProcessor
         {
             throw new NotSupportedException("EventMerge only supports int, float, and double types.");
         }
+        // 对两个列表进行排序，排序依据为开始时间
+        toEventsCopy.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
+        formEventsCopy.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
 
 
         // 将formEvents合并进toEvents，先检查是否有重合事件
@@ -480,6 +504,8 @@ internal static class EventProcessor
                     EasingRight = formEvent.EasingRight,
                     IsBezier = formEvent.IsBezier,
                 });
+
+
             // 从当前位置开始，逻辑与原方法不再一致
             // 使用累积误差驱动的自适应采样：变化快时密集采样，变化慢时稀疏采样
             var cutLength = new Beat(1d / precision);
@@ -648,11 +674,33 @@ internal static class EventProcessor
         }
         else // 如果没有重合事件,直接合并
         {
+            var newEvents = new List<Rpe.Event<T>>();
+
+            // to-events 加上来自 formEventsCopy 的偏移（取该拍之前最近结束的 form 事件的 EndValue）
+            foreach (var toEvent in toEventsCopy)
+            {
+                var previousFormEvent = formEventsCopy.FindLast(e => e.EndBeat <= toEvent.StartBeat);
+                var formOffset = previousFormEvent != null ? previousFormEvent.EndValue : default;
+                newEvents.Add(new Rpe.Event<T>
+                {
+                    StartBeat = toEvent.StartBeat,
+                    EndBeat = toEvent.EndBeat,
+                    StartValue = (dynamic)toEvent.StartValue! + (dynamic)formOffset!,
+                    EndValue = (dynamic)toEvent.EndValue! + (dynamic)formOffset!,
+                    BezierPoints = toEvent.BezierPoints,
+                    Easing = toEvent.Easing,
+                    EasingLeft = toEvent.EasingLeft,
+                    EasingRight = toEvent.EasingRight,
+                    IsBezier = toEvent.IsBezier,
+                });
+            }
+
+            // form-events 加上来自原始 toEventsCopy 的偏移（避免使用已合并事件导致偏移叠加）
             foreach (var formEvent in formEventsCopy)
             {
                 var previousToEvent = toEventsCopy.FindLast(e => e.EndBeat <= formEvent.StartBeat);
                 var toEventValue = previousToEvent != null ? previousToEvent.EndValue : default;
-                var mergedEvent = new Rpe.Event<T>
+                newEvents.Add(new Rpe.Event<T>
                 {
                     StartBeat = formEvent.StartBeat,
                     EndBeat = formEvent.EndBeat,
@@ -663,13 +711,12 @@ internal static class EventProcessor
                     EasingLeft = formEvent.EasingLeft,
                     EasingRight = formEvent.EasingRight,
                     IsBezier = formEvent.IsBezier,
-                };
-                toEventsCopy.Add(mergedEvent);
+                });
             }
 
-
             // 合并后按开始拍排序
-            toEventsCopy.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
+            newEvents.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
+            toEventsCopy = newEvents;
         }
 
         return toEventsCopy;
@@ -693,3 +740,5 @@ internal static class EventProcessor
         return eventsCopy;
     }
 }
+
+

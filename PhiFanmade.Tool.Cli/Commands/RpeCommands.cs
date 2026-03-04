@@ -71,8 +71,6 @@ public abstract class RpeOperationSettings : BaseSettings
     }
 }
 
-// ─── rpe unbind-father ───────────────────────────────────────────────────────
-
 /// <summary>
 /// 解绑父级命令
 /// </summary>
@@ -116,8 +114,6 @@ public sealed class RpeUnbindFatherCommand : AsyncCommand<RpeUnbindFatherCommand
     }
 }
 
-// ─── rpe layer-merge ────────────────────────────────────────────────────────
-
 /// <summary>
 /// 合并层级命令
 /// </summary>
@@ -137,7 +133,7 @@ public sealed class RpeLayerMergeCommand : AsyncCommand<RpeLayerMergeCommand.Set
         foreach (var jl in chartCopy.JudgeLineList)
         {
             if (jl.EventLayers is not { Count: > 1 }) continue;
-            jl.EventLayers = [RePhiEditHelper.LayerMergePlus(jl.EventLayers, settings.Precision, settings.Tolerance)];
+            jl.EventLayers = [RePhiEditHelper.LayerMerge(jl.EventLayers, settings.Precision, settings.Tolerance)];
         }
 
         var output = settings.ResolveOutputPath();
