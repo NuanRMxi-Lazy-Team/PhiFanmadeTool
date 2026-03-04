@@ -70,4 +70,9 @@ NuanR_Star Ciallo Team Copyright © 2025 PhiFanmadeTool Project.
 
 ## 致谢
 [cmdysj](https://space.bilibili.com/252635690)  
-And you.
+[HLMC](https://space.bilibili.com/357681195)  
+[不会特效の点缀星空](https://space.bilibili.com/1792961650)  
+[PhiFans](https://github.com/PhiFans)  
+[Ivan-1F](https://github.com/Ivan-1F)  
+所有参与测试反馈的各位以及贡献者  
+和屏幕前的你！

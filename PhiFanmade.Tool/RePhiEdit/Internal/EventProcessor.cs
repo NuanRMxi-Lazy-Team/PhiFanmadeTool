@@ -502,19 +502,19 @@ internal static class EventProcessor
                 var formEventAtCurrent = formEventsCopy
                     .Where(e => e.StartBeat <= currentBeat && e.EndBeat >= currentBeat)
                     .MaxBy(e => e.StartBeat);
-                T toValAtCurrent = toEventAtCurrent != null
+                var toValAtCurrent = toEventAtCurrent != null
                     ? toEventAtCurrent.GetValueAtBeat(currentBeat)
                     : lastToValue;
-                T formValAtCurrent = formEventAtCurrent != null
+                var formValAtCurrent = formEventAtCurrent != null
                     ? formEventAtCurrent.GetValueAtBeat(currentBeat)
                     : lastFormValue;
 
                 // segmentStart 是当前段的起始拍，累积误差从这里开始计算
                 // 使用 start 处的实际数值（而非前一个事件的结束数值），避免起始数值错误为 0
                 var segmentStart = start;
-                T segmentStartToValue = toValAtCurrent;
-                T segmentStartFormValue = formValAtCurrent;
-                T segmentStartSum = (dynamic)segmentStartToValue + (dynamic)segmentStartFormValue;
+                var segmentStartToValue = toValAtCurrent;
+                var segmentStartFormValue = formValAtCurrent;
+                T segmentStartSum = (dynamic)segmentStartToValue! + (dynamic)segmentStartFormValue!;
 
                 while (currentBeat < end)
                 {
@@ -555,26 +555,26 @@ internal static class EventProcessor
                     // toValUpdate / formValUpdate ── 用于下一段的 StartValue 及 tracking
                     //   使用 incoming 事件（nextBeat 处真正活跃的事件），确保新段从正确值起始。
                     var toEventBeforeNext = toEventsCopy.FindLast(e => e.EndBeat <= nextBeat);
-                    T toValueAtNext = (toEventAtCurrent != null && toEventAtCurrent.EndBeat >= nextBeat)
+                    var toValueAtNext = (toEventAtCurrent != null && toEventAtCurrent.EndBeat >= nextBeat)
                         ? toEventAtCurrent.GetValueAtBeat(nextBeat)
                         : (toEventBeforeNext != null ? toEventBeforeNext.EndValue : default!);
-                    T toValUpdate = toEventAtNext != null
+                    var toValUpdate = toEventAtNext != null
                         ? toEventAtNext.GetValueAtBeat(nextBeat)
                         : (toEventBeforeNext != null ? toEventBeforeNext.EndValue : default!);
 
                     var formEventBeforeNext = formEventsCopy.FindLast(e => e.EndBeat <= nextBeat);
-                    T formValueAtNext = (formEventAtCurrent != null && formEventAtCurrent.EndBeat >= nextBeat)
+                    var formValueAtNext = (formEventAtCurrent != null && formEventAtCurrent.EndBeat >= nextBeat)
                         ? formEventAtCurrent.GetValueAtBeat(nextBeat)
                         : (formEventBeforeNext != null ? formEventBeforeNext.EndValue : default!);
-                    T formValUpdate = formEventAtNext != null
+                    var formValUpdate = formEventAtNext != null
                         ? formEventAtNext.GetValueAtBeat(nextBeat)
                         : (formEventBeforeNext != null ? formEventBeforeNext.EndValue : default!);
 
-                    T sumAtNext = (dynamic)toValueAtNext + (dynamic)formValueAtNext;
+                    T sumAtNext = (dynamic)toValueAtNext! + (dynamic)formValueAtNext!;
 
                     // 计算线性插值预测值（如果当前段不切割，线性从segmentStart延伸到nextBeat应该是多少）
                     // 若无法预测（segmentStart == end），直接切割
-                    double segmentProgress = nextBeat == end
+                    var segmentProgress = nextBeat == end
                         ? 1.0
                         : (double)(nextBeat - segmentStart) / (double)(end - segmentStart);
 
