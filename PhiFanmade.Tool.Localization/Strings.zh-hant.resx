@@ -1,0 +1,281 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>1.3</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="cli_app_title" xml:space="preserve">
+    <value>PhiFanmade 開源工具集</value>
+  </data>
+  <data name="cli_cmd_version_desc" xml:space="preserve">
+    <value>顯示目前版本號碼</value>
+  </data>
+  <data name="cli_cmd_load_desc" xml:space="preserve">
+    <value>將譜面檔案載入工作區，供後續操作使用。</value>
+  </data>
+  <data name="cli_cmd_save_desc" xml:space="preserve">
+    <value>將工作區中的譜面儲存到檔案</value>
+  </data>
+  <data name="cli_branch_workspace_desc" xml:space="preserve">
+    <value>工作區管理</value>
+  </data>
+  <data name="cli_cmd_workspace_list_desc" xml:space="preserve">
+    <value>列出所有工作區 ID</value>
+  </data>
+  <data name="cli_cmd_workspace_clear_desc" xml:space="preserve">
+    <value>清理工作區快取（可使用 --id 僅清理單一項目）</value>
+  </data>
+  <data name="cli_branch_rpe_desc" xml:space="preserve">
+    <value>RPE 譜面操作</value>
+  </data>
+  <data name="cli_cmd_rpe_unbind_father_desc" xml:space="preserve">
+    <value>將判定線與父級解綁</value>
+  </data>
+  <data name="cli_cmd_rpe_layer_merge_desc" xml:space="preserve">
+    <value>將所有判定線的多個事件層級合併為單一層級。</value>
+  </data>
+  <data name="cli_cmd_rpe_convert_desc" xml:space="preserve">
+    <value>將 RPE 譜面轉換為其他格式（尚未完整實現）</value>
+  </data>
+  <data name="cli_opt_input_phiedit_desc" xml:space="preserve">
+    <value>輸入的 RPE/PhiEdit 譜面檔案路徑</value>
+  </data>
+  <data name="cli_opt_workspace_default_desc" xml:space="preserve">
+    <value>工作區 ID（預設：default）</value>
+  </data>
+  <data name="cli_opt_output_path_desc" xml:space="preserve">
+    <value>輸出檔案路徑</value>
+  </data>
+  <data name="cli_opt_workspace_clear_id_desc" xml:space="preserve">
+    <value>僅清理指定工作區（留空則清理全部）</value>
+  </data>
+  <data name="cli_opt_input_rpe_desc" xml:space="preserve">
+    <value>輸入的 RPE 譜面檔案路徑（與 --workspace 二選一）</value>
+  </data>
+  <data name="cli_opt_output_auto_desc" xml:space="preserve">
+    <value>輸出檔案路徑（不填則自動生成 _PFC.json 後綴）</value>
+  </data>
+  <data name="cli_opt_workspace_rpe_desc" xml:space="preserve">
+    <value>工作區 ID（與 --input 二選一）</value>
+  </data>
+  <data name="cli_opt_precision_desc" xml:space="preserve">
+    <value>採樣精度（每拍細分數，預設：64，即每次採樣步進六十四分之一拍）</value>
+  </data>
+  <data name="cli_opt_tolerance_desc" xml:space="preserve">
+    <value>擬合容差百分比（預設：5）</value>
+  </data>
+  <data name="cli_opt_dry_run_desc" xml:space="preserve">
+    <value>試運行模式，不寫入檔案。</value>
+  </data>
+  <data name="cli_opt_stream_output_desc" xml:space="preserve">
+    <value>流式輸出模式（若發生記憶體不足錯誤，請考慮使用此選項）</value>
+  </data>
+  <data name="cli_msg_loaded" xml:space="preserve">
+    <value>已將檔案載入 {0} 工作區！</value>
+  </data>
+  <data name="cli_msg_saved" xml:space="preserve">
+    <value>完成！已將工作區「{0}」儲存至「{1}」！</value>
+  </data>
+  <data name="cli_msg_cleared" xml:space="preserve">
+    <value>嘩啦啦～所有工作區都打掃乾淨了喵！</value>
+  </data>
+  <data name="cli_msg_written" xml:space="preserve">
+    <value>檔案已成功輸出到 {0} 了！</value>
+  </data>
+  <data name="cli_msg_help" xml:space="preserve">
+    <value>詳見README.md喵...</value>
+  </data>
+  <data name="cli_warn_rpe_convert" xml:space="preserve">
+    <value>RPE 轉換還在進行中，請稍等一下～</value>
+  </data>
+  <data name="cli_err_unknown" xml:space="preserve">
+    <value>咦？這條指令我還不認識呢！</value>
+  </data>
+  <data name="cli_hint_use_help" xml:space="preserve">
+    <value>可以用 --help 查看所有可用指令哦~</value>
+  </data>
+  <data name="cli_err_unimplemented" xml:space="preserve">
+    <value>這個指令功能還未完全實現呢...</value>
+  </data>
+  <data name="cli_err_input_required" xml:space="preserve">
+    <value>請提供 --input，或者使用 --workspace 也可以～</value>
+  </data>
+  <data name="cli_err_output_required" xml:space="preserve">
+    <value>請提供 --output 參數，我才能為您儲存檔案。</value>
+  </data>
+  <data name="cli_err_workspace_missing" xml:space="preserve">
+    <value>找不到工作區 {0} 喵...</value>
+  </data>
+  <data name="gui_app_subtitle" xml:space="preserve">
+    <value>開源工具集</value>
+  </data>
+  <data name="gui_version_label" xml:space="preserve">
+    <value>v0.1.x — 圖形介面版</value>
+  </data>
+  <data name="gui_nav_rpe_unbind_father" xml:space="preserve">
+    <value>RPE 解除父級綁定</value>
+  </data>
+  <data name="gui_nav_rpe_layer_merge" xml:space="preserve">
+    <value>RPE 圖層合併</value>
+  </data>
+  <data name="gui_nav_workspace" xml:space="preserve">
+    <value>工作區管理</value>
+  </data>
+  <data name="gui_page_unbind_subtitle" xml:space="preserve">
+    <value>將判定線從其父級解綁，並保持運動行為不變</value>
+  </data>
+  <data name="gui_page_merge_subtitle" xml:space="preserve">
+    <value>將判定線的所有事件圖層合併為單一圖層</value>
+  </data>
+  <data name="gui_page_workspace_subtitle" xml:space="preserve">
+    <value>載入、儲存和管理 RPE 譜面工作區</value>
+  </data>
+  <data name="gui_section_input_source" xml:space="preserve">
+    <value>輸入來源</value>
+  </data>
+  <data name="gui_section_output" xml:space="preserve">
+    <value>輸出</value>
+  </data>
+  <data name="gui_section_params" xml:space="preserve">
+    <value>參數</value>
+  </data>
+  <data name="gui_section_run_log" xml:space="preserve">
+    <value>執行日誌</value>
+  </data>
+  <data name="gui_section_op_log" xml:space="preserve">
+    <value>操作日誌</value>
+  </data>
+  <data name="gui_section_load_chart" xml:space="preserve">
+    <value>載入譜面</value>
+  </data>
+  <data name="gui_section_save_workspace" xml:space="preserve">
+    <value>儲存工作區</value>
+  </data>
+  <data name="gui_section_workspace_list" xml:space="preserve">
+    <value>工作區列表</value>
+  </data>
+  <data name="gui_label_file_path" xml:space="preserve">
+    <value>檔案路徑</value>
+  </data>
+  <data name="gui_label_workspace_id" xml:space="preserve">
+    <value>工作區 ID</value>
+  </data>
+  <data name="gui_label_output_path" xml:space="preserve">
+    <value>輸出路徑</value>
+  </data>
+  <data name="gui_label_precision" xml:space="preserve">
+    <value>取樣精度</value>
+  </data>
+  <data name="gui_label_tolerance" xml:space="preserve">
+    <value>公差 %</value>
+  </data>
+  <data name="gui_label_clear_id" xml:space="preserve">
+    <value>清除 ID</value>
+  </data>
+  <data name="gui_watermark_input_from_workspace" xml:space="preserve">
+    <value>留空則從工作區讀取</value>
+  </data>
+  <data name="gui_watermark_workspace_or_file" xml:space="preserve">
+    <value>（與檔案路徑二選一）</value>
+  </data>
+  <data name="gui_watermark_output_auto" xml:space="preserve">
+    <value>留空則自動生成 _PFC.json 後綴</value>
+  </data>
+  <data name="gui_watermark_workspace_default" xml:space="preserve">
+    <value>預設</value>
+  </data>
+  <data name="gui_watermark_select_json" xml:space="preserve">
+    <value>選擇 RPE 譜面 JSON 檔案</value>
+  </data>
+  <data name="gui_watermark_select_output" xml:space="preserve">
+    <value>選擇輸出檔案位置</value>
+  </data>
+  <data name="gui_watermark_clear_all" xml:space="preserve">
+    <value>留空則清除全部</value>
+  </data>
+  <data name="gui_tooltip_precision" xml:space="preserve">
+    <value>每拍細分數，預設 64（每一步進為 1/64 拍）</value>
+  </data>
+  <data name="gui_tooltip_tolerance" xml:space="preserve">
+    <value>擬合容差百分比，預設 5</value>
+  </data>
+  <data name="gui_check_dry_run" xml:space="preserve">
+    <value>試執行（不寫入檔案）</value>
+  </data>
+  <data name="gui_check_stream_output" xml:space="preserve">
+    <value>串流輸出（減少記憶體佔用）</value>
+  </data>
+  <data name="gui_btn_browse" xml:space="preserve">
+    <value>瀏覽</value>
+  </data>
+  <data name="gui_btn_clear_log" xml:space="preserve">
+    <value>清除</value>
+  </data>
+  <data name="gui_btn_cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="gui_btn_start_unbind" xml:space="preserve">
+    <value>開始解綁</value>
+  </data>
+  <data name="gui_btn_start_merge" xml:space="preserve">
+    <value>開始合併</value>
+  </data>
+  <data name="gui_btn_load_to_workspace" xml:space="preserve">
+    <value>載入至工作區</value>
+  </data>
+  <data name="gui_btn_save_to_file" xml:space="preserve">
+    <value>儲存到檔案</value>
+  </data>
+  <data name="gui_btn_refresh" xml:space="preserve">
+    <value>重新整理</value>
+  </data>
+  <data name="gui_btn_clear" xml:space="preserve">
+    <value>清除</value>
+  </data>
+  <data name="gui_status_ready" xml:space="preserve">
+    <value>就緒</value>
+  </data>
+  <data name="cli_err_ukerr" xml:space="preserve">
+    <value>抱歉！軟體遇到了未知錯誤！請將以下資訊發送到 https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool/issues 我們會盡快修復這個問題！
+{0}</value>
+  </data>
+  <data name="cli_err_out_of_memory" xml:space="preserve">
+    <value>輸出的結果可能有些大哦~請試著添加「--stream」選項來減少記憶體佔用！若這沒有解決你的問題，請將以下資訊傳送到https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool/issues，我們會盡快修復這個問題！
+{0}</value>
+  </data>
+  <data name="gui_page_start" xml:space="preserve">
+    <value>導入譜面</value>
+  </data>
+  <data name="gui_status_loading" xml:space="preserve">
+    <value>正在載入…</value>
+  </data>
+  <data name="gui_status_load_success" xml:space="preserve">
+    <value>譜面載入成功！現在可以使用其他功能了。</value>
+  </data>
+  <data name="gui_status_load_error" xml:space="preserve">
+    <value>載入失敗：{0}</value>
+  </data>
+  <data name="gui_page_start_subtitle" xml:space="preserve">
+    <value>請先匯入一份譜面檔案，然後才能使用其他功能</value>
+  </data>
+  <data name="gui_btn_load_chart" xml:space="preserve">
+    <value>載入譜面</value>
+  </data>
+  <data name="gui_label_chart_file" xml:space="preserve">
+    <value>譜面檔案</value>
+  </data>
+  <data name="gui_hint_nav_locked" xml:space="preserve">
+    <value>請先在「導入譜面」頁面載入譜面</value>
+  </data>
+  <data name="cli_opt_classic_mode_desc" xml:space="preserve">
+    <value>舊版行為模式，這個模式通常會消耗更多效能，但是輸出通常更加穩定</value>
+  </data>
+</root>

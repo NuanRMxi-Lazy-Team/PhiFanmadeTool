@@ -3,7 +3,7 @@ using PhiFanmade.Tool.Localization;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
-namespace PhiFanmade.Tool.Cli.Commands;
+namespace PhiFanmade.Tool.Cli.Commands.WorkSpace;
 
 // ─── Load ────────────────────────────────────────────────────────────────────
 

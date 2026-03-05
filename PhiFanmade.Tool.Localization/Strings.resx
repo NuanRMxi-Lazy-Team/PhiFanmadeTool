@@ -168,7 +168,7 @@
     <value>咦？这条指令我还不认识呢！</value>
   </data>
   <data name="cli_hint_use_help" xml:space="preserve">
-    <value>可以用 --help 查看所有可用命令哦，或者看看 README 喵~</value>
+    <value>可以用 --help 查看所有可用命令哦~</value>
   </data>
   <data name="cli_err_unimplemented" xml:space="preserve">
     <value>这个命令功能还未完全实现呢...</value>
@@ -355,5 +355,8 @@
   </data>
   <data name="gui_hint_nav_locked" xml:space="preserve">
     <value>请先在「导入谱面」页面载入谱面</value>
+  </data>
+  <data name="cli_opt_classic_mode_desc" xml:space="preserve">
+    <value>旧版行为模式，这个模式通常会消耗更多性能，但是输出通常更加稳定</value>
   </data>
 </root>

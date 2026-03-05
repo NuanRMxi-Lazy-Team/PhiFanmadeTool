@@ -224,7 +224,7 @@ namespace PhiFanmade.Tool.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 可以用 --help 查看所有可用命令哦，或者看看 README 喵~.
+        ///   Looks up a localized string similar to 可以用 --help 查看所有可用命令哦~.
         /// </summary>
         public static string cli_hint_use_help {
             get {
@@ -274,6 +274,15 @@ namespace PhiFanmade.Tool.Localization {
         public static string cli_msg_written {
             get {
                 return ResourceManager.GetString("cli_msg_written", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 旧版行为模式，这个模式通常会消耗更多性能，但是输出通常更加稳定.
+        /// </summary>
+        public static string cli_opt_classic_mode_desc {
+            get {
+                return ResourceManager.GetString("cli_opt_classic_mode_desc", resourceCulture);
             }
         }
         

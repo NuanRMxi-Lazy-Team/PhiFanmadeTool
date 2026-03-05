@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
 using PhiFanmade.Tool.Cli.Commands;
+using PhiFanmade.Tool.Cli.Commands.RePhiEdit;
+using PhiFanmade.Tool.Cli.Commands.WorkSpace;
 using PhiFanmade.Tool.Cli.Infrastructure;
 using PhiFanmade.Tool.Localization;
 using Spectre.Console.Cli;
@@ -53,6 +55,10 @@ app.Configure(config =>
             .WithDescription(Strings.cli_cmd_workspace_list_desc);
         ws.AddCommand<WorkspaceClearCommand>("clear")
             .WithDescription(Strings.cli_cmd_workspace_clear_desc);
+        ws.AddCommand<LoadCommand>("load")
+            .WithDescription(Strings.cli_cmd_load_desc);
+        ws.AddCommand<SaveCommand>("save")
+            .WithDescription(Strings.cli_cmd_save_desc);
     });
 
     config.AddBranch("rpe", rpe =>

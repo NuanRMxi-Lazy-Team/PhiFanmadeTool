@@ -51,25 +51,39 @@ namespace PhiFanmade.Core.RePhiEdit
             return JsonConvert.SerializeObject(this, format ? Formatting.Indented : Formatting.None);
         }
 
-        /// <summary>
-        /// 流式序列化铺面
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="format"></param>
-        public async Task ExportToJsonStreamAsync(Stream stream, bool format)
+        public void ExportToJsonStream(Stream stream, bool format)
         {
             Anticipation();
-            await using var streamWriter =
-                new StreamWriter(stream, Encoding.UTF8, 1024, leaveOpen: true);
-            // .NETStandard 2.1不允许await using，所以这里不使用await using
-            using var jsonWriter = new JsonTextWriter(streamWriter);
-            var serializer = new Newtonsoft.Json.JsonSerializer
+            using var streamWriter = new StreamWriter(stream, new UTF8Encoding(false), 1024, leaveOpen: true);
+            var serializer = new JsonSerializer
             {
                 Formatting = format ? Formatting.Indented : Formatting.None
             };
 
-            await Task.Run(() => serializer.Serialize(jsonWriter, this));
-            await jsonWriter.FlushAsync();
+            using var jsonWriter = new JsonTextWriter(streamWriter) { CloseOutput = false };
+            serializer.Serialize(jsonWriter, this);
+            jsonWriter.Flush();
+            streamWriter.Flush();
+        }
+
+        public async Task ExportToJsonStreamAsync(Stream stream, bool format)
+        {
+            Anticipation();
+            await using var streamWriter =
+                new StreamWriter(stream, new UTF8Encoding(false), 1024, leaveOpen: true);
+            var serializer = new JsonSerializer
+            {
+                Formatting = format ? Formatting.Indented : Formatting.None
+            };
+
+            await Task.Run(() =>
+            {
+                using var jsonWriter = new JsonTextWriter(streamWriter) { CloseOutput = false };
+                serializer.Serialize(jsonWriter, this);
+                jsonWriter.Flush();
+            });
+
+            await streamWriter.FlushAsync();
         }
 
 

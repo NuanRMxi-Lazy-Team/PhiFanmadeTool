@@ -148,9 +148,6 @@
   <data name="cli_err_unknown" xml:space="preserve">
     <value>Oops? I don't recognize this command!</value>
   </data>
-  <data name="cli_hint_use_help" xml:space="preserve">
-    <value>Use --help to see all available commands, or check the README~</value>
-  </data>
   <data name="cli_err_unimplemented" xml:space="preserve">
     <value>This command feature is not fully implemented yet...</value>
   </data>
@@ -315,5 +312,27 @@
   </data>
   <data name="gui_hint_nav_locked" xml:space="preserve">
     <value>Please load a chart first on the "Import Chart" page</value>
+  </data>
+  <data name="cli_cmd_rpe_unbind_father_desc" xml:space="preserve">
+    <value>Unbind the judgment line from its parent.</value>
+  </data>
+  <data name="cli_opt_tolerance_desc" xml:space="preserve">
+    <value>Fitting tolerance percentage (default: 5)</value>
+  </data>
+  <data name="cli_hint_use_help" xml:space="preserve">
+    <value>You can use --help to view all available commands.</value>
+  </data>
+  <data name="cli_err_out_of_memory" xml:space="preserve">
+    <value>The output might be a bit large~ Try adding the "--stream" option to reduce memory usage! If this doesn't solve your problem, please send the following information to https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool/issues, and we'll fix the issue as soon as possible!
+{0}</value>
+  </data>
+  <data name="gui_page_start" xml:space="preserve">
+    <value>Import beatmap</value>
+  </data>
+  <data name="gui_page_start_subtitle" xml:space="preserve">
+    <value>Please import a chart file first to use other features.</value>
+  </data>
+  <data name="cli_opt_classic_mode_desc" xml:space="preserve">
+    <value>Legacy behavior mode. This mode typically consumes more performance, but the output is usually more stable.</value>
   </data>
 </root>
