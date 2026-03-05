@@ -91,7 +91,7 @@ public sealed class RpeUnbindFatherCommand : AsyncCommand<RpeUnbindFatherCommand
         {
             //Console.WriteLine(i);
             if (chart.JudgeLineList[i].Father != -1)
-                chartCopy.JudgeLineList[i] = await RePhiEditHelper.FatherUnbindAsync(
+                chartCopy.JudgeLineList[i] = await RePhiEditHelper.FatherUnbindPlusAsync(
                     i, chart.JudgeLineList, settings.Precision, settings.Tolerance);
         }
 
