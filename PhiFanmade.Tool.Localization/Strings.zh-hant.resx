@@ -278,4 +278,7 @@
   <data name="cli_opt_classic_mode_desc" xml:space="preserve">
     <value>舊版行為模式，這個模式通常會消耗更多效能，但是輸出通常更加穩定</value>
   </data>
+  <data name="cli_opt_format_desc" xml:space="preserve">
+    <value>使輸出格式化</value>
+  </data>
 </root>

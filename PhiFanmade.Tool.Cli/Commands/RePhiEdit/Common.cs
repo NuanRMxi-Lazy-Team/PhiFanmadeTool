@@ -37,6 +37,10 @@ public abstract class RpeOperationSettings : BaseSettings
     [CommandOption("--stream")]
     [LocalizedDescription("cli_opt_stream_output_desc")]
     public bool StreamOutput { get; set; }
+    
+    [CommandOption("--format")]
+    [LocalizedDescription("cli_opt_format_desc")]
+    public bool FormatOutput { get; set; }
 
     public override ValidationResult Validate()
     {

@@ -51,6 +51,11 @@ namespace PhiFanmade.Core.RePhiEdit
             return JsonConvert.SerializeObject(this, format ? Formatting.Indented : Formatting.None);
         }
 
+        /// <summary>
+        /// 将谱面序列化为Json并写入流
+        /// </summary>
+        /// <param name="stream">流</param>
+        /// <param name="format">是否需要格式化</param>
         public void ExportToJsonStream(Stream stream, bool format)
         {
             Anticipation();
@@ -65,7 +70,12 @@ namespace PhiFanmade.Core.RePhiEdit
             jsonWriter.Flush();
             streamWriter.Flush();
         }
-
+        
+        /// <summary>
+        /// 异步将谱面序列化为Json并写入流
+        /// </summary>
+        /// <param name="stream">流</param>
+        /// <param name="format">是否需要格式化</param>
         public async Task ExportToJsonStreamAsync(Stream stream, bool format)
         {
             Anticipation();

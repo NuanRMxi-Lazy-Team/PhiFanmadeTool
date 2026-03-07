@@ -296,6 +296,15 @@ namespace PhiFanmade.Tool.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 使输出的文件格式化.
+        /// </summary>
+        public static string cli_opt_format_desc {
+            get {
+                return ResourceManager.GetString("cli_opt_format_desc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 输入的 RPE/PhiEdit 谱面文件路径.
         /// </summary>
         public static string cli_opt_input_phiedit_desc {

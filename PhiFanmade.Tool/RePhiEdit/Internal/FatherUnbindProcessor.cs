@@ -118,13 +118,18 @@ internal static class FatherUnbindProcessor
             var (frMin, frMax) = GetEventRange(fR);
 
             // 5 个通道互不依赖，并行切割为等长小段
+            var capTx = tX;
+            var capTy = tY;
+            var capFx = fX;
+            var capFy = fY;
+            var capFr = fR;
             var cutTasks = new[]
             {
-                Task.Run(() => EventProcessor.CutEventsInRange(tX, txMin, txMax)),
-                Task.Run(() => EventProcessor.CutEventsInRange(tY, tyMin, tyMax)),
-                Task.Run(() => EventProcessor.CutEventsInRange(fX, fxMin, fxMax)),
-                Task.Run(() => EventProcessor.CutEventsInRange(fY, fyMin, fyMax)),
-                Task.Run(() => EventProcessor.CutEventsInRange(fR, frMin, frMax))
+                Task.Run(() => EventProcessor.CutEventsInRange(capTx, txMin, txMax)),
+                Task.Run(() => EventProcessor.CutEventsInRange(capTy, tyMin, tyMax)),
+                Task.Run(() => EventProcessor.CutEventsInRange(capFx, fxMin, fxMax)),
+                Task.Run(() => EventProcessor.CutEventsInRange(capFy, fyMin, fyMax)),
+                Task.Run(() => EventProcessor.CutEventsInRange(capFr, frMin, frMax))
             };
             Task.WaitAll(cutTasks);
 
@@ -155,11 +160,11 @@ internal static class FatherUnbindProcessor
                 var next = beat + step;
 
                 // 无事件覆盖时，取当前拍之前最近一个结束事件的末尾值作为默认值
-                var prevFX = i > 0 ? fX.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
-                var prevFY = i > 0 ? fY.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
-                var prevFR = i > 0 ? fR.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
-                var prevTX = i > 0 ? tX.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
-                var prevTY = i > 0 ? tY.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
+                var prevFx = i > 0 ? fX.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
+                var prevFy = i > 0 ? fY.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
+                var prevFr = i > 0 ? fR.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
+                var prevTx = i > 0 ? tX.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
+                var prevTy = i > 0 ? tY.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
 
                 var fxEvt = fX.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == next);
                 var fyEvt = fY.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == next);
@@ -168,11 +173,11 @@ internal static class FatherUnbindProcessor
                 var tyEvt = tY.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == next);
 
                 var (startAbsX, startAbsY) = GetLinePos(
-                    fxEvt?.StartValue ?? prevFX, fyEvt?.StartValue ?? prevFY, frEvt?.StartValue ?? prevFR,
-                    txEvt?.StartValue ?? prevTX, tyEvt?.StartValue ?? prevTY);
+                    fxEvt?.StartValue ?? prevFx, fyEvt?.StartValue ?? prevFy, frEvt?.StartValue ?? prevFr,
+                    txEvt?.StartValue ?? prevTx, tyEvt?.StartValue ?? prevTy);
                 var (endAbsX, endAbsY) = GetLinePos(
-                    fxEvt?.EndValue ?? prevFX, fyEvt?.EndValue ?? prevFY, frEvt?.EndValue ?? prevFR,
-                    txEvt?.EndValue ?? prevTX, tyEvt?.EndValue ?? prevTY);
+                    fxEvt?.EndValue ?? prevFx, fyEvt?.EndValue ?? prevFy, frEvt?.EndValue ?? prevFr,
+                    txEvt?.EndValue ?? prevTx, tyEvt?.EndValue ?? prevTy);
 
                 xBag.Add((i, new Rpe.Event<float>
                     { StartBeat = beat, EndBeat = next, StartValue = (float)startAbsX, EndValue = (float)endAbsX }));
@@ -214,7 +219,7 @@ internal static class FatherUnbindProcessor
         List<Rpe.JudgeLine> allJudgeLines, double precision, double tolerance,
         ConcurrentDictionary<int, Rpe.JudgeLine> cache)
     {
-        // ── 缓存命中：该线已被解绑过，直接返回副本，避免重复计算 ──
+        // 缓存命中：该线已被解绑过，直接返回副本，避免重复计算
         if (cache.TryGetValue(targetJudgeLineIndex, out var cachedResult))
         {
             RePhiEditHelper.OnDebug.Invoke(
@@ -315,7 +320,11 @@ internal static class FatherUnbindProcessor
             var segmentCount = keyBeats.Count - 1;
             var segmentsX = new List<Rpe.Event<float>>[segmentCount];
             var segmentsY = new List<Rpe.Event<float>>[segmentCount];
-            for (var i = 0; i < segmentCount; i++) { segmentsX[i] = []; segmentsY[i] = []; }
+            for (var i = 0; i < segmentCount; i++)
+            {
+                segmentsX[i] = [];
+                segmentsY[i] = [];
+            }
 
             // 各 key interval 完全独立，Parallel.For 并行处理
             Parallel.For(0, segmentCount, ki =>
@@ -354,9 +363,13 @@ internal static class FatherUnbindProcessor
                     if (shouldCut)
                     {
                         localX.Add(new Rpe.Event<float>
-                            { StartBeat = segStart, EndBeat = next, StartValue = (float)segX, EndValue = (float)nextX });
+                        {
+                            StartBeat = segStart, EndBeat = next, StartValue = (float)segX, EndValue = (float)nextX
+                        });
                         localY.Add(new Rpe.Event<float>
-                            { StartBeat = segStart, EndBeat = next, StartValue = (float)segY, EndValue = (float)nextY });
+                        {
+                            StartBeat = segStart, EndBeat = next, StartValue = (float)segY, EndValue = (float)nextY
+                        });
                         segStart = next;
                         segX = nextX;
                         segY = nextY;
@@ -417,9 +430,14 @@ internal static class FatherUnbindProcessor
         while (lo <= hi)
         {
             var mid = (lo + hi) >> 1;
-            if (events[mid].StartBeat <= beat) { idx = mid; lo = mid + 1; }
+            if (events[mid].StartBeat <= beat)
+            {
+                idx = mid;
+                lo = mid + 1;
+            }
             else hi = mid - 1;
         }
+
         if (idx < 0) return 0f;
         var e = events[idx];
         // EndBeat > beat：事件尚在进行，插值；否则取末尾值
@@ -438,16 +456,21 @@ internal static class FatherUnbindProcessor
         while (lo <= hi)
         {
             var mid = (lo + hi) >> 1;
-            if (events[mid].StartBeat < beat) { idx = mid; lo = mid + 1; }
+            if (events[mid].StartBeat < beat)
+            {
+                idx = mid;
+                lo = mid + 1;
+            }
             else hi = mid - 1;
         }
+
         if (idx < 0) return 0f;
         var e = events[idx];
         return e.EndBeat >= beat ? e.GetValueAtBeat(beat) : e.EndValue;
     }
 
     /// <summary>
-    /// 按层顺序将某一通道的事件列表叠加合并。
+    /// 按层顺序将某一个通道的事件列表叠加合并。
     /// 层间叠加不满足交换律，同一通道内的层必须串行顺序处理；不同通道间互不依赖，可并行。
     /// </summary>
     internal static List<Rpe.Event<float>> MergeLayerChannel(
@@ -473,7 +496,7 @@ internal static class FatherUnbindProcessor
     {
         return events.Count == 0
             ? (new Beat(0), new Beat(0))
-            : (events.Min(e => e.StartBeat)!, events.Max(e => e.EndBeat)!);
+            : (events.Min(e => e.StartBeat), events.Max(e => e.EndBeat));
     }
 
     /// <summary>
@@ -505,13 +528,15 @@ internal static class FatherUnbindProcessor
         if (line.RotateWithFather)
             line.EventLayers[0].RotateEvents = EventProcessor.EventListCompress(
                 merge(line.EventLayers[0].RotateEvents, fatherRotateEvents), tolerance);
-        // 确保这条线的第一层级每个事件列表都至少存在一个垫底事件，且列表必须存在
+        // 确保这条线的第一层级每个事件列表都至少存在一个垫底事件，且列表必须存在，这是兼容一些不遵守空列表行为的模拟器所使用的，后续删掉也无可厚非
         line.EventLayers[0].AlphaEvents ??= [];
         if (line.EventLayers[0].AlphaEvents.Count == 0)
-            line.EventLayers[0].AlphaEvents.Add(new Rpe.Event<int> { StartBeat = new Beat(0), EndBeat = new Beat(1), StartValue = 0, EndValue = 0 });
+            line.EventLayers[0].AlphaEvents.Add(new Rpe.Event<int>
+                { StartBeat = new Beat(0), EndBeat = new Beat(1), StartValue = 0, EndValue = 0 });
         line.EventLayers[0].SpeedEvents ??= [];
         if (line.EventLayers[0].SpeedEvents.Count == 0)
-            line.EventLayers[0].SpeedEvents.Add(new Rpe.Event<float> { StartBeat = new Beat(0), EndBeat = new Beat(1), StartValue = 10, EndValue = 10 });
+            line.EventLayers[0].SpeedEvents.Add(new Rpe.Event<float>
+                { StartBeat = new Beat(0), EndBeat = new Beat(1), StartValue = 0, EndValue = 0 });
         line.Father = -1;
     }
 }

@@ -335,4 +335,7 @@
   <data name="cli_opt_classic_mode_desc" xml:space="preserve">
     <value>Legacy behavior mode. This mode typically consumes more performance, but the output is usually more stable.</value>
   </data>
+  <data name="cli_opt_format_desc" xml:space="preserve">
+    <value>Format the output</value>
+  </data>
 </root>

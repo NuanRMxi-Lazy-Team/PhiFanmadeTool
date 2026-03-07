@@ -28,7 +28,14 @@ public sealed class RpeLayerMergeCommand : AsyncCommand<RpeLayerMergeCommand.Set
 
         var output = settings.ResolveOutputPath();
         if (!settings.DryRun)
-            await File.WriteAllTextAsync(output, await chartCopy.ExportToJsonAsync(true), cancellationToken);
+            if (settings.StreamOutput)
+            {
+                await using var stream = new FileStream(output, FileMode.Create);
+                await chartCopy.ExportToJsonStreamAsync(stream, settings.FormatOutput);
+            }
+            else
+                await File.WriteAllTextAsync(output, await chartCopy.ExportToJsonAsync(settings.FormatOutput),
+                    cancellationToken);
 
         writer.Info(string.Format(Strings.cli_msg_written, output));
         return 0;

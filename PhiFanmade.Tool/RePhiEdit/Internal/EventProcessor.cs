@@ -23,7 +23,7 @@ internal static class EventProcessor
         Beat? cutLength = null)
     {
         var length = cutLength ?? new Beat(1d / 64d);
-        var cutedEvents = new List<Rpe.Event<T>>();
+        var cutEvents = new List<Rpe.Event<T>>();
 
         // 找到在指定范围内的事件
         var eventsToCut = events.Where(e => e.StartBeat < endBeat && e.EndBeat > startBeat).ToList();
@@ -35,7 +35,7 @@ internal static class EventProcessor
 
             // 计算需要切割的段数，避免浮点累加误差
             var totalBeats = cutEnd - cutStart;
-            var segmentCount = (int)Math.Ceiling((double)(totalBeats / length));
+            var segmentCount = (int)Math.Ceiling((totalBeats / length));
 
             for (int i = 0; i < segmentCount; i++)
             {
@@ -54,11 +54,11 @@ internal static class EventProcessor
                     StartValue = evt.GetValueAtBeat(currentBeat),
                     EndValue = evt.GetValueAtBeat(segmentEnd),
                 };
-                cutedEvents.Add(newEvent);
+                cutEvents.Add(newEvent);
             }
         }
 
-        return cutedEvents;
+        return cutEvents;
     }
 
     /// <summary>
@@ -67,11 +67,11 @@ internal static class EventProcessor
     /// <param name="events">事件列表</param>
     /// <param name="tolerance">拟合容差百分比，越大拟合精细度越低</param>
     /// <returns>压缩后的事件列表</returns>
-    public static List<Rpe.Event<float>> EventListCompress(List<Rpe.Event<float>> events,
+    public static List<Rpe.Event<float>> EventListCompress(List<Rpe.Event<float>>? events,
         double tolerance = 5)
     {
         if (events == null || events.Count == 0)
-            return new List<Rpe.Event<float>>();
+            return [];
 
         var compressed = new List<Rpe.Event<float>> { events[0] };
 
@@ -117,8 +117,8 @@ internal static class EventProcessor
     /// <param name="tolerance">数值拟合容差</param>
     /// <returns>已合并的事件列表</returns>
     public static List<Rpe.Event<T>> EventMerge<T>(
-        List<Rpe.Event<T>> toEvents,
-        List<Rpe.Event<T>> formEvents,
+        List<Rpe.Event<T>>? toEvents,
+        List<Rpe.Event<T>>? formEvents,
         double precision = 64d,
         double tolerance = 5d)
     {
@@ -126,7 +126,7 @@ internal static class EventProcessor
         if (toEvents == null || toEvents.Count == 0)
         {
             if (formEvents == null || formEvents.Count == 0)
-                return new();
+                return [];
             return formEvents.Select(e => e.Clone()).ToList();
         }
 
@@ -210,8 +210,8 @@ internal static class EventProcessor
                 {
                     StartBeat = toEvent.StartBeat,
                     EndBeat = toEvent.EndBeat,
-                    StartValue = (dynamic)toEvent.StartValue! + (dynamic)formOffset!,
-                    EndValue = (dynamic)toEvent.EndValue! + (dynamic)formOffset!,
+                    StartValue = (dynamic)toEvent.StartValue + (dynamic)formOffset,
+                    EndValue = (dynamic)toEvent.EndValue + (dynamic)formOffset,
                     BezierPoints = toEvent.BezierPoints,
                     Easing = toEvent.Easing,
                     EasingLeft = toEvent.EasingLeft,
@@ -225,13 +225,13 @@ internal static class EventProcessor
                     formEvent.StartBeat < interval.End && formEvent.EndBeat > interval.Start)
                 where !isInOverlap
                 let previousToEvent = toEvents.FindLast(e => e.EndBeat <= formEvent.StartBeat)
-                let toEventValue = previousToEvent != null ? previousToEvent.EndValue : (T)default
+                let toEventValue = previousToEvent != null ? previousToEvent.EndValue : default
                 select new Rpe.Event<T>
                 {
                     StartBeat = formEvent.StartBeat,
                     EndBeat = formEvent.EndBeat,
-                    StartValue = (dynamic)formEvent.StartValue + (dynamic)toEventValue!,
-                    EndValue = (dynamic)formEvent.EndValue + (dynamic)toEventValue!,
+                    StartValue = (dynamic)formEvent.StartValue + (dynamic)toEventValue,
+                    EndValue = (dynamic)formEvent.EndValue + (dynamic)toEventValue,
                     BezierPoints = formEvent.BezierPoints,
                     Easing = formEvent.Easing,
                     EasingLeft = formEvent.EasingLeft,
@@ -242,17 +242,17 @@ internal static class EventProcessor
 
             // 对每个区间内的事件进行切割，两个事件列表都要做切割，切割后的事件长度为0.015625拍
             var cutLength = new Beat(1d / precision);
-            var cutedToEvents = new List<Rpe.Event<T>>();
-            var cutedFormEvents = new List<Rpe.Event<T>>();
+            var cutToEvents = new List<Rpe.Event<T>>();
+            var cutFormEvents = new List<Rpe.Event<T>>();
             foreach (var (start, end) in overlapIntervals)
             {
                 // 使用新方法切割toEvents内的事件
                 var cutToInRange = CutEventsInRange(toEventsCopy, start, end, cutLength);
-                cutedToEvents.AddRange(cutToInRange);
+                cutToEvents.AddRange(cutToInRange);
 
                 // 使用新方法切割formEvents内的事件
                 var cutFormInRange = CutEventsInRange(formEventsCopy, start, end, cutLength);
-                cutedFormEvents.AddRange(cutFormInRange);
+                cutFormEvents.AddRange(cutFormInRange);
 
                 // 从原列表中移除已切割的事件
                 toEventsCopy.RemoveAll(e => e.StartBeat < end && e.EndBeat > start);
@@ -260,12 +260,11 @@ internal static class EventProcessor
             }
 
             // 再次合并，现在所有事件长度都一致了，但是要注意，两个事件列表的当前值总和为最终值，无事件的地方使用上一个事件的结束值，没有上一个事件则使用默认值，如果合并不当会导致数值跳变
-            var allCutedEvents = new List<Rpe.Event<T>>();
-            T formOverlapEventLastEndValue, toOverlapEventLastEndValue;
+            var allCutEvents = new List<Rpe.Event<T>>();
+            T? formOverlapEventLastEndValue, toOverlapEventLastEndValue;
             // 以cutLength为采样大小，遍历每一个重合区间
-            for (var index = 0; index < overlapIntervals.Count; index++)
+            foreach (var (start, end) in overlapIntervals)
             {
-                var (start, end) = overlapIntervals[index];
                 var currentBeat = start;
                 // 在区间开始前，初始化"最近结束值"为区间开始拍之前最近结束的事件值（可能来自区间之外）
                 var prevTo = toEventsCopy.FindLast(e => e.EndBeat <= start);
@@ -275,11 +274,11 @@ internal static class EventProcessor
                 while (currentBeat < end)
                 {
                     var nextBeat = currentBeat + cutLength;
-                    // 以currentBeat为开始拍，nextBeat为结束拍，寻找cutedToEvents和cutedFormEvents内的事件
+                    // 以currentBeat为开始拍，nextBeat为结束拍，寻找cutToEvents和cutFormEvents内的事件
                     var toEvent =
-                        cutedToEvents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
+                        cutToEvents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
                     var formEvent =
-                        cutedFormEvents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
+                        cutFormEvents.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
 
                     // 计算合并后的值
                     var toStartValue = toEvent != null ? toEvent.StartValue : toOverlapEventLastEndValue;
@@ -288,17 +287,17 @@ internal static class EventProcessor
 
                     var toEndValue = toEvent != null ? toEvent.EndValue : toOverlapEventLastEndValue;
                     var formEndValue = formEvent != null ? formEvent.EndValue : formOverlapEventLastEndValue;
-                    var endValue = (dynamic)toEndValue + (dynamic)formEndValue;
+                    var endValue = (dynamic?)toEndValue + (dynamic?)formEndValue;
 
                     var newEvent = new Rpe.Event<T>
                     {
                         StartBeat = currentBeat,
                         EndBeat = nextBeat,
-                        StartValue = startValue!,
-                        EndValue = endValue!,
+                        StartValue = startValue,
+                        EndValue = endValue,
                     };
 
-                    allCutedEvents.Add(newEvent);
+                    allCutEvents.Add(newEvent);
 
                     // 更新最后的结束值
                     if (toEvent != null) toOverlapEventLastEndValue = toEvent.EndValue;
@@ -309,10 +308,11 @@ internal static class EventProcessor
             }
 
             // 把切割后的事件加入newEvents
-            newEvents.AddRange(allCutedEvents);
+            newEvents.AddRange(allCutEvents);
             // 如果T为float，则进行压缩
             if (typeof(T) == typeof(float))
-                newEvents = EventListCompress(newEvents as List<Rpe.Event<float>>, tolerance)
+                newEvents = EventListCompress(newEvents as List<Rpe.Event<float>> ?? throw new NullReferenceException(),
+                        tolerance)
                     .Select(e => e as Rpe.Event<T>).ToList();
             // 最后把newEvents赋值给toEvents
             toEventsCopy = newEvents;
@@ -333,8 +333,8 @@ internal static class EventProcessor
                 {
                     StartBeat = toEvent.StartBeat,
                     EndBeat = toEvent.EndBeat,
-                    StartValue = (dynamic)toEvent.StartValue! + (dynamic)formOffset!,
-                    EndValue = (dynamic)toEvent.EndValue! + (dynamic)formOffset!,
+                    StartValue = (dynamic?)toEvent.StartValue + (dynamic?)formOffset,
+                    EndValue = (dynamic?)toEvent.EndValue + (dynamic?)formOffset,
                     BezierPoints = toEvent.BezierPoints,
                     Easing = toEvent.Easing,
                     EasingLeft = toEvent.EasingLeft,
@@ -352,8 +352,8 @@ internal static class EventProcessor
                 {
                     StartBeat = formEvent.StartBeat,
                     EndBeat = formEvent.EndBeat,
-                    StartValue = (dynamic)formEvent.StartValue! + (dynamic)toEventValue!,
-                    EndValue = (dynamic)formEvent.EndValue! + (dynamic)toEventValue!,
+                    StartValue = (dynamic?)formEvent.StartValue + (dynamic?)toEventValue,
+                    EndValue = (dynamic?)formEvent.EndValue + (dynamic?)toEventValue,
                     BezierPoints = formEvent.BezierPoints,
                     Easing = formEvent.Easing,
                     EasingLeft = formEvent.EasingLeft,
@@ -380,8 +380,8 @@ internal static class EventProcessor
     /// <param name="tolerance">数值拟合容差</param>
     /// <returns>已合并的事件列表</returns>
     public static List<Rpe.Event<T>> EventMergePlus<T>(
-        List<Rpe.Event<T>> toEvents,
-        List<Rpe.Event<T>> formEvents,
+        List<Rpe.Event<T>>? toEvents,
+        List<Rpe.Event<T>>? formEvents,
         double precision = 64d,
         double tolerance = 5d)
     {
@@ -404,6 +404,7 @@ internal static class EventProcessor
         {
             throw new NotSupportedException("EventMerge only supports int, float, and double types.");
         }
+
         // 对两个列表进行排序，排序依据为开始时间
         toEventsCopy.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
         formEventsCopy.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
@@ -476,8 +477,8 @@ internal static class EventProcessor
                 {
                     StartBeat = toEvent.StartBeat,
                     EndBeat = toEvent.EndBeat,
-                    StartValue = (dynamic)toEvent.StartValue! + (dynamic)formOffset!,
-                    EndValue = (dynamic)toEvent.EndValue! + (dynamic)formOffset!,
+                    StartValue = (dynamic)toEvent.StartValue + (dynamic)formOffset,
+                    EndValue = (dynamic)toEvent.EndValue + (dynamic)formOffset,
                     BezierPoints = toEvent.BezierPoints,
                     Easing = toEvent.Easing,
                     EasingLeft = toEvent.EasingLeft,
@@ -491,13 +492,13 @@ internal static class EventProcessor
                     formEvent.StartBeat < interval.End && formEvent.EndBeat > interval.Start)
                 where !isInOverlap
                 let previousToEvent = toEvents.FindLast(e => e.EndBeat <= formEvent.StartBeat)
-                let toEventValue = previousToEvent != null ? previousToEvent.EndValue : (T)default
+                let toEventValue = previousToEvent != null ? previousToEvent.EndValue : default
                 select new Rpe.Event<T>
                 {
                     StartBeat = formEvent.StartBeat,
                     EndBeat = formEvent.EndBeat,
-                    StartValue = (dynamic)formEvent.StartValue + (dynamic)toEventValue!,
-                    EndValue = (dynamic)formEvent.EndValue + (dynamic)toEventValue!,
+                    StartValue = (dynamic)formEvent.StartValue + (dynamic)toEventValue,
+                    EndValue = (dynamic)formEvent.EndValue + (dynamic)toEventValue,
                     BezierPoints = formEvent.BezierPoints,
                     Easing = formEvent.Easing,
                     EasingLeft = formEvent.EasingLeft,
@@ -517,8 +518,8 @@ internal static class EventProcessor
                 // 初始化"上一次切割点"的 to/form 值
                 var prevTo = toEventsCopy.FindLast(e => e.EndBeat <= start);
                 var prevForm = formEventsCopy.FindLast(e => e.EndBeat <= start);
-                T lastToValue = prevTo != null ? prevTo.EndValue : default;
-                T lastFormValue = prevForm != null ? prevForm.EndValue : default;
+                var lastToValue = prevTo != null ? prevTo.EndValue : default;
+                var lastFormValue = prevForm != null ? prevForm.EndValue : default;
 
                 var currentBeat = start;
                 // 初始化跨事件检测所需的当前拍追踪变量
@@ -540,7 +541,7 @@ internal static class EventProcessor
                 var segmentStart = start;
                 var segmentStartToValue = toValAtCurrent;
                 var segmentStartFormValue = formValAtCurrent;
-                T segmentStartSum = (dynamic)segmentStartToValue! + (dynamic)segmentStartFormValue!;
+                T segmentStartSum = (dynamic?)segmentStartToValue + (dynamic?)segmentStartFormValue;
 
                 while (currentBeat < end)
                 {
@@ -564,13 +565,13 @@ internal static class EventProcessor
                         {
                             StartBeat = segmentStart,
                             EndBeat = currentBeat,
-                            StartValue = (dynamic)segmentStartToValue + (dynamic)segmentStartFormValue,
-                            EndValue = (dynamic)toValAtCurrent + (dynamic)formValAtCurrent,
+                            StartValue = (dynamic?)segmentStartToValue + (dynamic?)segmentStartFormValue,
+                            EndValue = (dynamic?)toValAtCurrent + (dynamic?)formValAtCurrent,
                         });
                         segmentStart = currentBeat;
                         segmentStartToValue = toValAtCurrent;
                         segmentStartFormValue = formValAtCurrent;
-                        segmentStartSum = (dynamic)toValAtCurrent + (dynamic)formValAtCurrent;
+                        segmentStartSum = (dynamic?)toValAtCurrent + (dynamic?)formValAtCurrent;
                     }
 
                     // 在 nextBeat 处获取数值，分为两套：
@@ -583,20 +584,20 @@ internal static class EventProcessor
                     var toEventBeforeNext = toEventsCopy.FindLast(e => e.EndBeat <= nextBeat);
                     var toValueAtNext = (toEventAtCurrent != null && toEventAtCurrent.EndBeat >= nextBeat)
                         ? toEventAtCurrent.GetValueAtBeat(nextBeat)
-                        : (toEventBeforeNext != null ? toEventBeforeNext.EndValue : default!);
+                        : (toEventBeforeNext != null ? toEventBeforeNext.EndValue : default);
                     var toValUpdate = toEventAtNext != null
                         ? toEventAtNext.GetValueAtBeat(nextBeat)
-                        : (toEventBeforeNext != null ? toEventBeforeNext.EndValue : default!);
+                        : (toEventBeforeNext != null ? toEventBeforeNext.EndValue : default);
 
                     var formEventBeforeNext = formEventsCopy.FindLast(e => e.EndBeat <= nextBeat);
                     var formValueAtNext = (formEventAtCurrent != null && formEventAtCurrent.EndBeat >= nextBeat)
                         ? formEventAtCurrent.GetValueAtBeat(nextBeat)
-                        : (formEventBeforeNext != null ? formEventBeforeNext.EndValue : default!);
+                        : (formEventBeforeNext != null ? formEventBeforeNext.EndValue : default);
                     var formValUpdate = formEventAtNext != null
                         ? formEventAtNext.GetValueAtBeat(nextBeat)
-                        : (formEventBeforeNext != null ? formEventBeforeNext.EndValue : default!);
+                        : (formEventBeforeNext != null ? formEventBeforeNext.EndValue : default);
 
-                    T sumAtNext = (dynamic)toValueAtNext! + (dynamic)formValueAtNext!;
+                    T sumAtNext = (dynamic?)toValueAtNext + (dynamic?)formValueAtNext;
 
                     // 计算线性插值预测值（如果当前段不切割，线性从segmentStart延伸到nextBeat应该是多少）
                     // 若无法预测（segmentStart == end），直接切割
@@ -612,28 +613,32 @@ internal static class EventProcessor
                         .Where(e => e.StartBeat <= end && e.EndBeat >= end)
                         .MaxBy(e => e.StartBeat);
                     var toEventBeforeEnd = toEventsCopy.FindLast(e => e.EndBeat <= end);
-                    T toEndVal = toAtEnd != null
+                    var toEndVal = toAtEnd != null
                         ? toAtEnd.GetValueAtBeat(end)
-                        : toEventBeforeEnd != null ? toEventBeforeEnd.EndValue : default!;
+                        : toEventBeforeEnd != null
+                            ? toEventBeforeEnd.EndValue
+                            : default;
                     var formEventBeforeEnd = formEventsCopy.FindLast(e => e.EndBeat <= end);
-                    T formEndVal = formAtEnd != null
+                    var formEndVal = formAtEnd != null
                         ? formAtEnd.GetValueAtBeat(end)
-                        : formEventBeforeEnd != null ? formEventBeforeEnd.EndValue : default!;
-                    T sumAtEnd = (dynamic)toEndVal + (dynamic)formEndVal;
+                        : formEventBeforeEnd != null
+                            ? formEventBeforeEnd.EndValue
+                            : default;
+                    T sumAtEnd = (dynamic?)toEndVal + (dynamic?)formEndVal;
 
-                    double predictedAtNext =
+                    var predictedAtNext =
                         (double)(dynamic)segmentStartSum +
                         ((double)(dynamic)sumAtEnd - (double)(dynamic)segmentStartSum) * segmentProgress;
 
                     // 误差 = 真实值 - 预测值
-                    double error = Math.Abs((double)(dynamic)sumAtNext - predictedAtNext);
+                    var error = Math.Abs((double)(dynamic)sumAtNext - predictedAtNext);
 
                     // 容差：以 tolerance% 的当前值幅度为阈值
-                    double thresholdBase = (Math.Abs((double)(dynamic)segmentStartSum) +
+                    var thresholdBase = (Math.Abs((double)(dynamic)segmentStartSum) +
                                             Math.Abs((double)(dynamic)sumAtNext)) / 2.0;
-                    double threshold = tolerance / 100.0 * (thresholdBase + 1e-9);
+                    var threshold = tolerance / 100.0 * (thresholdBase + 1e-9);
 
-                    bool isLastStep = nextBeat >= end;
+                    var isLastStep = nextBeat >= end;
                     // 跨事件时也强制切割，确保段不会跨越事件边界
                     if (error > threshold || isLastStep || crossEvent)
                     {
@@ -641,15 +646,15 @@ internal static class EventProcessor
                         {
                             StartBeat = segmentStart,
                             EndBeat = nextBeat,
-                            StartValue = (dynamic)segmentStartToValue + (dynamic)segmentStartFormValue,
-                            EndValue = (dynamic)toValueAtNext + (dynamic)formValueAtNext,
+                            StartValue = (dynamic?)segmentStartToValue + (dynamic?)segmentStartFormValue,
+                            EndValue = (dynamic?)toValueAtNext + (dynamic?)formValueAtNext,
                         });
 
                         // 重置段起点：使用 incoming 事件的数值，供下一段从正确值起始
                         segmentStart = nextBeat;
                         segmentStartToValue = toValUpdate;
                         segmentStartFormValue = formValUpdate;
-                        segmentStartSum = (dynamic)toValUpdate + (dynamic)formValUpdate;
+                        segmentStartSum = (dynamic?)toValUpdate + (dynamic?)formValUpdate;
                     }
 
                     // 更新跨事件检测的当前拍追踪变量，使用 incoming 事件的数值
@@ -685,8 +690,8 @@ internal static class EventProcessor
                 {
                     StartBeat = toEvent.StartBeat,
                     EndBeat = toEvent.EndBeat,
-                    StartValue = (dynamic)toEvent.StartValue! + (dynamic)formOffset!,
-                    EndValue = (dynamic)toEvent.EndValue! + (dynamic)formOffset!,
+                    StartValue = (dynamic?)toEvent.StartValue + (dynamic?)formOffset,
+                    EndValue = (dynamic?)toEvent.EndValue + (dynamic?)formOffset,
                     BezierPoints = toEvent.BezierPoints,
                     Easing = toEvent.Easing,
                     EasingLeft = toEvent.EasingLeft,
@@ -704,8 +709,8 @@ internal static class EventProcessor
                 {
                     StartBeat = formEvent.StartBeat,
                     EndBeat = formEvent.EndBeat,
-                    StartValue = (dynamic)formEvent.StartValue! + (dynamic)toEventValue!,
-                    EndValue = (dynamic)formEvent.EndValue! + (dynamic)toEventValue!,
+                    StartValue = (dynamic?)formEvent.StartValue + (dynamic?)toEventValue,
+                    EndValue = (dynamic?)formEvent.EndValue + (dynamic?)toEventValue,
                     BezierPoints = formEvent.BezierPoints,
                     Easing = formEvent.Easing,
                     EasingLeft = formEvent.EasingLeft,
@@ -740,5 +745,3 @@ internal static class EventProcessor
         return eventsCopy;
     }
 }
-
-

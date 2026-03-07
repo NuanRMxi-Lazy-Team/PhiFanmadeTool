@@ -39,7 +39,7 @@ public sealed class RpeUnbindFatherCommand : AsyncCommand<RpeUnbindFatherCommand
                     chartCopy.JudgeLineList[i] = await RePhiEditHelper.FatherUnbindPlusAsync(
                         i, chart.JudgeLineList, settings.Precision, settings.Tolerance);
         }
-        
+
         // 取消订阅
         RePhiEditHelper.OnDebug -= s => writer.Info(s);
         RePhiEditHelper.OnError -= s => writer.Error(s);
@@ -52,12 +52,11 @@ public sealed class RpeUnbindFatherCommand : AsyncCommand<RpeUnbindFatherCommand
             if (settings.StreamOutput)
             {
                 await using var stream = new FileStream(output, FileMode.Create);
-                await chartCopy.ExportToJsonStreamAsync(stream, true);
+                await chartCopy.ExportToJsonStreamAsync(stream, settings.FormatOutput);
             }
             else
-            {
-                await File.WriteAllTextAsync(output, await chartCopy.ExportToJsonAsync(true), cancellationToken);
-            }
+                await File.WriteAllTextAsync(output, await chartCopy.ExportToJsonAsync(settings.FormatOutput),
+                    cancellationToken);
         }
 
         writer.Info(string.Format(Strings.cli_msg_written, output));
