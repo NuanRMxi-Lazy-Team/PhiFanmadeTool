@@ -1,5 +1,4 @@
 ﻿using static PhiFanmade.Core.Utils.Easings;
-using Newtonsoft.Json;
 
 namespace PhiFanmade.Core.PhiFanmadeNrc
 {
@@ -76,7 +75,7 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
             _easingNumber = easingNumber;
         }
 
-        [JsonIgnore] private int _easingNumber;
+        private int _easingNumber;
 
         public float Do(float minLim, float maxLim, float start, float end, float t)
         {

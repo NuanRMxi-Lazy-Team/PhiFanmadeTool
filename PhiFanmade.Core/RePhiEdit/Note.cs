@@ -17,7 +17,7 @@ namespace PhiFanmade.Core.RePhiEdit
         /// <summary>
         /// 音符的不透明度
         /// </summary>
-        [JsonProperty("alpha")] public int Alpha = 255;
+        [JsonProperty("alpha")] public byte Alpha = 255;
 
         /// <summary>
         /// 音符的起始拍
@@ -79,7 +79,6 @@ namespace PhiFanmade.Core.RePhiEdit
 
         [JsonProperty("color", NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(ColorConverter))]
-
         private byte[] ColorLegacyField
         {
             get => null; // 序列化时不输出

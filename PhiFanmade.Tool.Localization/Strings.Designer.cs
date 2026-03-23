@@ -431,6 +431,15 @@ namespace PhiFanmade.Tool.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 您当前使用的版本并非正式版，可能会遇到非预期行为，届时，请反馈到 https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool，感谢支持.
+        /// </summary>
+        public static string cli_warn_unstable_version {
+            get {
+                return ResourceManager.GetString("cli_warn_unstable_version", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 开源工具集.
         /// </summary>
         public static string gui_app_subtitle {

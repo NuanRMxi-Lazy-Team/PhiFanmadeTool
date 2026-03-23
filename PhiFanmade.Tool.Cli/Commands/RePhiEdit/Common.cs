@@ -56,14 +56,20 @@ public abstract class RpeOperationSettings : BaseSettings
     /// <summary>从文件或工作区加载谱面。</summary>
     public async Task<Rpe.Chart> LoadChartAsync()
     {
+        string path;
         if (!string.IsNullOrWhiteSpace(Workspace))
         {
             var ws = new WorkspaceService();
-            return await ws.GetAsync(Workspace) ?? throw new InvalidOperationException(
-                string.Format(Strings.cli_err_workspace_missing, Workspace));
+            path = ws.GetChartPath(Workspace)
+                   ?? throw new InvalidOperationException(
+                       string.Format(Strings.cli_err_workspace_missing, Workspace));
+        }
+        else
+        {
+            path = Input!;
         }
 
-        var text = await File.ReadAllTextAsync(Input!);
+        var text = await File.ReadAllTextAsync(path);
         return await Rpe.Chart.LoadFromJsonAsync(text);
     }
 

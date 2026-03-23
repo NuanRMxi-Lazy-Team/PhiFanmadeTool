@@ -5,8 +5,6 @@ using System.Reflection;
 using PhiFanmade.Core.Common;
 using PhiFanmade.Core.Utils;
 
-// STJ 特性使用完全限定名
-
 namespace PhiFanmade.Core.PhiFanmadeNrc
 {
     public class Event<T>

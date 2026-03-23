@@ -15,7 +15,7 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         /// <summary>
         /// 音符的不透明度
         /// </summary>
-        public int Alpha = 255;
+        public byte Alpha = 255;
 
         /// <summary>
         /// 音符的起始拍

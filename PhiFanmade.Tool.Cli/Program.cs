@@ -1,10 +1,16 @@
 ﻿using System.Reflection;
 using PhiFanmade.Tool.Cli.Commands;
 using PhiFanmade.Tool.Cli.Commands.RePhiEdit;
+using PhiFanmade.Tool.Cli.Commands.Test;
 using PhiFanmade.Tool.Cli.Commands.WorkSpace;
 using PhiFanmade.Tool.Cli.Infrastructure;
 using PhiFanmade.Tool.Localization;
 using Spectre.Console.Cli;
+
+#if !Release
+var writer = new ConsoleWriter();
+writer.Warn(string.Format(Strings.cli_warn_unstable_version, Strings.cli_app_title));
+#endif
 
 var app = new CommandApp();
 app.SetDefaultCommand<VersionCommand>();
@@ -41,6 +47,7 @@ app.Configure(config =>
     config.AddCommand<VersionCommand>("version")
         .WithDescription(Strings.cli_cmd_version_desc)
         .WithAlias("ver");
+    config.AddCommand<GetTypeTestCommand>("test");
 
     config.AddCommand<LoadCommand>("load")
         .WithDescription(Strings.cli_cmd_load_desc);

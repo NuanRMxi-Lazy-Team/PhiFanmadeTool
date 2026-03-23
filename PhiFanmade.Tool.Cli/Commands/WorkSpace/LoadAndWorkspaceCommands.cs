@@ -38,8 +38,6 @@ public sealed class LoadCommand : AsyncCommand<LoadCommand.Settings>
     }
 }
 
-// ─── Save ────────────────────────────────────────────────────────────────────
-
 // Description set via WithDescription(Strings.cli_cmd_save_desc) in Program.cs
 public sealed class SaveCommand : AsyncCommand<SaveCommand.Settings>
 {

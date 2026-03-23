@@ -5,12 +5,16 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Version>0.2.3</Version>
-        <Configurations>Debug;Release</Configurations>
-        <Platforms>AnyCPU;x64</Platforms>
+        <Configurations>Debug;Release;PreRelease</Configurations>
+        <Platforms>x64</Platforms>
     </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\PhiFanmade.Core\PhiFanmade.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
     </ItemGroup>
 
 </Project>

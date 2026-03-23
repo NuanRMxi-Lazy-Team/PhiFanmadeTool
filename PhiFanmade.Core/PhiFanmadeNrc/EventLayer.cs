@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using PhiFanmade.Core.Common;
 
-
 namespace PhiFanmade.Core.PhiFanmadeNrc
 {
     public class EventLayer

@@ -371,4 +371,7 @@
   <data name="cli_cmd_rpe_cut_event_desc" xml:space="preserve">
     <value>将所有事件碎尸万段为线性事件，完全破坏可编辑性</value>
   </data>
+  <data name="cli_warn_unstable_version" xml:space="preserve">
+    <value>您当前使用的版本并非正式版，可能会遇到非预期行为，届时，请反馈到 https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool，感谢支持</value>
+  </data>
 </root>

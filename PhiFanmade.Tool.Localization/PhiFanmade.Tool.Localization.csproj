@@ -4,8 +4,8 @@
         <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Configurations>Debug;Release</Configurations>
-        <Platforms>AnyCPU;x64</Platforms>
+        <Configurations>Debug;Release;PreRelease</Configurations>
+        <Platforms>x64</Platforms>
         <!-- Satellite assemblies (e.g. zh-CN/) are produced automatically
              by the SDK for every Strings.*.resx file found. -->
     </PropertyGroup>

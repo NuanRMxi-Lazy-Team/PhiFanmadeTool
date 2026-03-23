@@ -7,7 +7,7 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         /// <summary>
         /// 判定线名称
         /// </summary>
-        public string Name = "PhiFanmadeCoreJudgeLine";
+        public string Name = "NrcJudgeLine";
 
         /// <summary>
         /// 判定线纹理相对路径，默认值为line.png

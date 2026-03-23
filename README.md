@@ -30,8 +30,8 @@ PhiFanmade.Tool.Cli: .NET8.0, .NET10.0
 - [ ] PhiEdit序列化
 - [ ] PhiFans反序列化
 - [ ] PhiFans序列化
-- [ ] PhiChain反序列化
-- [ ] PhiChain序列化
+~~- [ ] PhiChain反序列化~~（格式构造有点奇异，基本上只有自家可以读写，搁置，PhiChain本身有导出为RePhiEdit的功能，后期无优化则彻底放弃）
+~~- [ ] PhiChain序列化~~（格式构造有点奇异，基本上只有自家可以读写，搁置，PhiChain本身有导出为RePhiEdit的功能，后期无优化则彻底放弃）
 - [ ] 本家谱面反序列化
 - [ ] 本家谱面序列化
 - [ ] CLI工具（当前已初步可用）

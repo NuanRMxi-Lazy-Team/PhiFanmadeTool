@@ -1,9 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PhiFanmade.Core.PhiFanmadeNrc
+﻿namespace PhiFanmade.Core.PhiFanmadeNrc
 {
     public partial class Chart
     {

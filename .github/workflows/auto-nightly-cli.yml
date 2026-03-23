@@ -1,0 +1,59 @@
+﻿name: Nightly Cli Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nightly-cli:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Build Cli (Debug / Nightly)
+        run: |
+          CSPROJ="PhiFanmade.Tool.Cli/PhiFanmade.Tool.Cli.csproj"
+          output_dir="./artifacts/cli"
+          frameworks=("net8.0" "net10.0")
+          runtimes=("win-x64" "win-x86" "linux-x64")
+
+          mkdir -p "$output_dir"
+
+          for framework in "${frameworks[@]}"; do
+            for runtime in "${runtimes[@]}"; do
+              echo "Building $framework / $runtime (Debug)..."
+              dotnet publish "$CSPROJ" \
+                -c Debug \
+                -f "$framework" \
+                -r "$runtime" \
+                --self-contained false \
+                -o "$output_dir/$framework-$runtime"
+
+              cd "$output_dir/$framework-$runtime"
+              zip -r "../PhiFanmade.OpenTool.Cli-nightly-$framework-$runtime.zip" .
+              cd -
+            done
+          done
+
+      - name: Upload nightly artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-nightly-${{ github.sha }}
+          path: ./artifacts/cli/*.zip
+          if-no-files-found: warn
+          retention-days: 7
+

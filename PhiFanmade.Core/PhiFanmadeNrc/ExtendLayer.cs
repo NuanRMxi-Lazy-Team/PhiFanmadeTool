@@ -61,17 +61,17 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         /// </summary>
         public void Anticipation()
         {
-            if (ColorEvents != null && ColorEvents.Count == 0)
+            if (ColorEvents is { Count: 0 })
                 ColorEvents = null;
-            if (ScaleXEvents != null && ScaleXEvents.Count == 0)
+            if (ScaleXEvents is { Count: 0 })
                 ScaleXEvents = null;
-            if (ScaleYEvents != null && ScaleYEvents.Count == 0)
+            if (ScaleYEvents is { Count: 0 })
                 ScaleYEvents = null;
-            if (TextEvents != null && TextEvents.Count == 0)
+            if (TextEvents is { Count: 0 })
                 TextEvents = null;
-            if (PaintEvents != null && PaintEvents.Count == 0)
+            if (PaintEvents is { Count: 0 })
                 PaintEvents = null;
-            if (GifEvents != null && GifEvents.Count == 0)
+            if (GifEvents is { Count: 0 })
                 GifEvents = null;
         }
     }

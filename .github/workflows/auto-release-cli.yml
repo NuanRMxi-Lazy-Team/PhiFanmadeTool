@@ -8,16 +8,16 @@ on:
       - 'PhiFanmade.Tool.Cli/PhiFanmade.Tool.Cli.csproj'
   workflow_dispatch:
     inputs:
-      test_build:
-        description: '仅测试构建（不发版）'
+      force_release_type:
+        description: '强制指定发版类型（auto = 自动检测）'
         required: false
-        default: false
-        type: boolean
-      create_release:
-        description: '创建 Release 发版'
-        required: false
-        default: true
-        type: boolean
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - release
+          - prerelease
+          - skip
 
 permissions:
   contents: write
@@ -31,104 +31,126 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
 
       - name: Configure git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Detect version change
+        id: version
+        run: |
+          CSPROJ="PhiFanmade.Tool.Cli/PhiFanmade.Tool.Cli.csproj"
+          FORCE="${{ github.event.inputs.force_release_type || 'auto' }}"
+
+          get_version() {
+            grep -oP '<Version>\K[^<]+' "$1" 2>/dev/null || echo ""
+          }
+
+          CURRENT=$(get_version "$CSPROJ")
+          if [ -z "$CURRENT" ]; then
+            echo "::warning::Could not extract version from $CSPROJ, skipping."
+            echo "build_type=skip" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Handle forced release types (workflow_dispatch)
+          if [ "$FORCE" = "release" ]; then
+            echo "Forced release type: release"
+            echo "build_type=release" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT" >> $GITHUB_OUTPUT
+            exit 0
+          elif [ "$FORCE" = "prerelease" ]; then
+            echo "Forced release type: prerelease"
+            echo "build_type=prerelease" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT" >> $GITHUB_OUTPUT
+            exit 0
+          elif [ "$FORCE" = "skip" ]; then
+            echo "Forced skip"
+            echo "build_type=skip" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Auto detection: compare version with previous commit
+          PREVIOUS=$(git show HEAD~1:"$CSPROJ" 2>/dev/null | grep -oP '<Version>\K[^<]+' || echo "")
+          echo "Current version:  $CURRENT"
+          echo "Previous version: $PREVIOUS"
+
+          if [ "$CURRENT" = "$PREVIOUS" ]; then
+            echo ".csproj changed but version is unchanged ($CURRENT), skipping release build."
+            echo "build_type=skip" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Parse version components (x.y.z)
+          CUR_MAJOR=$(echo "$CURRENT"  | cut -d'.' -f1)
+          CUR_MINOR=$(echo "$CURRENT"  | cut -d'.' -f2)
+          PREV_MAJOR=$(echo "$PREVIOUS" | cut -d'.' -f1)
+          PREV_MINOR=$(echo "$PREVIOUS" | cut -d'.' -f2)
+
+          if [ -z "$PREVIOUS" ] || [ "$CUR_MAJOR" != "$PREV_MAJOR" ] || [ "$CUR_MINOR" != "$PREV_MINOR" ]; then
+            echo "Major/minor version changed ($PREVIOUS → $CURRENT) → Release"
+            echo "build_type=release" >> $GITHUB_OUTPUT
+          else
+            echo "Patch version changed ($PREVIOUS → $CURRENT) → PreRelease"
+            echo "build_type=prerelease" >> $GITHUB_OUTPUT
+          fi
+          echo "version=$CURRENT" >> $GITHUB_OUTPUT
+
       - name: Setup .NET
+        if: steps.version.outputs.build_type != 'skip'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
             8.0.x
-            9.0.x
             10.0.x
 
-      - name: Build and release Cli
+      - name: Build and publish Cli
+        if: steps.version.outputs.build_type != 'skip'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IS_TEST_BUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.test_build == true }}
-          SHOULD_RELEASE: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.create_release == true && inputs.test_build == false) }}
+          BUILD_TYPE: ${{ steps.version.outputs.build_type }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           CSPROJ="PhiFanmade.Tool.Cli/PhiFanmade.Tool.Cli.csproj"
+          output_dir="./artifacts/cli"
+          frameworks=("net8.0" "net10.0")
+          runtimes=("win-x64" "win-x86" "linux-x64")
 
-          get_version() {
-            grep -oP '<Version>\K[^<]+' "$1" || grep -oP '<AssemblyVersion>\K[^<]+' "$1"
-          }
+          [ "$BUILD_TYPE" = "release" ] && CONFIG="Release" || CONFIG="PreRelease"
+          echo "Build configuration: $CONFIG"
 
-          is_prerelease() {
-            local patch=$(echo "$1" | cut -d'.' -f3)
-            local build=$(echo "$1" | cut -d'.' -f4)
-            if [ "$patch" != "0" ] || [ ! -z "$build" -a "$build" != "0" ]; then echo "true"; else echo "false"; fi
-          }
+          mkdir -p "$output_dir"
 
-          build_cli() {
-            local output_dir="./artifacts/cli"
-            local frameworks=("net8.0" "net10.0")
-            local runtimes=("win-x64" "win-x86" "linux-x64")
+          for framework in "${frameworks[@]}"; do
+            for runtime in "${runtimes[@]}"; do
+              echo "Building $framework / $runtime ($CONFIG)..."
+              dotnet publish "$CSPROJ" \
+                -c "$CONFIG" \
+                -f "$framework" \
+                -r "$runtime" \
+                --self-contained false \
+                -o "$output_dir/$framework-$runtime-fdd"
 
-            for framework in "${frameworks[@]}"; do
-              for runtime in "${runtimes[@]}"; do
-                echo "Building $framework $runtime (framework-dependent)..."
-                dotnet publish "$CSPROJ" \
-                  -c Release \
-                  -f "$framework" \
-                  -r "$runtime" \
-                  --self-contained false \
-                  -o "$output_dir/$framework-$runtime-fdd"
-
-                cd "$output_dir/$framework-$runtime-fdd"
-                zip -r "../PhiFanmade.OpenTool.Cli-$framework-$runtime-fdd.zip" .
-                cd -
-              done
+              cd "$output_dir/$framework-$runtime-fdd"
+              zip -r "../PhiFanmade.OpenTool.Cli-$framework-$runtime-fdd.zip" .
+              cd -
             done
-
-            echo "Built all CLI variants"
-          }
-
-          VERSION=$(get_version "$CSPROJ")
-          if [ -z "$VERSION" ]; then echo "Could not extract version, skipping."; exit 0; fi
+          done
 
           TAG="Cli-v${VERSION}"
-          mkdir -p ./artifacts/cli
-
-          if [ "$IS_TEST_BUILD" = "true" ]; then
-            echo "Test build mode - skipping release for Cli"
-            build_cli
-            exit 0
-          fi
-
           if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists, skipping..."
+            echo "::warning::Tag $TAG already exists, skipping release creation."
             exit 0
           fi
 
-          build_cli
-
-          if [ "$SHOULD_RELEASE" != "true" ]; then
-            echo "Skipping release creation (build only mode)"
-            exit 0
-          fi
-
-          PRERELEASE=$(is_prerelease "$VERSION")
           git tag "$TAG"
-          git push origin "$TAG" --force
+          git push origin "$TAG"
 
-          RELEASE_ARGS=("$TAG" --title "Cli v${VERSION}" --notes "自动发布 Cli 版本 $VERSION")
-          [ "$PRERELEASE" = "true" ] && RELEASE_ARGS+=(--prerelease) || RELEASE_ARGS+=(--latest)
-          RELEASE_ARGS+=(./artifacts/cli/*.zip)
+          RELEASE_FLAGS=("$TAG" --title "Cli v${VERSION}" --notes "自动发布 Cli 版本 $VERSION")
+          [ "$BUILD_TYPE" = "prerelease" ] && RELEASE_FLAGS+=(--prerelease) || RELEASE_FLAGS+=(--latest)
+          RELEASE_FLAGS+=(./artifacts/cli/*.zip)
 
-          gh release create "${RELEASE_ARGS[@]}"
-          echo "Created release: Cli v${VERSION} (prerelease: $PRERELEASE)"
-
-      - name: Upload build artifacts
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
-        with:
-          name: cli-artifacts
-          path: ./artifacts/cli/*.zip
-          if-no-files-found: warn
-          retention-days: 7
-
+          gh release create "${RELEASE_FLAGS[@]}"
+          echo "✅ Created $BUILD_TYPE release: Cli v${VERSION}"

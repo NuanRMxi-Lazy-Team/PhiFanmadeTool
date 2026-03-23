@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 
-// STJ 特性使用完全限定名，避免命名冲突
-
 namespace PhiFanmade.Core.PhiFanmadeNrc
 {
     public abstract class ControlBase
