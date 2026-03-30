@@ -35,7 +35,7 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         /// <summary>
         /// 音符相对于判定线的X坐标
         /// </summary>
-        public float PositionX = 0.0f; // X坐标
+        public double PositionX = 0.0f; // X坐标
 
         /// <summary>
         /// 音符宽度倍率
@@ -65,7 +65,7 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         /// <summary>
         /// 音符相对于判定线的Y轴偏移
         /// </summary>
-        public float YOffset = 0.0f; // Y偏移
+        public double YOffset = 0.0f; // Y偏移
 
         /// <summary>
         /// 音符颜色（RGB，顶点颜色乘法）

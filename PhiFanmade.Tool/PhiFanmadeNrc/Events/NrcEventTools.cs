@@ -8,8 +8,8 @@ namespace PhiFanmade.Tool.PhiFanmadeNrc.Events;
 public static class NrcEventTools
 {
     /// <summary>根据容差压缩事件列表，合并变化率相近的相邻线性事件。</summary>
-    public static List<Nrc.Event<float>> EventListCompress(
-        List<Nrc.Event<float>> events, double tolerance = 5)
+    public static List<Nrc.Event<double>> EventListCompress(
+        List<Nrc.Event<double>> events, double tolerance = 5)
         => EventCompressor.EventListCompress(events, tolerance);
 
     /// <summary>
@@ -28,4 +28,3 @@ public static class NrcEventTools
         double precision = 64d, double tolerance = 5d)
         => EventMerger.EventMergePlus(toEvents, fromEvents, precision, tolerance);
 }
-

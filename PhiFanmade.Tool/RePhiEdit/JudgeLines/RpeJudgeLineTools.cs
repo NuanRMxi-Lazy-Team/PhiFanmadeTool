@@ -26,10 +26,10 @@ public static class RpeJudgeLineTools
     /// <summary>将判定线与父判定线解绑并保持行为一致（等间隔采样，异步）。</summary>
     public static async Task<Rpe.JudgeLine> FatherUnbindAsync(
         int targetJudgeLineIndex, List<Rpe.JudgeLine> allJudgeLines,
-        double precision = 64d, double tolerance = 5d, bool compress = true)
+        double precision = 64d, double tolerance = 5d, bool useCompress = true)
         => await FatherUnbindAsyncProcessor.FatherUnbindAsync(
             targetJudgeLineIndex, allJudgeLines, precision, tolerance,
-            FatherUnbindHelpers.ChartCacheTable.GetOrCreateValue(allJudgeLines), compress);
+            FatherUnbindHelpers.ChartCacheTable.GetOrCreateValue(allJudgeLines), useCompress);
 
     #endregion
 

@@ -21,10 +21,7 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         /// <summary>
         /// BPM列表
         /// </summary>
-        public List<BpmItem> BpmList = new List<BpmItem>
-        {
-            new BpmItem()
-        };
+        public List<BpmItem> BpmList { get; set; }
 
         /// <summary>
         /// 元数据
@@ -34,6 +31,6 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         /// <summary>
         /// 判定线列表
         /// </summary>
-        public List<JudgeLine> JudgeLineList = new List<JudgeLine>();
+        public List<JudgeLine> JudgeLineList { get; set; }
     }
 }

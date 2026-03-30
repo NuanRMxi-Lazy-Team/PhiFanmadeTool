@@ -45,5 +45,16 @@ internal static class EventCutter
 
         return cutEvents;
     }
+     
+    /// <see cref="CutEventsInRange{T}(List{Nrc.Event{T}}, Beat, Beat, Beat)"/>
+    internal static List<Nrc.Event<T>> CutEventsInRange<T>(
+        List<Nrc.Event<T>> events,
+        Beat startBeat,
+        Beat endBeat,
+        double cutLength)
+    {
+        var cutLengthBeat = new Beat(cutLength);
+        return CutEventsInRange(events, startBeat, endBeat, cutLengthBeat);
+    }
 }
 

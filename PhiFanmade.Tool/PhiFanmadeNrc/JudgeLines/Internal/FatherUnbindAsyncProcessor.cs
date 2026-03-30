@@ -12,10 +12,13 @@ namespace PhiFanmade.Tool.PhiFanmadeNrc.JudgeLines.Internal;
 internal static class FatherUnbindAsyncProcessor
 {
     private readonly record struct EventChannels(
-        List<Nrc.Event<float>> Fx, List<Nrc.Event<float>> Fy, List<Nrc.Event<float>> Fr,
-        List<Nrc.Event<float>> Tx, List<Nrc.Event<float>> Ty);
+        List<Nrc.Event<double>> Fx,
+        List<Nrc.Event<double>> Fy,
+        List<Nrc.Event<double>> Fr,
+        List<Nrc.Event<double>> Tx,
+        List<Nrc.Event<double>> Ty);
 
-    // ─── 等间隔采样异步版 ────────────────────────────────────────────────────
+    // 等间隔采样异步版
 
     internal static async Task<Nrc.JudgeLine> FatherUnbindAsync(
         int targetJudgeLineIndex,
@@ -30,7 +33,7 @@ internal static class FatherUnbindAsyncProcessor
             return cached.Clone();
         }
 
-        var judgeLineCopy    = allJudgeLines[targetJudgeLineIndex].Clone();
+        var judgeLineCopy = allJudgeLines[targetJudgeLineIndex].Clone();
         var allJudgeLinesCopy = allJudgeLines.Select(jl => jl.Clone()).ToList();
         try
         {
@@ -51,8 +54,10 @@ internal static class FatherUnbindAsyncProcessor
                     judgeLineCopy.Father, allJudgeLinesCopy, precision, tolerance, cache, compress);
             }
 
-            judgeLineCopy.EventLayers  = LayerProcessor.RemoveUnlessLayer(judgeLineCopy.EventLayers)  ?? judgeLineCopy.EventLayers;
-            fatherLineCopy.EventLayers = LayerProcessor.RemoveUnlessLayer(fatherLineCopy.EventLayers) ?? fatherLineCopy.EventLayers;
+            judgeLineCopy.EventLayers =
+                LayerProcessor.RemoveUnlessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
+            fatherLineCopy.EventLayers = LayerProcessor.RemoveUnlessLayer(fatherLineCopy.EventLayers) ??
+                                         fatherLineCopy.EventLayers;
 
             var tLayers = judgeLineCopy.EventLayers;
             var fLayers = fatherLineCopy.EventLayers;
@@ -75,7 +80,7 @@ internal static class FatherUnbindAsyncProcessor
             var (fxMin, fxMax) = FatherUnbindHelpers.GetEventRange(mergeResults[2]);
             var (fyMin, fyMax) = FatherUnbindHelpers.GetEventRange(mergeResults[3]);
             var (frMin, frMax) = FatherUnbindHelpers.GetEventRange(mergeResults[4]);
-            var cutLength      = new Beat(1d / precision);
+            var cutLength = new Beat(1d / precision);
 
             var cutResults = await Task.WhenAll(
                 Task.Run(() => EventCutter.CutEventsInRange(mergeResults[0], txMin, txMax, cutLength)),
@@ -85,15 +90,15 @@ internal static class FatherUnbindAsyncProcessor
                 Task.Run(() => EventCutter.CutEventsInRange(mergeResults[4], frMin, frMax, cutLength))
             );
 
-            var ch          = new EventChannels(cutResults[2], cutResults[3], cutResults[4], cutResults[0], cutResults[1]);
-            var overallMin  = new Beat(Math.Min(Math.Min(txMin, tyMin), Math.Min(fxMin, fyMin)));
-            var overallMax  = new Beat(Math.Max(Math.Max(txMax, tyMax), Math.Max(fxMax, fyMax)));
-            var step        = new Beat(1d / precision);
-            var beats       = BuildBeatList(overallMin, overallMax, step);
+            var ch = new EventChannels(cutResults[2], cutResults[3], cutResults[4], cutResults[0], cutResults[1]);
+            var overallMin = new Beat(Math.Min(Math.Min(Math.Min(txMin, tyMin), Math.Min(fxMin, fyMin)), frMin));
+            var overallMax = new Beat(Math.Max(Math.Max(Math.Max(txMax, tyMax), Math.Max(fxMax, fyMax)), frMax));
+            var step = new Beat(1d / precision);
+            var beats = BuildBeatList(overallMin, overallMax, step);
 
             NrcToolLog.OnDebug($"FatherUnbindAsync[{targetJudgeLineIndex}]: 等间隔采样 {beats.Count} 段，精度={precision}");
 
-            var (sortedX, sortedY) = await RunEqualSpacingSamplingAsync(beats, step, ch);
+            var (sortedX, sortedY) = await RunEqualSpacingSamplingAsync(beats, overallMax, step, ch);
 
             NrcToolLog.OnDebug($"FatherUnbindAsync[{targetJudgeLineIndex}]: 采样完成，写回");
             FatherUnbindHelpers.WriteResultToLine(judgeLineCopy, sortedX, sortedY, ch.Fr, tolerance,
@@ -129,7 +134,7 @@ internal static class FatherUnbindAsyncProcessor
             return cached.Clone();
         }
 
-        var judgeLineCopy    = allJudgeLines[targetJudgeLineIndex].Clone();
+        var judgeLineCopy = allJudgeLines[targetJudgeLineIndex].Clone();
         var allJudgeLinesCopy = allJudgeLines.Select(jl => jl.Clone()).ToList();
         try
         {
@@ -140,36 +145,41 @@ internal static class FatherUnbindAsyncProcessor
                 return judgeLineCopy;
             }
 
-            NrcToolLog.OnInfo($"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 开始解绑（自适应采样），父线索引={judgeLineCopy.Father}");
+            NrcToolLog.OnInfo(
+                $"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 开始解绑（自适应采样），父线索引={judgeLineCopy.Father}");
 
             var fatherLineCopy = allJudgeLinesCopy[judgeLineCopy.Father].Clone();
             if (fatherLineCopy.Father >= 0)
             {
-                NrcToolLog.OnDebug($"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 父线 {judgeLineCopy.Father} 仍有父线，递归解绑");
+                NrcToolLog.OnDebug(
+                    $"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 父线 {judgeLineCopy.Father} 仍有父线，递归解绑");
                 fatherLineCopy = await FatherUnbindPlusAsync(
                     judgeLineCopy.Father, allJudgeLinesCopy, precision, tolerance, cache);
             }
 
-            judgeLineCopy.EventLayers  = LayerProcessor.RemoveUnlessLayer(judgeLineCopy.EventLayers)  ?? judgeLineCopy.EventLayers;
-            fatherLineCopy.EventLayers = LayerProcessor.RemoveUnlessLayer(fatherLineCopy.EventLayers) ?? fatherLineCopy.EventLayers;
+            judgeLineCopy.EventLayers =
+                LayerProcessor.RemoveUnlessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
+            fatherLineCopy.EventLayers = LayerProcessor.RemoveUnlessLayer(fatherLineCopy.EventLayers) ??
+                                         fatherLineCopy.EventLayers;
 
             var tLayers = judgeLineCopy.EventLayers;
             var fLayers = fatherLineCopy.EventLayers;
 
             var mergeResults = await Task.WhenAll(
                 Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveXEvents,
-                    (a, b) => EventMerger.EventMergePlus(a, b))),
+                    (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
                 Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveYEvents,
-                    (a, b) => EventMerger.EventMergePlus(a, b))),
+                    (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
                 Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveXEvents,
-                    (a, b) => EventMerger.EventMergePlus(a, b))),
+                    (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
                 Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveYEvents,
-                    (a, b) => EventMerger.EventMergePlus(a, b))),
+                    (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
                 Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.RotateEvents,
-                    (a, b) => EventMerger.EventMergePlus(a, b)))
+                    (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance)))
             );
 
-            var rangeResult = TryGetOverallRange(mergeResults[0], mergeResults[1], mergeResults[2], mergeResults[3]);
+            var rangeResult = TryGetOverallRange(mergeResults[0], mergeResults[1], mergeResults[2], mergeResults[3],
+                mergeResults[4]);
             if (rangeResult is null)
             {
                 judgeLineCopy.Father = -1;
@@ -177,18 +187,20 @@ internal static class FatherUnbindAsyncProcessor
                 return judgeLineCopy;
             }
 
-            var ch                      = new EventChannels(mergeResults[2], mergeResults[3], mergeResults[4], mergeResults[0], mergeResults[1]);
+            var ch = new EventChannels(mergeResults[2], mergeResults[3], mergeResults[4], mergeResults[0],
+                mergeResults[1]);
             var (overallMin, overallMax) = rangeResult.Value;
-            var step                    = new Beat(1d / precision);
-            var keyBeats                = CollectKeyBeats(overallMin, overallMax, new[] { ch.Tx, ch.Ty, ch.Fx, ch.Fy, ch.Fr });
+            var step = new Beat(1d / precision);
+            var keyBeats = CollectKeyBeats(overallMin, overallMax, new[] { ch.Tx, ch.Ty, ch.Fx, ch.Fy, ch.Fr });
 
-            NrcToolLog.OnDebug($"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 自适应采样，关键帧数={keyBeats.Count}，最大精度={precision}");
+            NrcToolLog.OnDebug(
+                $"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 自适应采样，关键帧数={keyBeats.Count}，最大精度={precision}");
 
             var (resultX, resultY) = await Task.Run(() => RunAdaptiveSampling(keyBeats, step, tolerance, ch));
 
             NrcToolLog.OnDebug($"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 采样完成（生成 {resultX.Count} 段），压缩并写回");
             FatherUnbindHelpers.WriteResultToLine(judgeLineCopy, resultX, resultY, ch.Fr, tolerance,
-                (a, b) => EventMerger.EventMergePlus(a, b), compress: true);
+                (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance), compress: true);
 
             cache.TryAdd(targetJudgeLineIndex, judgeLineCopy);
             NrcToolLog.OnInfo($"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 解绑完成");
@@ -206,120 +218,112 @@ internal static class FatherUnbindAsyncProcessor
         }
     }
 
-    // ─── 等间隔采样辅助 ──────────────────────────────────────────────────────
+    // 等间隔采样辅助 
 
     private static List<Beat> BuildBeatList(Beat min, Beat max, Beat step)
     {
         var beats = new List<Beat>();
-        for (var b = min; b <= max; b += step) beats.Add(b);
+        for (var b = min; b < max; b += step) beats.Add(b);
         return beats;
     }
 
-    private static Task<(List<Nrc.Event<float>>, List<Nrc.Event<float>>)> RunEqualSpacingSamplingAsync(
-        List<Beat> beats, Beat step, EventChannels ch)
-        => Task.Run(() => EqualSpacingSampling(beats, step, ch));
+    private static Task<(List<Nrc.Event<double>>, List<Nrc.Event<double>>)> RunEqualSpacingSamplingAsync(
+        List<Beat> beats, Beat max, Beat step, EventChannels ch)
+        => Task.Run(() => EqualSpacingSampling(beats, max, step, ch));
 
-    private static (List<Nrc.Event<float>> x, List<Nrc.Event<float>> y) EqualSpacingSampling(
-        List<Beat> beats, Beat step, EventChannels ch)
+    private static (List<Nrc.Event<double>> x, List<Nrc.Event<double>> y) EqualSpacingSampling(
+        List<Beat> beats, Beat max, Beat step, EventChannels ch)
     {
-        var xBag = new ConcurrentBag<(int i, Nrc.Event<float> evt)>();
-        var yBag = new ConcurrentBag<(int i, Nrc.Event<float> evt)>();
+        var xBag = new ConcurrentBag<(int i, Nrc.Event<double> evt)>();
+        var yBag = new ConcurrentBag<(int i, Nrc.Event<double> evt)>();
 
         Parallel.For(0, beats.Count, i =>
         {
-            var (xEvt, yEvt) = ComputeBeatSegment(i, beats[i], beats[i] + step, ch);
+            var beat = beats[i];
+            var next = beat + step > max ? max : beat + step;
+            var (xEvt, yEvt) = ComputeBeatSegment(beat, next, ch);
             xBag.Add((i, xEvt));
             yBag.Add((i, yEvt));
         });
 
         return (xBag.OrderBy(x => x.i).Select(x => x.evt).ToList(),
-                yBag.OrderBy(x => x.i).Select(x => x.evt).ToList());
+            yBag.OrderBy(x => x.i).Select(x => x.evt).ToList());
     }
 
-    private static (Nrc.Event<float> x, Nrc.Event<float> y) ComputeBeatSegment(
-        int i, Beat beat, Beat next, EventChannels ch)
+    private static (Nrc.Event<double> x, Nrc.Event<double> y) ComputeBeatSegment(
+        Beat beat, Beat next, EventChannels ch)
     {
-        var prevFx = GetPrevValue(ch.Fx, beat, i);
-        var prevFy = GetPrevValue(ch.Fy, beat, i);
-        var prevFr = GetPrevValue(ch.Fr, beat, i);
-        var prevTx = GetPrevValue(ch.Tx, beat, i);
-        var prevTy = GetPrevValue(ch.Ty, beat, i);
-
-        var fxEvt = FindSegment(ch.Fx, beat, next);
-        var fyEvt = FindSegment(ch.Fy, beat, next);
-        var frEvt = FindSegment(ch.Fr, beat, next);
-        var txEvt = FindSegment(ch.Tx, beat, next);
-        var tyEvt = FindSegment(ch.Ty, beat, next);
-
         var (startAbsX, startAbsY) = FatherUnbindHelpers.GetLinePos(
-            fxEvt?.StartValue ?? prevFx, fyEvt?.StartValue ?? prevFy, frEvt?.StartValue ?? prevFr,
-            txEvt?.StartValue ?? prevTx, tyEvt?.StartValue ?? prevTy);
+            FatherUnbindHelpers.GetValIn(ch.Fx, beat), FatherUnbindHelpers.GetValIn(ch.Fy, beat),
+            FatherUnbindHelpers.GetValIn(ch.Fr, beat),
+            FatherUnbindHelpers.GetValIn(ch.Tx, beat), FatherUnbindHelpers.GetValIn(ch.Ty, beat));
         var (endAbsX, endAbsY) = FatherUnbindHelpers.GetLinePos(
-            fxEvt?.EndValue ?? prevFx, fyEvt?.EndValue ?? prevFy, frEvt?.EndValue ?? prevFr,
-            txEvt?.EndValue ?? prevTx, tyEvt?.EndValue ?? prevTy);
+            FatherUnbindHelpers.GetValOut(ch.Fx, next), FatherUnbindHelpers.GetValOut(ch.Fy, next),
+            FatherUnbindHelpers.GetValOut(ch.Fr, next),
+            FatherUnbindHelpers.GetValOut(ch.Tx, next), FatherUnbindHelpers.GetValOut(ch.Ty, next));
 
         return (
-            new Nrc.Event<float> { StartBeat = beat, EndBeat = next, StartValue = (float)startAbsX, EndValue = (float)endAbsX },
-            new Nrc.Event<float> { StartBeat = beat, EndBeat = next, StartValue = (float)startAbsY, EndValue = (float)endAbsY }
+            new Nrc.Event<double>
+                { StartBeat = beat, EndBeat = next, StartValue = startAbsX, EndValue = endAbsX },
+            new Nrc.Event<double>
+                { StartBeat = beat, EndBeat = next, StartValue = startAbsY, EndValue = endAbsY }
         );
     }
 
-    private static float GetPrevValue(List<Nrc.Event<float>> events, Beat beat, int i)
-        => i > 0 ? events.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
-
-    private static Nrc.Event<float>? FindSegment(List<Nrc.Event<float>> events, Beat start, Beat end)
-        => events.FirstOrDefault(e => e.StartBeat == start && e.EndBeat == end);
-
-    // ─── 自适应采样辅助 ──────────────────────────────────────────────────────
+    // ─── 自适应采样辅助 
 
     private static (Beat min, Beat max)? TryGetOverallRange(
-        List<Nrc.Event<float>> tX, List<Nrc.Event<float>> tY,
-        List<Nrc.Event<float>> fX, List<Nrc.Event<float>> fY)
+        List<Nrc.Event<double>> tX, List<Nrc.Event<double>> tY,
+        List<Nrc.Event<double>> fX, List<Nrc.Event<double>> fY,
+        List<Nrc.Event<double>> fR)
     {
         Beat overallMin = new(0), overallMax = new(0);
         var hasEvents = false;
-        foreach (var list in new[] { tX, tY, fX, fY })
+        foreach (var list in new[] { tX, tY, fX, fY, fR })
         {
             if (list.Count == 0) continue;
             var (mn, mx) = FatherUnbindHelpers.GetEventRange(list);
-            if (!hasEvents) { overallMin = mn; overallMax = mx; hasEvents = true; }
-            else { if (mn < overallMin) overallMin = mn; if (mx > overallMax) overallMax = mx; }
+            if (!hasEvents)
+            {
+                overallMin = mn;
+                overallMax = mx;
+                hasEvents = true;
+            }
+            else
+            {
+                if (mn < overallMin) overallMin = mn;
+                if (mx > overallMax) overallMax = mx;
+            }
         }
 
         return hasEvents ? (overallMin, overallMax) : null;
     }
 
     private static List<Beat> CollectKeyBeats(Beat overallMin, Beat overallMax,
-        IEnumerable<List<Nrc.Event<float>>> channels)
+        IEnumerable<List<Nrc.Event<double>>> channels)
     {
         var keyBeatsList = new List<Beat> { overallMin, overallMax };
         foreach (var list in channels)
         foreach (var e in list)
         {
             if (e.StartBeat >= overallMin && e.StartBeat <= overallMax) keyBeatsList.Add(e.StartBeat);
-            if (e.EndBeat   >= overallMin && e.EndBeat   <= overallMax) keyBeatsList.Add(e.EndBeat);
+            if (e.EndBeat >= overallMin && e.EndBeat <= overallMax) keyBeatsList.Add(e.EndBeat);
         }
 
         return keyBeatsList.Distinct().OrderBy(b => b).ToList();
     }
 
-    private static (List<Nrc.Event<float>> x, List<Nrc.Event<float>> y) RunAdaptiveSampling(
+    private static (List<Nrc.Event<double>> x, List<Nrc.Event<double>> y) RunAdaptiveSampling(
         List<Beat> keyBeats, Beat step, double tolerance, EventChannels ch)
     {
-        (double X, double Y) AbsPosIn(Beat beat) => FatherUnbindHelpers.GetLinePos(
-            FatherUnbindHelpers.GetValIn(ch.Fx, beat), FatherUnbindHelpers.GetValIn(ch.Fy, beat),
-            FatherUnbindHelpers.GetValIn(ch.Fr, beat),
-            FatherUnbindHelpers.GetValIn(ch.Tx, beat), FatherUnbindHelpers.GetValIn(ch.Ty, beat));
-
-        (double X, double Y) AbsPosOut(Beat beat) => FatherUnbindHelpers.GetLinePos(
-            FatherUnbindHelpers.GetValOut(ch.Fx, beat), FatherUnbindHelpers.GetValOut(ch.Fy, beat),
-            FatherUnbindHelpers.GetValOut(ch.Fr, beat),
-            FatherUnbindHelpers.GetValOut(ch.Tx, beat), FatherUnbindHelpers.GetValOut(ch.Ty, beat));
-
         var segmentCount = keyBeats.Count - 1;
-        var segmentsX    = new List<Nrc.Event<float>>[segmentCount];
-        var segmentsY    = new List<Nrc.Event<float>>[segmentCount];
-        for (var i = 0; i < segmentCount; i++) { segmentsX[i] = []; segmentsY[i] = []; }
+        var segmentsX = new List<Nrc.Event<double>>[segmentCount];
+        var segmentsY = new List<Nrc.Event<double>>[segmentCount];
+        for (var i = 0; i < segmentCount; i++)
+        {
+            segmentsX[i] = [];
+            segmentsY[i] = [];
+        }
 
         Parallel.For(0, segmentCount, ki =>
         {
@@ -330,39 +334,49 @@ internal static class FatherUnbindAsyncProcessor
             segmentsY[ki].AddRange(sy);
         });
 
-        var resX = new List<Nrc.Event<float>>();
-        var resY = new List<Nrc.Event<float>>();
+        var resX = new List<Nrc.Event<double>>();
+        var resY = new List<Nrc.Event<double>>();
         foreach (var seg in segmentsX) resX.AddRange(seg);
         foreach (var seg in segmentsY) resY.AddRange(seg);
         return (resX, resY);
+
+        (double X, double Y) AbsPosOut(Beat beat) => FatherUnbindHelpers.GetLinePos(
+            FatherUnbindHelpers.GetValOut(ch.Fx, beat), FatherUnbindHelpers.GetValOut(ch.Fy, beat),
+            FatherUnbindHelpers.GetValOut(ch.Fr, beat),
+            FatherUnbindHelpers.GetValOut(ch.Tx, beat), FatherUnbindHelpers.GetValOut(ch.Ty, beat));
+
+        (double X, double Y) AbsPosIn(Beat beat) => FatherUnbindHelpers.GetLinePos(
+            FatherUnbindHelpers.GetValIn(ch.Fx, beat), FatherUnbindHelpers.GetValIn(ch.Fy, beat),
+            FatherUnbindHelpers.GetValIn(ch.Fr, beat),
+            FatherUnbindHelpers.GetValIn(ch.Tx, beat), FatherUnbindHelpers.GetValIn(ch.Ty, beat));
     }
 
-    private static (List<Nrc.Event<float>> x, List<Nrc.Event<float>> y) AdaptiveSampleInterval(
+    private static (List<Nrc.Event<double>> x, List<Nrc.Event<double>> y) AdaptiveSampleInterval(
         Beat iStart, Beat iEnd, Beat step, double tolerance,
         Func<Beat, (double X, double Y)> absPosIn,
         Func<Beat, (double X, double Y)> absPosOut)
     {
-        var localX = new List<Nrc.Event<float>>();
-        var localY = new List<Nrc.Event<float>>();
+        var localX = new List<Nrc.Event<double>>();
+        var localY = new List<Nrc.Event<double>>();
 
-        var end      = absPosOut(iEnd);
+        var end = absPosOut(iEnd);
         var segStart = iStart;
-        var seg      = absPosIn(iStart);
+        var seg = absPosIn(iStart);
 
         for (var cur = iStart; cur < iEnd;)
         {
-            var next   = cur + step > iEnd ? iEnd : cur + step;
+            var next = cur + step > iEnd ? iEnd : cur + step;
             var isLast = next >= iEnd;
             var nextPos = isLast ? end : absPosIn(next);
 
             if (isLast || NeedsAdaptiveCut(seg, nextPos, end, segStart, iEnd, next, tolerance))
             {
-                localX.Add(new Nrc.Event<float>
-                    { StartBeat = segStart, EndBeat = next, StartValue = (float)seg.X, EndValue = (float)nextPos.X });
-                localY.Add(new Nrc.Event<float>
-                    { StartBeat = segStart, EndBeat = next, StartValue = (float)seg.Y, EndValue = (float)nextPos.Y });
+                localX.Add(new Nrc.Event<double>
+                    { StartBeat = segStart, EndBeat = next, StartValue = seg.X, EndValue = nextPos.X });
+                localY.Add(new Nrc.Event<double>
+                    { StartBeat = segStart, EndBeat = next, StartValue = seg.Y, EndValue = nextPos.Y });
                 segStart = next;
-                seg      = nextPos;
+                seg = nextPos;
             }
 
             cur = next;
@@ -374,14 +388,5 @@ internal static class FatherUnbindAsyncProcessor
     private static bool NeedsAdaptiveCut(
         (double X, double Y) seg, (double X, double Y) next,
         (double X, double Y) end, Beat segStart, Beat iEnd, Beat nextBeat, double tolerance)
-    {
-        var segLen   = (double)(iEnd - segStart);
-        var progress = segLen > 1e-12 ? (double)(nextBeat - segStart) / segLen : 1.0;
-        var predX    = seg.X + (end.X - seg.X) * progress;
-        var predY    = seg.Y + (end.Y - seg.Y) * progress;
-        var thrX     = tolerance / 100.0 * ((Math.Abs(seg.X) + Math.Abs(next.X)) / 2.0 + 1e-9);
-        var thrY     = tolerance / 100.0 * ((Math.Abs(seg.Y) + Math.Abs(next.Y)) / 2.0 + 1e-9);
-        return Math.Abs(next.X - predX) > thrX || Math.Abs(next.Y - predY) > thrY;
-    }
+        => FatherUnbindHelpers.NeedsAdaptiveCut(seg, next, end, segStart, iEnd, nextBeat, tolerance);
 }
-

@@ -62,6 +62,14 @@ internal static class EventMerger
 
     // ─── 快速返回 ────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// 在任一输入列表为空时直接给出合并结果，避免进入完整合并流程。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="toEvents">目标事件列表。</param>
+    /// <param name="fromEvents">来源事件列表。</param>
+    /// <param name="result">提前返回时的结果列表。</param>
+    /// <returns>若命中提前返回条件则为 <see langword="true"/>；否则为 <see langword="false"/>。</returns>
     private static bool TryGetMergeEarlyReturn<T>(
         List<Nrc.Event<T>>? toEvents,
         List<Nrc.Event<T>>? fromEvents,
@@ -87,24 +95,53 @@ internal static class EventMerger
 
     // ─── 共用工具 ────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// 校验事件值类型是否为合并器支持的数值类型。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
     private static void EnsureSupportedNumericType<T>()
     {
         if (typeof(T) != typeof(int) && typeof(T) != typeof(float) && typeof(T) != typeof(double))
             throw new NotSupportedException("EventMerge only supports int, float, and double types.");
     }
 
+    /// <summary>
+    /// 深拷贝事件列表，避免修改调用方数据。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="events">待拷贝的事件列表。</param>
+    /// <returns>拷贝后的新列表。</returns>
     private static List<Nrc.Event<T>> CloneEventList<T>(List<Nrc.Event<T>> events)
         => events.Select(e => e.Clone()).ToList();
 
+    /// <summary>
+    /// 按开始拍排序事件列表。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="events">待排序的事件列表。</param>
     private static void SortByStartBeat<T>(List<Nrc.Event<T>> events)
         => events.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
 
+    /// <summary>
+    /// 判断两个事件列表是否存在时间重叠。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="toEvents">目标事件列表。</param>
+    /// <param name="fromEvents">来源事件列表。</param>
+    /// <returns>存在任意重叠区间时返回 <see langword="true"/>。</returns>
     private static bool HasOverlap<T>(List<Nrc.Event<T>> toEvents, List<Nrc.Event<T>> fromEvents)
         => fromEvents.Any(fe =>
             toEvents.Any(te => fe.StartBeat < te.EndBeat && fe.EndBeat > te.StartBeat));
 
     // ─── 无重叠路径 ──────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// 合并无重叠的两组事件，按前序事件终值补偿偏移。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="toEventsCopy">目标事件拷贝。</param>
+    /// <param name="fromEventsCopy">来源事件拷贝。</param>
+    /// <returns>合并后的事件列表。</returns>
     private static List<Nrc.Event<T>> MergeWithoutOverlap<T>(
         List<Nrc.Event<T>> toEventsCopy,
         List<Nrc.Event<T>> fromEventsCopy)
@@ -114,7 +151,7 @@ internal static class EventMerger
         foreach (var toEvent in toEventsCopy)
         {
             var prevForm  = fromEventsCopy.FindLast(e => e.EndBeat <= toEvent.StartBeat);
-            var formOffset = prevForm.EndValue ?? default;
+            var formOffset = prevForm is null ? default : prevForm.EndValue;
             newEvents.Add(new Nrc.Event<T>
             {
                 StartBeat   = toEvent.StartBeat,
@@ -149,8 +186,15 @@ internal static class EventMerger
         return newEvents;
     }
 
-    // ─── 重叠区间构建 ────────────────────────────────────────────────────────
+    // 重叠区间构建
 
+    /// <summary>
+    /// 构建两组事件的重叠区间，并将可连接区间归并。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="toEvents">目标事件列表。</param>
+    /// <param name="fromEvents">来源事件列表。</param>
+    /// <returns>按开始拍排序后的重叠区间集合。</returns>
     private static List<(Beat Start, Beat End)> BuildOverlapIntervals<T>(
         List<Nrc.Event<T>> toEvents,
         List<Nrc.Event<T>> fromEvents)
@@ -168,6 +212,15 @@ internal static class EventMerger
         return overlapIntervals;
     }
 
+    /// <summary>
+    /// 计算两个事件的重叠边界。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="fe">来源事件。</param>
+    /// <param name="te">目标事件。</param>
+    /// <param name="start">重叠起始拍。</param>
+    /// <param name="end">重叠结束拍。</param>
+    /// <returns>存在重叠时返回 <see langword="true"/>。</returns>
     private static bool TryGetOverlapBounds<T>(
         Nrc.Event<T> fe, Nrc.Event<T> te, out Beat start, out Beat end)
     {
@@ -183,6 +236,12 @@ internal static class EventMerger
         return true;
     }
 
+    /// <summary>
+    /// 将新区间加入集合；若与已有区间重叠则进行归并。
+    /// </summary>
+    /// <param name="overlapIntervals">重叠区间集合。</param>
+    /// <param name="start">新区间起始拍。</param>
+    /// <param name="end">新区间结束拍。</param>
     private static void AddOrMergeOverlapInterval(
         List<(Beat Start, Beat End)> overlapIntervals, Beat start, Beat end)
     {
@@ -204,12 +263,27 @@ internal static class EventMerger
         }
     }
 
+    /// <summary>
+    /// 按起止拍对区间进行稳定排序。
+    /// </summary>
+    /// <param name="overlapIntervals">待排序区间集合。</param>
     private static void SortIntervals(List<(Beat Start, Beat End)> overlapIntervals)
         => overlapIntervals.Sort((a, b)
             => a.Start != b.Start ? a.Start.CompareTo(b.Start) : a.End.CompareTo(b.End));
 
-    // ─── 固定采样路径 ────────────────────────────────────────────────────────
+    // 固定采样路径
 
+    /// <summary>
+    /// 通过固定步长切片合并重叠区间，并可按容差压缩结果。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="toEventsForOffsetLookup">用于查询前序偏移的目标事件原始序列。</param>
+    /// <param name="toEventsCopy">目标事件拷贝。</param>
+    /// <param name="fromEventsCopy">来源事件拷贝。</param>
+    /// <param name="precision">每拍切片精度。</param>
+    /// <param name="tolerance">压缩容差百分比。</param>
+    /// <param name="compress">是否执行压缩。</param>
+    /// <returns>合并后的事件列表。</returns>
     private static List<Nrc.Event<T>> MergeWithOverlapFixedSampling<T>(
         List<Nrc.Event<T>> toEventsForOffsetLookup,
         List<Nrc.Event<T>> toEventsCopy,
@@ -239,6 +313,15 @@ internal static class EventMerger
         return newEvents;
     }
 
+    /// <summary>
+    /// 构建重叠区间之外的基础事件，并应用另一轨道的前序偏移。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="toEventsCopy">目标事件拷贝。</param>
+    /// <param name="fromEventsCopy">来源事件拷贝。</param>
+    /// <param name="toEventsForOffsetLookup">用于查询偏移的目标事件序列。</param>
+    /// <param name="overlapIntervals">重叠区间集合。</param>
+    /// <returns>重叠区间外的合并事件。</returns>
     private static List<Nrc.Event<T>> BuildBaseEventsOutsideOverlap<T>(
         List<Nrc.Event<T>> toEventsCopy,
         List<Nrc.Event<T>> fromEventsCopy,
@@ -285,6 +368,15 @@ internal static class EventMerger
         return newEvents;
     }
 
+    /// <summary>
+    /// 在重叠区间内切分两组事件，并从原列表移除已覆盖片段。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="toEventsCopy">目标事件拷贝。</param>
+    /// <param name="fromEventsCopy">来源事件拷贝。</param>
+    /// <param name="overlapIntervals">重叠区间集合。</param>
+    /// <param name="cutLength">切片长度。</param>
+    /// <returns>目标与来源两组切片事件。</returns>
     private static (List<Nrc.Event<T>> CutTo, List<Nrc.Event<T>> CutFrom) CutAndRemoveOverlapEvents<T>(
         List<Nrc.Event<T>> toEventsCopy,
         List<Nrc.Event<T>> fromEventsCopy,
@@ -304,6 +396,17 @@ internal static class EventMerger
         return (cutTo, cutFrom);
     }
 
+    /// <summary>
+    /// 逐个重叠区间合并切片事件，并处理缺失片段的延续值。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="toEventsCopy">目标事件拷贝（用于查找前序终值）。</param>
+    /// <param name="fromEventsCopy">来源事件拷贝（用于查找前序终值）。</param>
+    /// <param name="cutTo">目标切片事件。</param>
+    /// <param name="cutFrom">来源切片事件。</param>
+    /// <param name="overlapIntervals">重叠区间集合。</param>
+    /// <param name="cutLength">切片长度。</param>
+    /// <returns>重叠区间合并结果。</returns>
     private static List<Nrc.Event<T>> MergeCutOverlapSegments<T>(
         List<Nrc.Event<T>> toEventsCopy,
         List<Nrc.Event<T>> fromEventsCopy,
@@ -326,6 +429,18 @@ internal static class EventMerger
         return allCutEvents;
     }
 
+    /// <summary>
+    /// 合并单个重叠区间内的切片事件。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="cutTo">目标切片事件。</param>
+    /// <param name="cutFrom">来源切片事件。</param>
+    /// <param name="start">区间起始拍。</param>
+    /// <param name="end">区间结束拍。</param>
+    /// <param name="cutLength">切片长度。</param>
+    /// <param name="toLastEndValue">目标轨道进入区间前的终值。</param>
+    /// <param name="formLastEndValue">来源轨道进入区间前的终值。</param>
+    /// <returns>该区间的合并事件。</returns>
     private static List<Nrc.Event<T>> MergeSingleOverlapInterval<T>(
         List<Nrc.Event<T>> cutTo,
         List<Nrc.Event<T>> cutFrom,
@@ -361,8 +476,18 @@ internal static class EventMerger
         return merged;
     }
 
-    // ─── 自适应采样路径 ──────────────────────────────────────────────────────
+    // 自适应采样路径
 
+    /// <summary>
+    /// 通过自适应采样合并重叠区间，减少冗余切片。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="toEventsForOffsetLookup">用于查询偏移的目标事件序列。</param>
+    /// <param name="toEventsCopy">目标事件拷贝。</param>
+    /// <param name="fromEventsCopy">来源事件拷贝。</param>
+    /// <param name="precision">基础采样精度。</param>
+    /// <param name="tolerance">分段误差容差。</param>
+    /// <returns>合并后的事件列表。</returns>
     private static List<Nrc.Event<T>> MergeWithOverlapAdaptiveSampling<T>(
         List<Nrc.Event<T>> toEventsForOffsetLookup,
         List<Nrc.Event<T>> toEventsCopy,
@@ -388,6 +513,16 @@ internal static class EventMerger
         return newEvents;
     }
 
+    /// <summary>
+    /// 逐个重叠区间执行自适应合并。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="toEventsCopy">目标事件拷贝。</param>
+    /// <param name="fromEventsCopy">来源事件拷贝。</param>
+    /// <param name="overlapIntervals">重叠区间集合。</param>
+    /// <param name="precision">基础采样精度。</param>
+    /// <param name="tolerance">分段误差容差。</param>
+    /// <returns>所有重叠区间的合并结果。</returns>
     private static List<Nrc.Event<T>> MergeAdaptiveIntervals<T>(
         List<Nrc.Event<T>> toEventsCopy,
         List<Nrc.Event<T>> fromEventsCopy,
@@ -406,6 +541,17 @@ internal static class EventMerger
         return result;
     }
 
+    /// <summary>
+    /// 在单个区间内按误差阈值动态分段，生成近似线性片段。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="toEventsCopy">目标事件拷贝。</param>
+    /// <param name="fromEventsCopy">来源事件拷贝。</param>
+    /// <param name="start">区间起始拍。</param>
+    /// <param name="end">区间结束拍。</param>
+    /// <param name="cutLength">基础步长。</param>
+    /// <param name="tolerance">误差容差百分比。</param>
+    /// <returns>单区间合并后的事件。</returns>
     private static List<Nrc.Event<T>> MergeAdaptiveSingleInterval<T>(
         List<Nrc.Event<T>> toEventsCopy,
         List<Nrc.Event<T>> fromEventsCopy,
@@ -475,23 +621,55 @@ internal static class EventMerger
         return result;
     }
 
-    // ─── 自适应采样辅助方法 ──────────────────────────────────────────────────
+    // 自适应采样辅助方法
 
+    /// <summary>
+    /// 获取指定拍点处处于激活状态且起始拍最晚的事件。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="events">事件列表。</param>
+    /// <param name="beat">查询拍点。</param>
+    /// <returns>命中的活动事件；若不存在则为 <see langword="null"/>。</returns>
     private static Nrc.Event<T>? GetActiveEventAtBeat<T>(List<Nrc.Event<T>> events, Beat beat)
         => events.Where(e => e.StartBeat <= beat && e.EndBeat >= beat).MaxBy(e => e.StartBeat);
 
+    /// <summary>
+    /// 获取指定拍点之前最近事件的终值。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="events">事件列表。</param>
+    /// <param name="beat">查询拍点。</param>
+    /// <returns>最近前序终值；不存在时返回默认值。</returns>
     private static T? GetPreviousEndValue<T>(List<Nrc.Event<T>> events, Beat beat)
     {
         var prev = events.FindLast(e => e.EndBeat <= beat);
         return prev != null ? prev.EndValue : default;
     }
 
+    /// <summary>
+    /// 获取指定拍点的事件值；若无活动事件则回退到前序终值。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="events">事件列表。</param>
+    /// <param name="beat">查询拍点。</param>
+    /// <returns>该拍点可用的数值。</returns>
     private static T? GetValueAtBeatOrPreviousEnd<T>(List<Nrc.Event<T>> events, Beat beat)
     {
         var active = GetActiveEventAtBeat(events, beat);
         return active != null ? active.GetValueAtBeat(beat) : GetPreviousEndValue(events, beat);
     }
 
+    /// <summary>
+    /// 计算下一拍点的出站值与入站值，用于事件切换边界处理。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="events">事件列表。</param>
+    /// <param name="eventAtCurrent">当前拍点活动事件。</param>
+    /// <param name="eventAtNext">下一拍点活动事件。</param>
+    /// <param name="nextBeat">下一拍点。</param>
+    /// <returns>
+    /// 一个元组：<c>Outgoing</c> 表示当前事件延续到下一拍的值，<c>Incoming</c> 表示下一拍活动事件值。
+    /// </returns>
     private static (T? Outgoing, T? Incoming) GetNextBeatValues<T>(
         List<Nrc.Event<T>> events,
         Nrc.Event<T>? eventAtCurrent,
@@ -508,6 +686,18 @@ internal static class EventMerger
         return (outgoing, incoming);
     }
 
+    /// <summary>
+    /// 根据线性预测误差判断当前自适应分段是否需要切分。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="segmentStart">分段起始拍。</param>
+    /// <param name="nextBeat">待评估拍点。</param>
+    /// <param name="intervalEnd">区间结束拍。</param>
+    /// <param name="segmentStartSum">分段起点和轨道值。</param>
+    /// <param name="sumAtNext">下一拍点和轨道值。</param>
+    /// <param name="sumAtEnd">区间终点和轨道值。</param>
+    /// <param name="tolerance">允许误差百分比。</param>
+    /// <returns>误差超限或到达区间末尾时返回 <see langword="true"/>。</returns>
     private static bool ShouldSplitAdaptiveSegment<T>(
         Beat segmentStart, Beat nextBeat, Beat intervalEnd,
         T? segmentStartSum, T? sumAtNext, T? sumAtEnd, double tolerance)
@@ -526,6 +716,11 @@ internal static class EventMerger
         return error > threshold || nextBeat >= intervalEnd;
     }
 
+    /// <summary>
+    /// 将动态数值安全转换为 <see cref="double"/>。
+    /// </summary>
+    /// <param name="value">待转换数值。</param>
+    /// <returns>转换后的双精度值。</returns>
     private static double ToDouble(dynamic? value)
     {
         if (value == null)
@@ -533,9 +728,27 @@ internal static class EventMerger
         return (double)value;
     }
 
+    /// <summary>
+    /// 对两个可空数值执行动态加法。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="left">左值。</param>
+    /// <param name="right">右值。</param>
+    /// <returns>加法结果。</returns>
     private static T AddValues<T>(T? left, T? right)
         => (dynamic?)left + (dynamic?)right;
 
+    /// <summary>
+    /// 向目标列表追加一个由两轨道叠加得到的分段事件。
+    /// </summary>
+    /// <typeparam name="T">事件值类型。</typeparam>
+    /// <param name="target">目标事件列表。</param>
+    /// <param name="startBeat">分段起始拍。</param>
+    /// <param name="endBeat">分段结束拍。</param>
+    /// <param name="startToValue">目标轨道起点值。</param>
+    /// <param name="startFormValue">来源轨道起点值。</param>
+    /// <param name="endToValue">目标轨道终点值。</param>
+    /// <param name="endFormValue">来源轨道终点值。</param>
     private static void AddSegmentEvent<T>(
         List<Nrc.Event<T>> target, Beat startBeat, Beat endBeat,
         T? startToValue, T? startFormValue, T? endToValue, T? endFormValue)

@@ -5,11 +5,11 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
 {
     public class EventLayer
     {
-        public List<Event<float>> MoveXEvents; // 移动事件
+        public List<Event<double>> MoveXEvents; // 移动事件
 
-        public List<Event<float>> MoveYEvents; // 移动事件
+        public List<Event<double>> MoveYEvents; // 移动事件
 
-        public List<Event<float>> RotateEvents; // 旋转事件
+        public List<Event<double>> RotateEvents; // 旋转事件
 
         public List<Event<int>> AlphaEvents; // 透明度事件
 
@@ -43,13 +43,15 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         /// </summary>
         public void Sort()
         {
-            var eventLists = new List<List<Event<float>>>
+            var eventLists = new List<List<Event<double>>>
             {
-                MoveXEvents, MoveYEvents, RotateEvents, SpeedEvents
+                MoveXEvents, MoveYEvents, RotateEvents
             };
             var alphaEventList = AlphaEvents;
+            var speedEventList = SpeedEvents;
             eventLists.ForEach(events => { events?.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat)); });
             alphaEventList?.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
+            speedEventList?.Sort((a, b) => a.StartBeat.CompareTo(b.StartBeat));
         }
 
         /// <summary>

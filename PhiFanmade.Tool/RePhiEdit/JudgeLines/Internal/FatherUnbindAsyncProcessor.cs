@@ -23,7 +23,7 @@ internal static class FatherUnbindAsyncProcessor
         double precision,
         double tolerance,
         ConcurrentDictionary<int, Rpe.JudgeLine> cache,
-        bool compress)
+        bool useCompress)
     {
         if (cache.TryGetValue(targetJudgeLineIndex, out var cached))
         {
@@ -46,21 +46,29 @@ internal static class FatherUnbindAsyncProcessor
             var fatherLineCopy = allJudgeLinesCopy[judgeLineCopy.Father].Clone();
             if (fatherLineCopy.Father >= 0)
             {
-                fatherLineCopy = await FatherUnbindAsync(judgeLineCopy.Father, allJudgeLinesCopy, precision, tolerance, cache, compress);
+                fatherLineCopy = await FatherUnbindAsync(judgeLineCopy.Father, allJudgeLinesCopy, precision, tolerance,
+                    cache, useCompress);
             }
 
-            judgeLineCopy.EventLayers = LayerProcessor.RemoveUnlessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
-            fatherLineCopy.EventLayers = LayerProcessor.RemoveUnlessLayer(fatherLineCopy.EventLayers) ?? fatherLineCopy.EventLayers;
+            judgeLineCopy.EventLayers =
+                LayerProcessor.RemoveUselessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
+            fatherLineCopy.EventLayers = LayerProcessor.RemoveUselessLayer(fatherLineCopy.EventLayers) ??
+                                         fatherLineCopy.EventLayers;
 
             var tLayers = judgeLineCopy.EventLayers;
             var fLayers = fatherLineCopy.EventLayers;
 
             var mergeResults = await Task.WhenAll(
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveXEvents, (a, b) => EventMerger.EventListMerge<float>(a, b, precision, tolerance, compress))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveYEvents, (a, b) => EventMerger.EventListMerge<float>(a, b, precision, tolerance, compress))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveXEvents, (a, b) => EventMerger.EventListMerge<float>(a, b, precision, tolerance, compress))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveYEvents, (a, b) => EventMerger.EventListMerge<float>(a, b, precision, tolerance, compress))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.RotateEvents, (a, b) => EventMerger.EventListMerge<float>(a, b, precision, tolerance, compress)))
+                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveXEvents,
+                    (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, useCompress))),
+                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveYEvents,
+                    (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, useCompress))),
+                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveXEvents,
+                    (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, useCompress))),
+                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveYEvents,
+                    (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, useCompress))),
+                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.RotateEvents,
+                    (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, useCompress)))
             );
 
             var (txMin, txMax) = FatherUnbindHelpers.GetEventRange(mergeResults[0]);
@@ -79,14 +87,14 @@ internal static class FatherUnbindAsyncProcessor
             );
 
             var ch = new EventChannels(cutResults[2], cutResults[3], cutResults[4], cutResults[0], cutResults[1]);
-            var overallMin = new Beat(Math.Min(Math.Min(txMin, tyMin), Math.Min(fxMin, fyMin)));
-            var overallMax = new Beat(Math.Max(Math.Max(txMax, tyMax), Math.Max(fxMax, fyMax)));
+            var overallMin = new Beat(Math.Min(Math.Min(Math.Min(txMin, tyMin), Math.Min(fxMin, fyMin)), frMin));
+            var overallMax = new Beat(Math.Max(Math.Max(Math.Max(txMax, tyMax), Math.Max(fxMax, fyMax)), frMax));
             var step = new Beat(1d / precision);
             var beats = BuildBeatList(overallMin, overallMax, step);
 
-            var (sortedX, sortedY) = await Task.Run(() => EqualSpacingSampling(beats, step, ch));
+            var (sortedX, sortedY) = await Task.Run(() => EqualSpacingSampling(beats, overallMax, step, ch));
             FatherUnbindHelpers.WriteResultToLine(judgeLineCopy, sortedX, sortedY, ch.Fr, tolerance,
-                (a, b) => EventMerger.EventListMerge<float>(a, b, precision, tolerance, compress), compress);
+                (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, useCompress), useCompress);
 
             cache.TryAdd(targetJudgeLineIndex, judgeLineCopy);
             return judgeLineCopy;
@@ -126,24 +134,38 @@ internal static class FatherUnbindAsyncProcessor
             var fatherLineCopy = allJudgeLinesCopy[judgeLineCopy.Father].Clone();
             if (fatherLineCopy.Father >= 0)
             {
-                fatherLineCopy = await FatherUnbindPlusAsync(judgeLineCopy.Father, allJudgeLinesCopy, precision, tolerance, cache);
+                fatherLineCopy = await FatherUnbindPlusAsync(judgeLineCopy.Father, allJudgeLinesCopy, precision,
+                    tolerance, cache);
             }
 
-            judgeLineCopy.EventLayers = LayerProcessor.RemoveUnlessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
-            fatherLineCopy.EventLayers = LayerProcessor.RemoveUnlessLayer(fatherLineCopy.EventLayers) ?? fatherLineCopy.EventLayers;
+            judgeLineCopy.EventLayers =
+                LayerProcessor.RemoveUselessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
+            fatherLineCopy.EventLayers = LayerProcessor.RemoveUselessLayer(fatherLineCopy.EventLayers) ??
+                                         fatherLineCopy.EventLayers;
 
             var tLayers = judgeLineCopy.EventLayers;
             var fLayers = fatherLineCopy.EventLayers;
 
             var mergeResults = await Task.WhenAll(
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveXEvents, (a, b) => EventMerger.EventMergePlus<float>(a, b))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveYEvents, (a, b) => EventMerger.EventMergePlus<float>(a, b))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveXEvents, (a, b) => EventMerger.EventMergePlus<float>(a, b))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveYEvents, (a, b) => EventMerger.EventMergePlus<float>(a, b))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.RotateEvents, (a, b) => EventMerger.EventMergePlus<float>(a, b)))
+                Task.Run(() =>
+                    FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveXEvents,
+                        (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
+                Task.Run(() =>
+                    FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveYEvents,
+                        (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
+                Task.Run(() =>
+                    FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveXEvents,
+                        (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
+                Task.Run(() =>
+                    FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveYEvents,
+                        (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
+                Task.Run(() =>
+                    FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.RotateEvents,
+                        (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance)))
             );
 
-            var rangeResult = TryGetOverallRange(mergeResults[0], mergeResults[1], mergeResults[2], mergeResults[3]);
+            var rangeResult = TryGetOverallRange(mergeResults[0], mergeResults[1], mergeResults[2], mergeResults[3],
+                mergeResults[4]);
             if (rangeResult is null)
             {
                 judgeLineCopy.Father = -1;
@@ -151,14 +173,15 @@ internal static class FatherUnbindAsyncProcessor
                 return judgeLineCopy;
             }
 
-            var ch = new EventChannels(mergeResults[2], mergeResults[3], mergeResults[4], mergeResults[0], mergeResults[1]);
+            var ch = new EventChannels(mergeResults[2], mergeResults[3], mergeResults[4], mergeResults[0],
+                mergeResults[1]);
             var (overallMin, overallMax) = rangeResult.Value;
             var step = new Beat(1d / precision);
-            var keyBeats = CollectKeyBeats(overallMin, overallMax, new[] { ch.Tx, ch.Ty, ch.Fx, ch.Fy, ch.Fr });
+            var keyBeats = CollectKeyBeats(overallMin, overallMax, [ch.Tx, ch.Ty, ch.Fx, ch.Fy, ch.Fr]);
 
             var (resultX, resultY) = await Task.Run(() => RunAdaptiveSampling(keyBeats, step, tolerance, ch));
             FatherUnbindHelpers.WriteResultToLine(judgeLineCopy, resultX, resultY, ch.Fr, tolerance,
-                (a, b) => EventMerger.EventMergePlus<float>(a, b), compress: true);
+                (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance), compress: true);
 
             cache.TryAdd(targetJudgeLineIndex, judgeLineCopy);
             return judgeLineCopy;
@@ -173,13 +196,14 @@ internal static class FatherUnbindAsyncProcessor
     private static List<Beat> BuildBeatList(Beat min, Beat max, Beat step)
     {
         var beats = new List<Beat>();
-        for (var b = min; b <= max; b += step)
+        for (var b = min; b < max; b += step)
             beats.Add(b);
         return beats;
     }
 
     private static (List<Rpe.Event<float>> x, List<Rpe.Event<float>> y) EqualSpacingSampling(
         List<Beat> beats,
+        Beat max,
         Beat step,
         EventChannels ch)
     {
@@ -189,26 +213,16 @@ internal static class FatherUnbindAsyncProcessor
         Parallel.For(0, beats.Count, i =>
         {
             var beat = beats[i];
-            var next = beat + step;
-
-            var prevFx = i > 0 ? ch.Fx.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
-            var prevFy = i > 0 ? ch.Fy.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
-            var prevFr = i > 0 ? ch.Fr.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
-            var prevTx = i > 0 ? ch.Tx.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
-            var prevTy = i > 0 ? ch.Ty.LastOrDefault(e => e.EndBeat <= beat)?.EndValue ?? 0f : 0f;
-
-            var fxEvt = ch.Fx.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == next);
-            var fyEvt = ch.Fy.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == next);
-            var frEvt = ch.Fr.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == next);
-            var txEvt = ch.Tx.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == next);
-            var tyEvt = ch.Ty.FirstOrDefault(e => e.StartBeat == beat && e.EndBeat == next);
+            var next = beat + step > max ? max : beat + step;
 
             var (startAbsX, startAbsY) = FatherUnbindHelpers.GetLinePos(
-                fxEvt?.StartValue ?? prevFx, fyEvt?.StartValue ?? prevFy, frEvt?.StartValue ?? prevFr,
-                txEvt?.StartValue ?? prevTx, tyEvt?.StartValue ?? prevTy);
+                FatherUnbindHelpers.GetValIn(ch.Fx, beat), FatherUnbindHelpers.GetValIn(ch.Fy, beat),
+                FatherUnbindHelpers.GetValIn(ch.Fr, beat),
+                FatherUnbindHelpers.GetValIn(ch.Tx, beat), FatherUnbindHelpers.GetValIn(ch.Ty, beat));
             var (endAbsX, endAbsY) = FatherUnbindHelpers.GetLinePos(
-                fxEvt?.EndValue ?? prevFx, fyEvt?.EndValue ?? prevFy, frEvt?.EndValue ?? prevFr,
-                txEvt?.EndValue ?? prevTx, tyEvt?.EndValue ?? prevTy);
+                FatherUnbindHelpers.GetValOut(ch.Fx, next), FatherUnbindHelpers.GetValOut(ch.Fy, next),
+                FatherUnbindHelpers.GetValOut(ch.Fr, next),
+                FatherUnbindHelpers.GetValOut(ch.Tx, next), FatherUnbindHelpers.GetValOut(ch.Ty, next));
 
             xBag.Add((i, new Rpe.Event<float>
             {
@@ -235,11 +249,12 @@ internal static class FatherUnbindAsyncProcessor
         List<Rpe.Event<float>> tX,
         List<Rpe.Event<float>> tY,
         List<Rpe.Event<float>> fX,
-        List<Rpe.Event<float>> fY)
+        List<Rpe.Event<float>> fY,
+        List<Rpe.Event<float>> fR)
     {
         Beat overallMin = new(0), overallMax = new(0);
         var hasEvents = false;
-        foreach (var list in new[] { tX, tY, fX, fY })
+        foreach (var list in new[] { tX, tY, fX, fY, fR })
         {
             if (list.Count == 0)
                 continue;
@@ -285,14 +300,6 @@ internal static class FatherUnbindAsyncProcessor
         double tolerance,
         EventChannels ch)
     {
-        (double X, double Y) AbsPosIn(Beat beat) => FatherUnbindHelpers.GetLinePos(
-            FatherUnbindHelpers.GetValIn(ch.Fx, beat), FatherUnbindHelpers.GetValIn(ch.Fy, beat), FatherUnbindHelpers.GetValIn(ch.Fr, beat),
-            FatherUnbindHelpers.GetValIn(ch.Tx, beat), FatherUnbindHelpers.GetValIn(ch.Ty, beat));
-
-        (double X, double Y) AbsPosOut(Beat beat) => FatherUnbindHelpers.GetLinePos(
-            FatherUnbindHelpers.GetValOut(ch.Fx, beat), FatherUnbindHelpers.GetValOut(ch.Fy, beat), FatherUnbindHelpers.GetValOut(ch.Fr, beat),
-            FatherUnbindHelpers.GetValOut(ch.Tx, beat), FatherUnbindHelpers.GetValOut(ch.Ty, beat));
-
         var segmentCount = keyBeats.Count - 1;
         var segmentsX = new List<Rpe.Event<float>>[segmentCount];
         var segmentsY = new List<Rpe.Event<float>>[segmentCount];
@@ -348,6 +355,16 @@ internal static class FatherUnbindAsyncProcessor
         foreach (var seg in segmentsX) resultX.AddRange(seg);
         foreach (var seg in segmentsY) resultY.AddRange(seg);
         return (resultX, resultY);
+
+        (double X, double Y) AbsPosIn(Beat beat) => FatherUnbindHelpers.GetLinePos(
+            FatherUnbindHelpers.GetValIn(ch.Fx, beat), FatherUnbindHelpers.GetValIn(ch.Fy, beat),
+            FatherUnbindHelpers.GetValIn(ch.Fr, beat),
+            FatherUnbindHelpers.GetValIn(ch.Tx, beat), FatherUnbindHelpers.GetValIn(ch.Ty, beat));
+
+        (double X, double Y) AbsPosOut(Beat beat) => FatherUnbindHelpers.GetLinePos(
+            FatherUnbindHelpers.GetValOut(ch.Fx, beat), FatherUnbindHelpers.GetValOut(ch.Fy, beat),
+            FatherUnbindHelpers.GetValOut(ch.Fr, beat),
+            FatherUnbindHelpers.GetValOut(ch.Tx, beat), FatherUnbindHelpers.GetValOut(ch.Ty, beat));
     }
 
     private static bool NeedsAdaptiveCut(
@@ -368,4 +385,3 @@ internal static class FatherUnbindAsyncProcessor
         return Math.Abs(next.X - predX) > thrX || Math.Abs(next.Y - predY) > thrY;
     }
 }
-

@@ -13,6 +13,8 @@ internal static class EventCompressor
     internal static List<Nrc.Event<T>> EventListCompress<T>(
         List<Nrc.Event<T>>? events, double tolerance = 5)
     {
+        if (tolerance is > 100 or < 0)
+            throw new ArgumentOutOfRangeException(nameof(tolerance), "Tolerance must be between 0 and 100.");
         if (typeof(T) != typeof(int) && typeof(T) != typeof(float) && typeof(T) != typeof(double))
             throw new NotSupportedException("EventListCompress only supports int, float, and double types.");
 
@@ -22,7 +24,7 @@ internal static class EventCompressor
 
         for (var i = 1; i < events.Count; i++)
         {
-            var lastEvent    = compressed[^1];
+            var lastEvent = compressed[^1];
             var currentEvent = events[i];
 
             if (lastEvent.Easing == 1 && currentEvent.Easing == 1)
@@ -33,12 +35,12 @@ internal static class EventCompressor
                                   (currentEvent.EndBeat - currentEvent.StartBeat);
 
                 if (Math.Abs((double)(lastRate - currentRate)) <=
-                        tolerance * (Math.Abs((double)lastRate) + Math.Abs((double)currentRate)) / 2.0 / 100.0 &&
+                    tolerance * (Math.Abs((double)lastRate) + Math.Abs((double)currentRate)) / 2.0 / 100.0 &&
                     lastEvent.EndBeat == currentEvent.StartBeat &&
                     Math.Abs((double)((dynamic?)lastEvent.EndValue - (dynamic?)currentEvent.StartValue)) <=
-                        tolerance * (Math.Abs((dynamic?)lastEvent.EndValue) + 1e-9) / 100.0)
+                    tolerance * (Math.Abs((dynamic?)lastEvent.EndValue) + 1e-9) / 100.0)
                 {
-                    lastEvent.EndBeat  = currentEvent.EndBeat;
+                    lastEvent.EndBeat = currentEvent.EndBeat;
                     lastEvent.EndValue = currentEvent.EndValue;
                     continue;
                 }
@@ -58,11 +60,11 @@ internal static class EventCompressor
         var eventsCopy = events?.Select(e => e.Clone()).ToList();
         if (eventsCopy is { Count: 1 } &&
             EqualityComparer<T>.Default.Equals(eventsCopy[0].StartValue, default) &&
-            EqualityComparer<T>.Default.Equals(eventsCopy[0].EndValue,   default))
+            EqualityComparer<T>.Default.Equals(eventsCopy[0].EndValue, default))
         {
             eventsCopy.RemoveAt(0);
         }
+
         return eventsCopy;
     }
 }
-

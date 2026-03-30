@@ -13,15 +13,12 @@ internal static class FatherUnbindHelpers
     internal static readonly ConditionalWeakTable<List<Rpe.JudgeLine>, ConcurrentDictionary<int, Rpe.JudgeLine>>
         ChartCacheTable = new();
 
-    internal static (double X, double Y) GetLinePos(
-        double fatherLineX, double fatherLineY, double angleDegrees,
+    internal static (double, double) GetLinePos(double fatherLineX, double fatherLineY, double angleDegrees,
         double lineX, double lineY)
     {
-        var rad  = angleDegrees % 360 * Math.PI / 180d;
-        var cos  = Math.Cos(rad);
-        var sin  = Math.Sin(rad);
-        var rotX = lineX * cos - lineY * sin;
-        var rotY = lineX * sin + lineY * cos;
+        double rad = (angleDegrees % 360) * Math.PI / 180d;
+        double rotX = lineX * Math.Cos(rad) + lineY * Math.Sin(rad);
+        double rotY = -lineX * Math.Sin(rad) + lineY * Math.Cos(rad);
         return (fatherLineX + rotX, fatherLineY + rotY);
     }
 

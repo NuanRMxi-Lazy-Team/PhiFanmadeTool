@@ -22,10 +22,7 @@ namespace PhiFanmade.Core.RePhiEdit
         /// <summary>
         /// BPM列表
         /// </summary>
-        [JsonProperty("BPMList")] public List<BpmItem> BpmList = new List<BpmItem>
-        {
-            new BpmItem()
-        };
+        [JsonProperty("BPMList")] public List<BpmItem> BpmList { get; set; }
 
         /// <summary>
         /// 元数据
@@ -35,7 +32,7 @@ namespace PhiFanmade.Core.RePhiEdit
         /// <summary>
         /// 判定线列表
         /// </summary>
-        [JsonProperty("judgeLineList")] public List<JudgeLine> JudgeLineList = new List<JudgeLine>();
+        [JsonProperty("judgeLineList")] public List<JudgeLine> JudgeLineList { get; set; }
 
         /// <summary>
         /// 制谱时长（秒）

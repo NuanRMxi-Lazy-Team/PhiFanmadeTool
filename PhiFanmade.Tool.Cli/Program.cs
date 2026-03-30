@@ -54,6 +54,9 @@ app.Configure(config =>
 
     config.AddCommand<SaveCommand>("save")
         .WithDescription(Strings.cli_cmd_save_desc);
+    config.AddCommand<UnbindFatherCommand>("unbind-father")
+        .WithAlias("unbind")
+        .WithDescription(Strings.cli_cmd_rpe_unbind_father_desc);
 
     config.AddBranch("workspace", ws =>
     {

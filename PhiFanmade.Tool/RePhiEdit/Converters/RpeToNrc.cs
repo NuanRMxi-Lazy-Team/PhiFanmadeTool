@@ -1,4 +1,5 @@
 ﻿using PhiFanmade.Core.Common;
+using PhiFanmade.Tool.Common;
 
 namespace PhiFanmade.Tool.RePhiEdit.Converters;
 
@@ -24,9 +25,9 @@ public static class RpeToNrc
     };
 
     private static Nrc.Easing ConvertEasing(Rpe.Easing src) => new(MapEasingNumber((int)src));
-    private static float TransformX(float x) => x / Rpe.Chart.CoordinateSystem.MaxX;
-    private static float TransformY(float y) => y / Rpe.Chart.CoordinateSystem.MaxY;
-    private static float TransformAngle(float angle) => -angle;
+    private static double TransformX(float x) => CoordinateGeometry.ToNrcX(x);
+    private static double TransformY(float y) => CoordinateGeometry.ToNrcY(y);
+    private static double TransformAngle(float angle) => CoordinateGeometry.ToNrcAngle(angle);
 
     private static Nrc.BpmItem ConvertBpmItem(Rpe.BpmItem src) => new()
     {
@@ -90,15 +91,15 @@ public static class RpeToNrc
     private static Nrc.EventLayer ConvertEventLayer(Rpe.EventLayer src)
     {
         var nrc = new Nrc.EventLayer();
-        if (src.MoveXEvents != null) nrc.MoveXEvents = src.MoveXEvents.ConvertAll(e => ConvertEvent(e, valueTransformer: TransformX));
-        if (src.MoveYEvents != null) nrc.MoveYEvents = src.MoveYEvents.ConvertAll(e => ConvertEvent(e, valueTransformer: TransformY));
-        if (src.RotateEvents != null) nrc.RotateEvents = src.RotateEvents.ConvertAll(e => ConvertEvent(e, valueTransformer: TransformAngle));
+        if (src.MoveXEvents != null) nrc.MoveXEvents = src.MoveXEvents.ConvertAll(e => ConvertFloatToDoubleEvent(e, TransformX));
+        if (src.MoveYEvents != null) nrc.MoveYEvents = src.MoveYEvents.ConvertAll(e => ConvertFloatToDoubleEvent(e, TransformY));
+        if (src.RotateEvents != null) nrc.RotateEvents = src.RotateEvents.ConvertAll(e => ConvertFloatToDoubleEvent(e, TransformAngle));
         if (src.AlphaEvents != null) nrc.AlphaEvents = src.AlphaEvents.ConvertAll(ConvertIntEvent);
         if (src.SpeedEvents != null) nrc.SpeedEvents = src.SpeedEvents.ConvertAll(ConvertFloatEvent);
         return nrc;
     }
 
-    private static Nrc.ExtendLayer ConvertExtendLayer(Rpe.ExtendLayer src)
+    private static Nrc.ExtendLayer? ConvertExtendLayer(Rpe.ExtendLayer? src)
     {
         if (src == null) return null;
         var nrc = new Nrc.ExtendLayer();
@@ -111,7 +112,7 @@ public static class RpeToNrc
         return nrc;
     }
 
-    private static Nrc.Event<T> ConvertEvent<T>(Rpe.Event<T> src, Func<T, T> valueCopier = null, Func<T, T> valueTransformer = null)
+    private static Nrc.Event<T> ConvertEvent<T>(Rpe.Event<T> src, Func<T, T>? valueCopier = null, Func<T, T>? valueTransformer = null)
     {
         valueCopier ??= v => v;
         valueTransformer ??= v => v;
@@ -130,6 +131,20 @@ public static class RpeToNrc
         };
     }
 
+    private static Nrc.Event<double> ConvertFloatToDoubleEvent(Rpe.Event<float> src, Func<float, double> valueTransformer) => new()
+    {
+        IsBezier = src.IsBezier,
+        BezierPoints = src.BezierPoints.ToArray(),
+        EasingLeft = src.EasingLeft,
+        EasingRight = src.EasingRight,
+        Easing = ConvertEasing(src.Easing),
+        StartValue = valueTransformer(src.StartValue),
+        EndValue = valueTransformer(src.EndValue),
+        StartBeat = new Beat((int[])src.StartBeat),
+        EndBeat = new Beat((int[])src.EndBeat),
+        Font = src.Font
+    };
+
     private static Nrc.Event<float> ConvertFloatEvent(Rpe.Event<float> src) => ConvertEvent(src);
     private static Nrc.Event<int> ConvertIntEvent(Rpe.Event<int> src) => ConvertEvent(src);
     private static Nrc.Event<string> ConvertStringEvent(Rpe.Event<string> src) => ConvertEvent(src);
@@ -140,4 +155,3 @@ public static class RpeToNrc
     private static Nrc.SkewControl ConvertSkewControl(Rpe.SkewControl src) => new() { Easing = ConvertEasing(src.Easing), X = src.X, Skew = src.Skew };
     private static Nrc.YControl ConvertYControl(Rpe.YControl src) => new() { Easing = ConvertEasing(src.Easing), X = src.X, Y = src.Y };
 }
-
