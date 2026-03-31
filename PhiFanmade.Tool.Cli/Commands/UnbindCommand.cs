@@ -33,61 +33,62 @@ public sealed class UnbindFatherCommand : AsyncCommand<UnbindFatherCommand.Setti
 
         // 推断谱面格式
         var chartType = Common.ChartGetType.GetType(chartText);
+        NrcCore.Chart? nrc = null;
         if (chartType == Common.ChartType.RePhiEdit)
         {
             var chart = await RpeCore.Chart.LoadFromJsonAsync(chartText);
-            var nrc = PhiFanmade.Tool.RePhiEdit.Converters.RpeToNrc.Convert(chart);
-
-
-            var nrcCopy = nrc.Clone();
-            // 订阅日志
-            var onDebug = writer.Info;
-            var onError = writer.Error;
-            var onInfo = writer.Info;
-            var onWarning = writer.Warn;
-            NrcToolLog.OnDebug += onDebug;
-            NrcToolLog.OnError += onError;
-            NrcToolLog.OnInfo += onInfo;
-            NrcToolLog.OnWarning += onWarning;
-
-            for (var i = 0; i < nrc.JudgeLineList.Count; i++)
-            {
-                if (nrc.JudgeLineList[i].Father != -1)
-                    if (settings.Classic)
-                        nrcCopy.JudgeLineList[i] = await NrcJudgeLineTools.FatherUnbindAsync(
-                            i, nrc.JudgeLineList, settings.Precision, settings.Tolerance, !settings.DisableCompress);
-                    else
-                        nrcCopy.JudgeLineList[i] = await NrcJudgeLineTools.FatherUnbindPlusAsync(
-                            i, nrc.JudgeLineList, settings.Precision, settings.Tolerance);
-            }
-            var rpeResult = NrcTool.Converters.NrcToRpe.Convert(nrcCopy);
-
-            // 取消订阅
-            NrcToolLog.OnDebug -= onDebug;
-            NrcToolLog.OnError -= onError;
-            NrcToolLog.OnInfo -= onInfo;
-            NrcToolLog.OnWarning -= onWarning;
-
-            var output = settings.ResolveOutputPath();
-            if (!settings.DryRun)
-            {
-                if (settings.StreamOutput)
-                {
-                    await using var stream = new FileStream(output, FileMode.Create);
-                    await rpeResult.ExportToJsonStreamAsync(stream, settings.FormatOutput);
-                }
-                else
-                    await File.WriteAllTextAsync(output, await rpeResult.ExportToJsonAsync(settings.FormatOutput),
-                        cancellationToken);
-            }
-
-            writer.Info(string.Format(Strings.cli_msg_written, output));
-            return 0;
+            nrc = PhiFanmade.Tool.RePhiEdit.Converters.RpeToNrc.Convert(chart);
         }
-        else
+
+        if (nrc == null)
         {
-            writer.Error(string.Format(Strings.cli_err_unknown, chartType));
+            writer.Error(string.Format(Strings.cli_err_unimplemented));
             return 1;
         }
+
+        var nrcCopy = nrc.Clone();
+        // 订阅日志
+        var onDebug = writer.Info;
+        var onError = writer.Error;
+        var onInfo = writer.Info;
+        var onWarning = writer.Warn;
+        NrcToolLog.OnDebug += onDebug;
+        NrcToolLog.OnError += onError;
+        NrcToolLog.OnInfo += onInfo;
+        NrcToolLog.OnWarning += onWarning;
+
+        for (var i = 0; i < nrc.JudgeLineList.Count; i++)
+        {
+            if (nrc.JudgeLineList[i].Father != -1)
+                if (settings.Classic)
+                    nrcCopy.JudgeLineList[i] = await NrcJudgeLineTools.FatherUnbindAsync(
+                        i, nrc.JudgeLineList, settings.Precision, settings.Tolerance, !settings.DisableCompress);
+                else
+                    nrcCopy.JudgeLineList[i] = await NrcJudgeLineTools.FatherUnbindPlusAsync(
+                        i, nrc.JudgeLineList, settings.Precision, settings.Tolerance);
+        }
+        var rpeResult = NrcTool.Converters.NrcToRpe.Convert(nrcCopy);
+
+        // 取消订阅
+        NrcToolLog.OnDebug -= onDebug;
+        NrcToolLog.OnError -= onError;
+        NrcToolLog.OnInfo -= onInfo;
+        NrcToolLog.OnWarning -= onWarning;
+
+        var output = settings.ResolveOutputPath();
+        if (!settings.DryRun)
+        {
+            if (settings.StreamOutput)
+            {
+                await using var stream = new FileStream(output, FileMode.Create);
+                await rpeResult.ExportToJsonStreamAsync(stream, settings.FormatOutput);
+            }
+            else
+                await File.WriteAllTextAsync(output, await rpeResult.ExportToJsonAsync(settings.FormatOutput),
+                    cancellationToken);
+        }
+
+        writer.Info(string.Format(Strings.cli_msg_written, output));
+        return 0;
     }
 }
