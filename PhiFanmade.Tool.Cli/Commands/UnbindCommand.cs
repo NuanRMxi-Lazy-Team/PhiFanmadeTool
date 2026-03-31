@@ -2,8 +2,6 @@
 using PhiFanmade.Tool.Localization;
 using PhiFanmade.Tool.PhiFanmadeNrc;
 using PhiFanmade.Tool.PhiFanmadeNrc.JudgeLines;
-using PhiFanmade.Tool.RePhiEdit;
-using PhiFanmade.Tool.RePhiEdit.JudgeLines;
 using Spectre.Console.Cli;
 
 namespace PhiFanmade.Tool.Cli.Commands;

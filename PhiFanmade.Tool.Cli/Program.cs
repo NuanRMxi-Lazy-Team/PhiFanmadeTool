@@ -56,6 +56,9 @@ app.Configure(config =>
     config.AddCommand<UnbindFatherCommand>("unbind-father")
         .WithAlias("unbind")
         .WithDescription(Strings.cli_cmd_rpe_unbind_father_desc);
+    config.AddCommand<FitEventCommand>("fit")
+        .WithAlias("fit-event")
+        .WithDescription("TODO");//TODO: Add Description
 
     config.AddBranch("workspace", ws =>
     {
