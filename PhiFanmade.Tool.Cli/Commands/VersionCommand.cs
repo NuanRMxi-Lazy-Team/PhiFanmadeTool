@@ -1,13 +1,14 @@
 ﻿using System.Reflection;
 using PhiFanmade.Tool.Localization;
+using PhiFanmade.Tool.Cli.Infrastructure;
 using Spectre.Console.Cli;
 
 namespace PhiFanmade.Tool.Cli.Commands;
 
 // Description set via WithDescription(Strings.cli_cmd_version_desc) in Program.cs
-public sealed class VersionCommand : AsyncCommand<BaseSettings>
+public sealed class VersionCommand : AsyncCommand<CommandSettings>
 {
-    public override Task<int> ExecuteAsync(CommandContext context, BaseSettings settings,
+    public override Task<int> ExecuteAsync(CommandContext context, CommandSettings settings,
         CancellationToken cancellationToken)
     {
 #if PreRelease || Release
@@ -18,7 +19,7 @@ public sealed class VersionCommand : AsyncCommand<BaseSettings>
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion;
 #endif
-        settings.CreateWriter().Info($"{CliLocalizationString.app_title} v{ver}");
+        new ConsoleWriter().Info($"{CliLocalizationString.app_title} v{ver}");
         return Task.FromResult(0);
     }
 }

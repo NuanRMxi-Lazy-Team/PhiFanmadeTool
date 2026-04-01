@@ -6,8 +6,8 @@ using PhiFanmade.Tool.Cli.Infrastructure;
 using PhiFanmade.Tool.Localization;
 using Spectre.Console.Cli;
 
-#if !Release
 var writer = new ConsoleWriter();
+#if !Release
 writer.Warn(string.Format(Strings.cli_warn_unstable_version, Strings.cli_app_title));
 #endif
 

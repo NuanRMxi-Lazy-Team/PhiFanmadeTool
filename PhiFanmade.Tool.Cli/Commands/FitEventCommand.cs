@@ -7,18 +7,14 @@ using Spectre.Console.Cli;
 namespace PhiFanmade.Tool.Cli.Commands;
 
 /// <summary>
-/// 解绑父级命令
+/// 事件拟合命令
 /// </summary>
-public sealed class FitEventCommand : AsyncCommand<FitEventCommand.Settings>
+public sealed class FitEventCommand : AsyncCommand<OperationSettings>
 {
-    public sealed class Settings : OperationSettings
-    {
-    }
-
-    public override async Task<int> ExecuteAsync(CommandContext context, Settings settings,
+    public override async Task<int> ExecuteAsync(CommandContext context, OperationSettings settings,
         CancellationToken cancellationToken)
     {
-        var writer = settings.CreateWriter();
+        var writer = new ConsoleWriter();
         var nrc = await settings.LoadNrcChartAsync(cancellationToken);
 
         if (nrc == null)

@@ -24,7 +24,7 @@ internal static class EventMerger
 
         EnsureSupportedNumericType<T>();
 
-        var toEventsCopy   = CloneEventList(toEvents);
+        var toEventsCopy = CloneEventList(toEvents);
         var fromEventsCopy = CloneEventList(fromEvents);
 
         if (!HasOverlap(toEventsCopy, fromEventsCopy))
@@ -48,7 +48,7 @@ internal static class EventMerger
 
         EnsureSupportedNumericType<T>();
 
-        var toEventsCopy   = CloneEventList(toEvents);
+        var toEventsCopy = CloneEventList(toEvents);
         var fromEventsCopy = CloneEventList(fromEvents);
         SortByStartBeat(toEventsCopy);
         SortByStartBeat(fromEventsCopy);
@@ -150,36 +150,36 @@ internal static class EventMerger
 
         foreach (var toEvent in toEventsCopy)
         {
-            var prevForm  = fromEventsCopy.FindLast(e => e.EndBeat <= toEvent.StartBeat);
+            var prevForm = fromEventsCopy.FindLast(e => e.EndBeat <= toEvent.StartBeat);
             var formOffset = prevForm is null ? default : prevForm.EndValue;
             newEvents.Add(new Nrc.Event<T>
             {
-                StartBeat   = toEvent.StartBeat,
-                EndBeat     = toEvent.EndBeat,
-                StartValue  = (dynamic?)toEvent.StartValue + (dynamic?)formOffset,
-                EndValue    = (dynamic?)toEvent.EndValue   + (dynamic?)formOffset,
+                StartBeat = toEvent.StartBeat,
+                EndBeat = toEvent.EndBeat,
+                StartValue = (dynamic?)toEvent.StartValue + (dynamic?)formOffset,
+                EndValue = (dynamic?)toEvent.EndValue + (dynamic?)formOffset,
                 BezierPoints = toEvent.BezierPoints,
-                Easing       = toEvent.Easing,
-                EasingLeft   = toEvent.EasingLeft,
-                EasingRight  = toEvent.EasingRight,
-                IsBezier     = toEvent.IsBezier,
+                Easing = toEvent.Easing,
+                EasingLeft = toEvent.EasingLeft,
+                EasingRight = toEvent.EasingRight,
+                IsBezier = toEvent.IsBezier,
             });
         }
 
         newEvents.AddRange(from formEvent in fromEventsCopy
-            let prevTo      = toEventsCopy.FindLast(e => e.EndBeat <= formEvent.StartBeat)
+            let prevTo = toEventsCopy.FindLast(e => e.EndBeat <= formEvent.StartBeat)
             let toEventValue = prevTo.EndValue ?? default
             select new Nrc.Event<T>
             {
-                StartBeat   = formEvent.StartBeat,
-                EndBeat     = formEvent.EndBeat,
-                StartValue  = (dynamic?)formEvent.StartValue + (dynamic?)toEventValue,
-                EndValue    = (dynamic?)formEvent.EndValue   + (dynamic?)toEventValue,
+                StartBeat = formEvent.StartBeat,
+                EndBeat = formEvent.EndBeat,
+                StartValue = (dynamic?)formEvent.StartValue + (dynamic?)toEventValue,
+                EndValue = (dynamic?)formEvent.EndValue + (dynamic?)toEventValue,
                 BezierPoints = formEvent.BezierPoints,
-                Easing       = formEvent.Easing,
-                EasingLeft   = formEvent.EasingLeft,
-                EasingRight  = formEvent.EasingRight,
-                IsBezier     = formEvent.IsBezier,
+                Easing = formEvent.Easing,
+                EasingLeft = formEvent.EasingLeft,
+                EasingRight = formEvent.EasingRight,
+                IsBezier = formEvent.IsBezier,
             });
 
         SortByStartBeat(newEvents);
@@ -201,11 +201,13 @@ internal static class EventMerger
     {
         var overlapIntervals = new List<(Beat Start, Beat End)>();
         foreach (var fe in fromEvents)
-        foreach (var te in toEvents)
         {
-            if (!TryGetOverlapBounds(fe, te, out var start, out var end)) continue;
-            if (overlapIntervals.Any(iv => iv.Start == start && iv.End == end)) continue;
-            AddOrMergeOverlapInterval(overlapIntervals, start, end);
+            foreach (var te in toEvents)
+            {
+                if (!TryGetOverlapBounds(fe, te, out var start, out var end)) continue;
+                if (overlapIntervals.Any(iv => iv.Start == start && iv.End == end)) continue;
+                AddOrMergeOverlapInterval(overlapIntervals, start, end);
+            }
         }
 
         SortIntervals(overlapIntervals);
@@ -227,12 +229,12 @@ internal static class EventMerger
         if (fe.StartBeat >= te.EndBeat || fe.EndBeat <= te.StartBeat)
         {
             start = new Beat(0d);
-            end   = new Beat(0d);
+            end = new Beat(0d);
             return false;
         }
 
         start = fe.StartBeat < te.StartBeat ? fe.StartBeat : te.StartBeat;
-        end   = fe.EndBeat   > te.EndBeat   ? fe.EndBeat   : te.EndBeat;
+        end = fe.EndBeat > te.EndBeat ? fe.EndBeat : te.EndBeat;
         return true;
     }
 
@@ -256,10 +258,10 @@ internal static class EventMerger
             var iv = overlapIntervals[i];
             if (!(start < iv.End && end > iv.Start)) continue;
             var newStart = start < iv.Start ? start : iv.Start;
-            var newEnd   = end   > iv.End   ? end   : iv.End;
+            var newEnd = end > iv.End ? end : iv.End;
             overlapIntervals[i] = (newStart, newEnd);
             start = newStart;
-            end   = newEnd;
+            end = newEnd;
         }
     }
 
@@ -333,36 +335,36 @@ internal static class EventMerger
 
         var newEvents = (from toEvent in toEventsCopy
             where !IsInOverlap(toEvent)
-            let prevForm   = fromEventsCopy.FindLast(e => e.EndBeat <= toEvent.StartBeat)
+            let prevForm = fromEventsCopy.FindLast(e => e.EndBeat <= toEvent.StartBeat)
             let formOffset = prevForm.EndValue ?? default
             select new Nrc.Event<T>
             {
-                StartBeat   = toEvent.StartBeat,
-                EndBeat     = toEvent.EndBeat,
-                StartValue  = (dynamic)toEvent.StartValue + (dynamic)formOffset,
-                EndValue    = (dynamic)toEvent.EndValue   + (dynamic)formOffset,
+                StartBeat = toEvent.StartBeat,
+                EndBeat = toEvent.EndBeat,
+                StartValue = (dynamic)toEvent.StartValue + (dynamic)formOffset,
+                EndValue = (dynamic)toEvent.EndValue + (dynamic)formOffset,
                 BezierPoints = toEvent.BezierPoints,
-                Easing       = toEvent.Easing,
-                EasingLeft   = toEvent.EasingLeft,
-                EasingRight  = toEvent.EasingRight,
-                IsBezier     = toEvent.IsBezier,
+                Easing = toEvent.Easing,
+                EasingLeft = toEvent.EasingLeft,
+                EasingRight = toEvent.EasingRight,
+                IsBezier = toEvent.IsBezier,
             }).ToList();
 
         newEvents.AddRange(from formEvent in fromEventsCopy
             where !IsInOverlap(formEvent)
-            let prevTo       = toEventsForOffsetLookup.FindLast(e => e.EndBeat <= formEvent.StartBeat)
+            let prevTo = toEventsForOffsetLookup.FindLast(e => e.EndBeat <= formEvent.StartBeat)
             let toEventValue = prevTo.EndValue ?? default
             select new Nrc.Event<T>
             {
-                StartBeat   = formEvent.StartBeat,
-                EndBeat     = formEvent.EndBeat,
-                StartValue  = (dynamic)formEvent.StartValue + (dynamic)toEventValue,
-                EndValue    = (dynamic)formEvent.EndValue   + (dynamic)toEventValue,
+                StartBeat = formEvent.StartBeat,
+                EndBeat = formEvent.EndBeat,
+                StartValue = (dynamic)formEvent.StartValue + (dynamic)toEventValue,
+                EndValue = (dynamic)formEvent.EndValue + (dynamic)toEventValue,
                 BezierPoints = formEvent.BezierPoints,
-                Easing       = formEvent.Easing,
-                EasingLeft   = formEvent.EasingLeft,
-                EasingRight  = formEvent.EasingRight,
-                IsBezier     = formEvent.IsBezier,
+                Easing = formEvent.Easing,
+                EasingLeft = formEvent.EasingLeft,
+                EasingRight = formEvent.EasingRight,
+                IsBezier = formEvent.IsBezier,
             });
 
         return newEvents;
@@ -383,13 +385,13 @@ internal static class EventMerger
         List<(Beat Start, Beat End)> overlapIntervals,
         Beat cutLength)
     {
-        var cutTo   = new List<Nrc.Event<T>>();
+        var cutTo = new List<Nrc.Event<T>>();
         var cutFrom = new List<Nrc.Event<T>>();
         foreach (var (start, end) in overlapIntervals)
         {
-            cutTo.AddRange(EventCutter.CutEventsInRange(toEventsCopy,   start, end, cutLength));
+            cutTo.AddRange(EventCutter.CutEventsInRange(toEventsCopy, start, end, cutLength));
             cutFrom.AddRange(EventCutter.CutEventsInRange(fromEventsCopy, start, end, cutLength));
-            toEventsCopy.RemoveAll(e => e.StartBeat   < end && e.EndBeat > start);
+            toEventsCopy.RemoveAll(e => e.StartBeat < end && e.EndBeat > start);
             fromEventsCopy.RemoveAll(e => e.StartBeat < end && e.EndBeat > start);
         }
 
@@ -418,9 +420,9 @@ internal static class EventMerger
         var allCutEvents = new List<Nrc.Event<T>>();
         foreach (var (start, end) in overlapIntervals)
         {
-            var prevTo   = toEventsCopy.FindLast(e => e.EndBeat <= start);
+            var prevTo = toEventsCopy.FindLast(e => e.EndBeat <= start);
             var prevForm = fromEventsCopy.FindLast(e => e.EndBeat <= start);
-            var toLastEnd   = prevTo   != null ? prevTo.EndValue   : default;
+            var toLastEnd = prevTo != null ? prevTo.EndValue : default;
             var formLastEnd = prevForm != null ? prevForm.EndValue : default;
             allCutEvents.AddRange(
                 MergeSingleOverlapInterval(cutTo, cutFrom, start, end, cutLength, toLastEnd, formLastEnd));
@@ -447,28 +449,28 @@ internal static class EventMerger
         Beat start, Beat end, Beat cutLength,
         T? toLastEndValue, T? formLastEndValue)
     {
-        var merged      = new List<Nrc.Event<T>>();
+        var merged = new List<Nrc.Event<T>>();
         var currentBeat = start;
         while (currentBeat < end)
         {
-            var nextBeat  = currentBeat + cutLength;
-            var toEvent   = cutTo.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
+            var nextBeat = currentBeat + cutLength;
+            var toEvent = cutTo.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
             var formEvent = cutFrom.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
 
-            var toStart   = toEvent   != null ? toEvent.StartValue   : toLastEndValue;
+            var toStart = toEvent != null ? toEvent.StartValue : toLastEndValue;
             var formStart = formEvent != null ? formEvent.StartValue : formLastEndValue;
-            var toEnd     = toEvent   != null ? toEvent.EndValue     : toLastEndValue;
-            var formEnd   = formEvent != null ? formEvent.EndValue   : formLastEndValue;
+            var toEnd = toEvent != null ? toEvent.EndValue : toLastEndValue;
+            var formEnd = formEvent != null ? formEvent.EndValue : formLastEndValue;
 
             merged.Add(new Nrc.Event<T>
             {
-                StartBeat  = currentBeat,
-                EndBeat    = nextBeat,
-                StartValue = (dynamic?)toStart   + (dynamic?)formStart,
-                EndValue   = (dynamic?)toEnd     + (dynamic?)formEnd,
+                StartBeat = currentBeat,
+                EndBeat = nextBeat,
+                StartValue = (dynamic?)toStart + (dynamic?)formStart,
+                EndValue = (dynamic?)toEnd + (dynamic?)formEnd,
             });
 
-            if (toEvent   != null) toLastEndValue   = toEvent.EndValue;
+            if (toEvent != null) toLastEndValue = toEvent.EndValue;
             if (formEvent != null) formLastEndValue = formEvent.EndValue;
             currentBeat = nextBeat;
         }
@@ -531,7 +533,7 @@ internal static class EventMerger
         double tolerance)
     {
         var cutLength = new Beat(1d / precision);
-        var result    = new List<Nrc.Event<T>>();
+        var result = new List<Nrc.Event<T>>();
         foreach (var (start, end) in overlapIntervals)
         {
             result.AddRange(
@@ -557,28 +559,29 @@ internal static class EventMerger
         List<Nrc.Event<T>> fromEventsCopy,
         Beat start, Beat end, Beat cutLength, double tolerance)
     {
-        var result      = new List<Nrc.Event<T>>();
+        var result = new List<Nrc.Event<T>>();
         var currentBeat = start;
 
-        var lastToValue   = GetPreviousEndValue(toEventsCopy, start);
+        var lastToValue = GetPreviousEndValue(toEventsCopy, start);
         var lastFormValue = GetPreviousEndValue(fromEventsCopy, start);
 
-        var toEventAtCurrent   = GetActiveEventAtBeat(toEventsCopy, currentBeat);
+        var toEventAtCurrent = GetActiveEventAtBeat(toEventsCopy, currentBeat);
         var formEventAtCurrent = GetActiveEventAtBeat(fromEventsCopy, currentBeat);
-        var toValAtCurrent   = toEventAtCurrent   != null ? toEventAtCurrent.GetValueAtBeat(currentBeat)   : lastToValue;
-        var formValAtCurrent = formEventAtCurrent != null ? formEventAtCurrent.GetValueAtBeat(currentBeat) : lastFormValue;
+        var toValAtCurrent = toEventAtCurrent != null ? toEventAtCurrent.GetValueAtBeat(currentBeat) : lastToValue;
+        var formValAtCurrent =
+            formEventAtCurrent != null ? formEventAtCurrent.GetValueAtBeat(currentBeat) : lastFormValue;
 
-        var segmentStart      = start;
-        var segmentStartToValue   = toValAtCurrent;
+        var segmentStart = start;
+        var segmentStartToValue = toValAtCurrent;
         var segmentStartFormValue = formValAtCurrent;
-        var segmentStartSum   = AddValues(segmentStartToValue, segmentStartFormValue);
+        var segmentStartSum = AddValues(segmentStartToValue, segmentStartFormValue);
 
         while (currentBeat < end)
         {
             var nextBeat = currentBeat + cutLength;
             if (nextBeat > end) nextBeat = end;
 
-            var toEventAtNext   = GetActiveEventAtBeat(toEventsCopy, nextBeat);
+            var toEventAtNext = GetActiveEventAtBeat(toEventsCopy, nextBeat);
             var formEventAtNext = GetActiveEventAtBeat(fromEventsCopy, nextBeat);
             var crossEvent = !ReferenceEquals(toEventAtNext, toEventAtCurrent) ||
                              !ReferenceEquals(formEventAtNext, formEventAtCurrent);
@@ -587,35 +590,37 @@ internal static class EventMerger
             {
                 AddSegmentEvent(result, segmentStart, currentBeat,
                     segmentStartToValue, segmentStartFormValue, toValAtCurrent, formValAtCurrent);
-                segmentStart          = currentBeat;
-                segmentStartToValue   = toValAtCurrent;
+                segmentStart = currentBeat;
+                segmentStartToValue = toValAtCurrent;
                 segmentStartFormValue = formValAtCurrent;
-                segmentStartSum       = AddValues(toValAtCurrent, formValAtCurrent);
+                segmentStartSum = AddValues(toValAtCurrent, formValAtCurrent);
             }
 
-            var (toValueAtNext, toValUpdate)   = GetNextBeatValues(toEventsCopy, toEventAtCurrent, toEventAtNext, nextBeat);
-            var (formValueAtNext, formValUpdate) = GetNextBeatValues(fromEventsCopy, formEventAtCurrent, formEventAtNext, nextBeat);
+            var (toValueAtNext, toValUpdate) =
+                GetNextBeatValues(toEventsCopy, toEventAtCurrent, toEventAtNext, nextBeat);
+            var (formValueAtNext, formValUpdate) =
+                GetNextBeatValues(fromEventsCopy, formEventAtCurrent, formEventAtNext, nextBeat);
 
             var sumAtNext = AddValues(toValueAtNext, formValueAtNext);
-            var sumAtEnd  = AddValues(GetValueAtBeatOrPreviousEnd(toEventsCopy, end),
-                                      GetValueAtBeatOrPreviousEnd(fromEventsCopy, end));
+            var sumAtEnd = AddValues(GetValueAtBeatOrPreviousEnd(toEventsCopy, end),
+                GetValueAtBeatOrPreviousEnd(fromEventsCopy, end));
 
             if (crossEvent || ShouldSplitAdaptiveSegment(
                     segmentStart, nextBeat, end, segmentStartSum, sumAtNext, sumAtEnd, tolerance))
             {
                 AddSegmentEvent(result, segmentStart, nextBeat,
                     segmentStartToValue, segmentStartFormValue, toValueAtNext, formValueAtNext);
-                segmentStart          = nextBeat;
-                segmentStartToValue   = toValUpdate;
+                segmentStart = nextBeat;
+                segmentStartToValue = toValUpdate;
                 segmentStartFormValue = formValUpdate;
-                segmentStartSum       = AddValues(toValUpdate, formValUpdate);
+                segmentStartSum = AddValues(toValUpdate, formValUpdate);
             }
 
-            toEventAtCurrent   = toEventAtNext;
+            toEventAtCurrent = toEventAtNext;
             formEventAtCurrent = formEventAtNext;
-            toValAtCurrent     = toValUpdate;
-            formValAtCurrent   = formValUpdate;
-            currentBeat        = nextBeat;
+            toValAtCurrent = toValUpdate;
+            formValAtCurrent = formValUpdate;
+            currentBeat = nextBeat;
         }
 
         return result;
@@ -676,11 +681,11 @@ internal static class EventMerger
         Nrc.Event<T>? eventAtNext,
         Beat nextBeat)
     {
-        var prevEnd   = GetPreviousEndValue(events, nextBeat);
-        var outgoing  = (eventAtCurrent != null && eventAtCurrent.EndBeat >= nextBeat)
+        var prevEnd = GetPreviousEndValue(events, nextBeat);
+        var outgoing = (eventAtCurrent != null && eventAtCurrent.EndBeat >= nextBeat)
             ? eventAtCurrent.GetValueAtBeat(nextBeat)
             : prevEnd;
-        var incoming  = eventAtNext != null
+        var incoming = eventAtNext != null
             ? eventAtNext.GetValueAtBeat(nextBeat)
             : prevEnd;
         return (outgoing, incoming);
@@ -706,12 +711,12 @@ internal static class EventMerger
             ? 1.0
             : (double)(nextBeat - segmentStart) / (double)(intervalEnd - segmentStart);
 
-        var startNum    = ToDouble(segmentStartSum);
-        var nextNum     = ToDouble(sumAtNext);
-        var endNum      = ToDouble(sumAtEnd);
-        var predicted   = startNum + (endNum - startNum) * segmentProgress;
-        var error       = Math.Abs(nextNum - predicted);
-        var threshold   = tolerance / 100.0 * ((Math.Abs(startNum) + Math.Abs(nextNum)) / 2.0 + 1e-9);
+        var startNum = ToDouble(segmentStartSum);
+        var nextNum = ToDouble(sumAtNext);
+        var endNum = ToDouble(sumAtEnd);
+        var predicted = startNum + (endNum - startNum) * segmentProgress;
+        var error = Math.Abs(nextNum - predicted);
+        var threshold = tolerance / 100.0 * ((Math.Abs(startNum) + Math.Abs(nextNum)) / 2.0 + 1e-9);
 
         return error > threshold || nextBeat >= intervalEnd;
     }
@@ -755,11 +760,10 @@ internal static class EventMerger
     {
         target.Add(new Nrc.Event<T>
         {
-            StartBeat  = startBeat,
-            EndBeat    = endBeat,
+            StartBeat = startBeat,
+            EndBeat = endBeat,
             StartValue = AddValues(startToValue, startFormValue),
-            EndValue   = AddValues(endToValue,   endFormValue),
+            EndValue = AddValues(endToValue, endFormValue),
         });
     }
 }
-

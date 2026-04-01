@@ -15,12 +15,16 @@ public sealed class LayerMergeCommand : AsyncCommand<LayerMergeCommand.Settings>
         [CommandOption("--classic")]
         [LocalizedDescription("cli_opt_classic_mode_desc")]
         public bool Classic { get; set; }
+        
+        [CommandOption("--no-compress")]
+        [LocalizedDescription("cli_opt_compress_desc")]
+        public bool DisableCompress { get; set; }
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings,
         CancellationToken cancellationToken)
     {
-        var writer = settings.CreateWriter();
+        var writer = new ConsoleWriter();
         var nrc = await settings.LoadNrcChartAsync(cancellationToken);
 
         if (settings is { DisableCompress: true, Classic: false })
@@ -60,5 +64,3 @@ public sealed class LayerMergeCommand : AsyncCommand<LayerMergeCommand.Settings>
         return 0;
     }
 }
-
-

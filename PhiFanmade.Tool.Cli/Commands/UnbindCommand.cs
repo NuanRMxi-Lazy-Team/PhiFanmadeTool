@@ -16,12 +16,16 @@ public sealed class UnbindFatherCommand : AsyncCommand<UnbindFatherCommand.Setti
         [CommandOption("--classic")]
         [LocalizedDescription("cli_opt_classic_mode_desc")]
         public bool Classic { get; set; }
+
+        [CommandOption("--no-compress")]
+        [LocalizedDescription("cli_opt_compress_desc")]
+        public bool DisableCompress { get; set; }
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings,
         CancellationToken cancellationToken)
     {
-        var writer = settings.CreateWriter();
+        var writer = new ConsoleWriter();
         var nrc = await settings.LoadNrcChartAsync(cancellationToken);
         if (settings is { DisableCompress: true, Classic: false })
         {

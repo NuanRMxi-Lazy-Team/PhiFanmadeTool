@@ -9,7 +9,7 @@ namespace PhiFanmade.Tool.Cli.Commands;
 // 共享 Settings
 
 /// <summary>RPE 操作的通用参数，供 unbind-father 和 layer-merge 复用。</summary>
-public abstract class OperationSettings : BaseSettings
+public abstract class OperationSettings : CommandSettings
 {
     [CommandOption("-i|--input <PATH>")]
     [LocalizedDescription("cli_opt_input_rpe_desc")]
@@ -42,10 +42,6 @@ public abstract class OperationSettings : BaseSettings
     [CommandOption("--format")]
     [LocalizedDescription("cli_opt_format_desc")]
     public bool FormatOutput { get; set; }
-
-    [CommandOption("--no-compress")]
-    [LocalizedDescription("cli_opt_compress_desc")]
-    public bool DisableCompress { get; set; }
 
     [CommandOption("--target <TYPE>")]
     [LocalizedDescription("convert_command_opt_target")]
@@ -82,14 +78,12 @@ public abstract class OperationSettings : BaseSettings
     public string ResolveOutputPath()
     {
         if (!string.IsNullOrWhiteSpace(Output)) return Output;
-        if (!string.IsNullOrWhiteSpace(Workspace))
-        {
-            var ws = new WorkspaceService();
-            return Path.Combine(ws.Root, Workspace, "chart.json");
-        }
-        return Path.Combine(
-            Path.GetDirectoryName(Input!) ?? ".",
-            Path.GetFileNameWithoutExtension(Input!) + "_PFC.json");
+        if (string.IsNullOrWhiteSpace(Workspace))
+            return Path.Combine(
+                Path.GetDirectoryName(Input!) ?? ".",
+                Path.GetFileNameWithoutExtension(Input!) + "_PFC.json");
+        var ws = new WorkspaceService();
+        return Path.Combine(ws.Root, Workspace, "chart.json");
     }
 
     /// <summary>将输入谱面统一转换为 NRC 中间类型。</summary>

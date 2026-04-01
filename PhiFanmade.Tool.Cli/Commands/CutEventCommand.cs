@@ -1,4 +1,5 @@
-﻿using PhiFanmade.Tool.Localization;
+﻿using PhiFanmade.Tool.Cli.Infrastructure;
+using PhiFanmade.Tool.Localization;
 using PhiFanmade.Tool.PhiFanmadeNrc.Layers;
 using Spectre.Console.Cli;
 
@@ -11,12 +12,15 @@ public sealed class CutEventCommand : AsyncCommand<CutEventCommand.Settings>
 {
     public sealed class Settings : OperationSettings
     {
+        [CommandOption("--no-compress")]
+        [LocalizedDescription("cli_opt_compress_desc")]
+        public bool DisableCompress { get; set; }
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings,
         CancellationToken cancellationToken)
     {
-        var writer = settings.CreateWriter();
+        var writer = new ConsoleWriter();
         var nrc = await settings.LoadNrcChartAsync(cancellationToken);
 
         if (nrc == null)
@@ -44,4 +48,3 @@ public sealed class CutEventCommand : AsyncCommand<CutEventCommand.Settings>
         return 0;
     }
 }
-

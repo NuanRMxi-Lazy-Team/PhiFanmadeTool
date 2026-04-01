@@ -13,7 +13,7 @@ public sealed class ConvertCommand : AsyncCommand<ConvertCommand.Settings>
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings,
         CancellationToken cancellationToken)
     {
-        var writer = settings.CreateWriter();
+        var writer = new ConsoleWriter();
 
         var nrc = await settings.LoadNrcChartAsync(cancellationToken);
         if (nrc == null)
