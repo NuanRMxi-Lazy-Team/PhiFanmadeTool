@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 using PhiFanmade.Core.Common;
 
 namespace PhiFanmade.Core.Phigros.v3
@@ -14,12 +14,12 @@ namespace PhiFanmade.Core.Phigros.v3
         /// <summary>
         /// 谱面偏移，单位为秒
         /// </summary>
-        [JsonProperty("offset")] public float Offset { get; set; }= 0;
+        [JsonProperty("offset")] public float Offset { get; set; }
 
         /// <summary>
         /// 判定线列表
         /// </summary>
-        [JsonProperty("judgeLineList")] public List<JudgeLine> JudgeLineList { get; set; }= null;
+        [JsonProperty("judgeLineList")] public List<JudgeLine> JudgeLineList { get; set; }
         
         /// <summary>
         /// 坐标系边界

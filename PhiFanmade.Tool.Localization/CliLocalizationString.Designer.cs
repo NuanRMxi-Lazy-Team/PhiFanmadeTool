@@ -67,5 +67,32 @@ namespace PhiFanmade.Tool.Localization {
                 return ResourceManager.GetString("app_title", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 转换输入谱面到目标谱面格式.
+        /// </summary>
+        public static string convert_command_desc {
+            get {
+                return ResourceManager.GetString("convert_command_desc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 目标格式（如：RePhiEdit、PhiEdit、PhigrosV3）.
+        /// </summary>
+        public static string convert_command_opt_target {
+            get {
+                return ResourceManager.GetString("convert_command_opt_target", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 拟合谱面中线性事件.
+        /// </summary>
+        public static string fit_command_desc {
+            get {
+                return ResourceManager.GetString("fit_command_desc", resourceCulture);
+            }
+        }
     }
 }

@@ -21,4 +21,13 @@
     <data name="app_title" xml:space="preserve">
         <value>臀饭制工具集</value>
     </data>
+    <data name="fit_command_desc" xml:space="preserve">
+        <value>拟合谱面中线性事件</value>
+    </data>
+    <data name="convert_command_desc" xml:space="preserve">
+        <value>转换输入谱面到目标谱面格式</value>
+    </data>
+    <data name="convert_command_opt_target" xml:space="preserve">
+        <value>目标格式（如：RePhiEdit、PhiEdit、PhigrosV3）</value>
+    </data>
 </root>

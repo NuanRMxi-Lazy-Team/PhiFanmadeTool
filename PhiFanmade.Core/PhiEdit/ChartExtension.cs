@@ -38,7 +38,9 @@ namespace PhiFanmade.Core.PhiEdit
                 }
 
                 var part = line.Split(' ');
-                var judgeLineIndex = part.Length > 1 ? int.Parse(part[1]) : -1;
+                int judgeLineIndex = -1;
+                if (part[0] != "bp")
+                    judgeLineIndex = part.Length > 1 ? int.Parse(part[1]) : -1;
 
                 if (part[0] == "bp")
                 {

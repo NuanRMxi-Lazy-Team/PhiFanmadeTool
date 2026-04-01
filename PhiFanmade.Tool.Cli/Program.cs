@@ -46,7 +46,8 @@ app.Configure(config =>
     config.AddCommand<VersionCommand>("version")
         .WithDescription(Strings.cli_cmd_version_desc)
         .WithAlias("ver");
-    config.AddCommand<GetTypeTestCommand>("test");
+    config.AddCommand<GetTypeTestCommand>("test")
+        .IsHidden();
 
     config.AddCommand<LoadCommand>("load")
         .WithDescription(Strings.cli_cmd_load_desc);
@@ -58,7 +59,9 @@ app.Configure(config =>
         .WithDescription(Strings.cli_cmd_rpe_unbind_father_desc);
     config.AddCommand<FitEventCommand>("fit")
         .WithAlias("fit-event")
-        .WithDescription("TODO");//TODO: Add Description
+        .WithDescription(CliLocalizationString.fit_command_desc);
+    config.AddCommand<ConvertCommand>("convert")
+        .WithDescription(CliLocalizationString.convert_command_desc);
 
     config.AddBranch("workspace", ws =>
     {

@@ -26,6 +26,12 @@
           <Generator>PublicResXFileCodeGenerator</Generator>
           <LastGenOutput>CliLocalizationString.Designer.cs</LastGenOutput>
         </EmbeddedResource>
+        <EmbeddedResource Update="CliLocalizationString.en-us.resx">
+          <DependentUpon>CliLocalizationString.resx</DependentUpon>
+        </EmbeddedResource>
+        <EmbeddedResource Update="CliLocalizationString.zh-hant.resx">
+          <DependentUpon>CliLocalizationString.resx</DependentUpon>
+        </EmbeddedResource>
     </ItemGroup>
 
     <ItemGroup>

@@ -16,11 +16,11 @@ namespace PhiFanmade.Core.PhiEdit
         /// </summary>
         public static class CoordinateSystem
         {
-            public const float MaxX = 1024f;
-            public const float MinX = -1024f;
-            public const float MaxY = 700f;
-            public const float MinY = -700f;
-            public const CoordinateSystemAnchor Anchor = CoordinateSystemAnchor.ScreenCenter;
+            public const float MaxX = 2048f;
+            public const float MinX = 0f;
+            public const float MaxY = 1400f;
+            public const float MinY = 0f;
+            public const CoordinateSystemAnchor Anchor = CoordinateSystemAnchor.ScreenLeftLowerCorner;
             public const bool ClockwiseRotation = false;
         }
 
