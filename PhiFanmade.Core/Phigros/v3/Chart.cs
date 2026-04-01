@@ -26,7 +26,6 @@ namespace PhiFanmade.Core.Phigros.v3
         /// </summary>
         public static class CoordinateSystem
         {
-            public const CoordinateSystemAnchor Anchor = CoordinateSystemAnchor.ScreenLeftLowerCorner;
             public const bool ClockwiseRotation = false;
             public const float MaxX = 1f;
             public const float MinX = 0f;

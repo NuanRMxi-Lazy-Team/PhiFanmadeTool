@@ -23,6 +23,7 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         public bool Equals(AlphaControl other)
         {
             if (other == null) return false;
+            if (other.GetHashCode() == GetHashCode()) return true;
 
             // 比较所有需要比较的数值属性
             return Math.Abs(Alpha - other.Alpha) < 1e-6
@@ -81,7 +82,8 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         public bool Equals(XControl other)
         {
             if (other == null) return false;
-
+            if (other.GetHashCode() == GetHashCode()) return true;
+            
             return Math.Abs(Pos - other.Pos) < 1e-6
                    && Math.Abs(X - other.X) < 1e-6
                    && (Easing?.Equals(other.Easing) ?? other.Easing == null);
@@ -138,6 +140,7 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         public bool Equals(SizeControl other)
         {
             if (other == null) return false;
+            if (other.GetHashCode() == GetHashCode()) return true;
 
             return Math.Abs(Size - other.Size) < 1e-6
                    && Math.Abs(X - other.X) < 1e-6
@@ -195,7 +198,8 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         public bool Equals(SkewControl other)
         {
             if (other == null) return false;
-
+            if (other.GetHashCode() == GetHashCode()) return true;
+            
             return Math.Abs(Skew - other.Skew) < 1e-6
                    && Math.Abs(X - other.X) < 1e-6
                    && (Easing?.Equals(other.Easing) ?? other.Easing == null);
@@ -252,6 +256,7 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         public bool Equals(YControl other)
         {
             if (other == null) return false;
+            if (other.GetHashCode() == GetHashCode()) return true;
 
             return Math.Abs(Y - other.Y) < 1e-6
                    && Math.Abs(X - other.X) < 1e-6

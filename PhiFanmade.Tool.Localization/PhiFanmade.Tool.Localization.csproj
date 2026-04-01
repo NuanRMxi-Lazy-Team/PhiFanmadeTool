@@ -19,7 +19,7 @@
         <EmbeddedResource Update="Strings.en-US.resx">
           <DependentUpon>Strings.resx</DependentUpon>
         </EmbeddedResource>
-        <EmbeddedResource Update="Strings.zh-Hant.resx">
+        <EmbeddedResource Update="Strings.zh-hant.resx">
             <DependentUpon>Strings.resx</DependentUpon>
         </EmbeddedResource>
         <EmbeddedResource Update="CliLocalizationString.resx">

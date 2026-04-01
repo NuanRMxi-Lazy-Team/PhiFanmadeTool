@@ -14,7 +14,6 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
             public const float MinX = -1f;
             public const float MaxY = 1f;
             public const float MinY = -1f;
-            public const CoordinateSystemAnchor Anchor = CoordinateSystemAnchor.ScreenCenter;
             public const bool ClockwiseRotation = false;
         }
 

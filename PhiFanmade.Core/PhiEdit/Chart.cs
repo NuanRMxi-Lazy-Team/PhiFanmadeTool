@@ -20,7 +20,6 @@ namespace PhiFanmade.Core.PhiEdit
             public const float MinX = 0f;
             public const float MaxY = 1400f;
             public const float MinY = 0f;
-            public const CoordinateSystemAnchor Anchor = CoordinateSystemAnchor.ScreenLeftLowerCorner;
             public const bool ClockwiseRotation = false;
         }
 
