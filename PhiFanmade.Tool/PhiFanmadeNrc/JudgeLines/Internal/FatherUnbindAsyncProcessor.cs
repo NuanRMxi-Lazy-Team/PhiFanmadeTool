@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using PhiFanmade.Core.Common;
 using PhiFanmade.Tool.PhiFanmadeNrc.Events.Internal;
-using PhiFanmade.Tool.PhiFanmadeNrc.Layers.Internal;
 
 namespace PhiFanmade.Tool.PhiFanmadeNrc.JudgeLines.Internal;
 
@@ -13,7 +12,49 @@ namespace PhiFanmade.Tool.PhiFanmadeNrc.JudgeLines.Internal;
 /// </summary>
 internal static class FatherUnbindAsyncProcessor
 {
-    // ─── 等间隔采样异步版 ────────────────────────────────────────────────────
+    private readonly record struct PrepareResult(
+        Nrc.JudgeLine JudgeLine,
+        Nrc.JudgeLine? FatherLine,
+        bool ShouldReturn);
+
+    // 抽取异步版的前置流程，保证 FatherUnbindAsync / FatherUnbindPlusAsync 的递归与缓存行为一致。
+    private static async Task<PrepareResult> PrepareUnbindContextAsync(
+        int targetJudgeLineIndex,
+        List<Nrc.JudgeLine> allJudgeLines,
+        ConcurrentDictionary<int, Nrc.JudgeLine> cache,
+        string logTag,
+        string startAction,
+        Func<int, List<Nrc.JudgeLine>, Task<Nrc.JudgeLine>> recursiveUnbind)
+    {
+        if (FatherUnbindHelpers.TryGetCachedClone(targetJudgeLineIndex, cache, logTag, out var cached))
+        {
+            return new PrepareResult(cached, null, true);
+        }
+
+        var judgeLineCopy = allJudgeLines[targetJudgeLineIndex].Clone();
+        var allJudgeLinesCopy = allJudgeLines.Select(jl => jl.Clone()).ToList();
+
+        if (FatherUnbindHelpers.TryReturnWhenNoFather(targetJudgeLineIndex, judgeLineCopy, cache, logTag))
+        {
+            return new PrepareResult(judgeLineCopy, null, true);
+        }
+
+        NrcToolLog.OnInfo($"{logTag}[{targetJudgeLineIndex}]: {startAction}，父线索引={judgeLineCopy.Father}");
+
+        // 若父线仍有父线，递归异步解绑父链，确保父线已为绝对坐标
+        var fatherLineCopy = allJudgeLinesCopy[judgeLineCopy.Father].Clone();
+        if (fatherLineCopy.Father >= 0)
+        {
+            NrcToolLog.OnDebug($"{logTag}[{targetJudgeLineIndex}]: 父线 {judgeLineCopy.Father} 仍有父线，递归解绑");
+            fatherLineCopy = await recursiveUnbind(judgeLineCopy.Father, allJudgeLinesCopy);
+        }
+
+        FatherUnbindHelpers.CleanupRedundantLayers(judgeLineCopy, fatherLineCopy);
+
+        return new PrepareResult(judgeLineCopy, fatherLineCopy, false);
+    }
+
+    // 等间隔采样异步版
 
     /// <summary>
     /// 等间隔采样解绑（异步版）：将判定线与父线解绑，以等间隔拍步长采样保持原始行为。
@@ -34,73 +75,45 @@ internal static class FatherUnbindAsyncProcessor
         ConcurrentDictionary<int, Nrc.JudgeLine> cache,
         bool compress)
     {
-        if (cache.TryGetValue(targetJudgeLineIndex, out var cached))
-        {
-            NrcToolLog.OnDebug($"FatherUnbindAsync[{targetJudgeLineIndex}]: 命中缓存，直接返回已解绑结果");
-            return cached.Clone();
-        }
-
-        var judgeLineCopy = allJudgeLines[targetJudgeLineIndex].Clone();
-        var allJudgeLinesCopy = allJudgeLines.Select(jl => jl.Clone()).ToList();
+        Nrc.JudgeLine judgeLineCopy;
         try
         {
-            if (judgeLineCopy.Father <= -1)
+            // 统一前置流程，减少等间隔/自适应两个入口的重复实现。
+            var (judgeLine, fatherLine, shouldReturn) = await PrepareUnbindContextAsync(
+                targetJudgeLineIndex,
+                allJudgeLines,
+                cache,
+                logTag: "FatherUnbindAsync",
+                startAction: "开始解绑",
+                recursiveUnbind: (idx, lines) => FatherUnbindAsync(idx, lines, precision, tolerance, cache, compress));
+
+            judgeLineCopy = judgeLine;
+            
+            if (shouldReturn || fatherLine is null)
             {
-                NrcToolLog.OnWarning($"FatherUnbindAsync[{targetJudgeLineIndex}]: 判定线无父线，跳过。");
-                cache.TryAdd(targetJudgeLineIndex, judgeLineCopy);
                 return judgeLineCopy;
             }
 
-            NrcToolLog.OnInfo($"FatherUnbindAsync[{targetJudgeLineIndex}]: 开始解绑，父线索引={judgeLineCopy.Father}");
-
-            // 若父线仍有父线，递归异步解绑父链，确保父线已为绝对坐标
-            var fatherLineCopy = allJudgeLinesCopy[judgeLineCopy.Father].Clone();
-            if (fatherLineCopy.Father >= 0)
-            {
-                NrcToolLog.OnDebug(
-                    $"FatherUnbindAsync[{targetJudgeLineIndex}]: 父线 {judgeLineCopy.Father} 仍有父线，递归解绑");
-                fatherLineCopy = await FatherUnbindAsync(
-                    judgeLineCopy.Father, allJudgeLinesCopy, precision, tolerance, cache, compress);
-            }
-
-            // 清理冗余（全零）事件层，减少后续合并的计算量
-            judgeLineCopy.EventLayers =
-                LayerProcessor.RemoveUnlessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
-            fatherLineCopy.EventLayers =
-                LayerProcessor.RemoveUnlessLayer(fatherLineCopy.EventLayers) ?? fatherLineCopy.EventLayers;
-
-            var tLayers = judgeLineCopy.EventLayers;
-            var fLayers = fatherLineCopy.EventLayers;
-
             // 并行合并各通道事件（等间隔版使用 EventListMerge）；各通道独立，可安全并行
-            var mergeResults = await Task.WhenAll(
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveXEvents,
-                    (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, compress))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveYEvents,
-                    (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, compress))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveXEvents,
-                    (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, compress))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveYEvents,
-                    (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, compress))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.RotateEvents,
-                    (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, compress)))
-            );
-            // mergeResults 顺序：[0]=tx, [1]=ty, [2]=fx, [3]=fy, [4]=fr
+            var mergeChannels = await FatherUnbindHelpers.MergeChannelsAsync(
+                judgeLineCopy.EventLayers,
+                fatherLine.EventLayers,
+                (a, b) => EventMerger.EventListMerge(a, b, precision, tolerance, compress));
 
             // 将各通道按精度步长并行切割，为等间隔采样准备
-            var (txMin, txMax) = FatherUnbindHelpers.GetEventRange(mergeResults[0]);
-            var (tyMin, tyMax) = FatherUnbindHelpers.GetEventRange(mergeResults[1]);
-            var (fxMin, fxMax) = FatherUnbindHelpers.GetEventRange(mergeResults[2]);
-            var (fyMin, fyMax) = FatherUnbindHelpers.GetEventRange(mergeResults[3]);
-            var (frMin, frMax) = FatherUnbindHelpers.GetEventRange(mergeResults[4]);
+            var (txMin, txMax) = FatherUnbindHelpers.GetEventRange(mergeChannels.Tx);
+            var (tyMin, tyMax) = FatherUnbindHelpers.GetEventRange(mergeChannels.Ty);
+            var (fxMin, fxMax) = FatherUnbindHelpers.GetEventRange(mergeChannels.Fx);
+            var (fyMin, fyMax) = FatherUnbindHelpers.GetEventRange(mergeChannels.Fy);
+            var (frMin, frMax) = FatherUnbindHelpers.GetEventRange(mergeChannels.Fr);
             var cutLength = new Beat(1d / precision);
 
             var cutResults = await Task.WhenAll(
-                Task.Run(() => EventCutter.CutEventsInRange(mergeResults[0], txMin, txMax, cutLength)),
-                Task.Run(() => EventCutter.CutEventsInRange(mergeResults[1], tyMin, tyMax, cutLength)),
-                Task.Run(() => EventCutter.CutEventsInRange(mergeResults[2], fxMin, fxMax, cutLength)),
-                Task.Run(() => EventCutter.CutEventsInRange(mergeResults[3], fyMin, fyMax, cutLength)),
-                Task.Run(() => EventCutter.CutEventsInRange(mergeResults[4], frMin, frMax, cutLength))
+                Task.Run(() => EventCutter.CutEventsInRange(mergeChannels.Tx, txMin, txMax, cutLength)),
+                Task.Run(() => EventCutter.CutEventsInRange(mergeChannels.Ty, tyMin, tyMax, cutLength)),
+                Task.Run(() => EventCutter.CutEventsInRange(mergeChannels.Fx, fxMin, fxMax, cutLength)),
+                Task.Run(() => EventCutter.CutEventsInRange(mergeChannels.Fy, fyMin, fyMax, cutLength)),
+                Task.Run(() => EventCutter.CutEventsInRange(mergeChannels.Fr, frMin, frMax, cutLength))
             );
 
             // 构建事件通道并执行等间隔采样（委托给共享算法）
@@ -126,12 +139,13 @@ internal static class FatherUnbindAsyncProcessor
         }
         catch (Exception ex)
         {
+            judgeLineCopy = allJudgeLines[targetJudgeLineIndex].Clone();
             NrcToolLog.OnError($"FatherUnbindAsync[{targetJudgeLineIndex}]: 未知错误: " + ex.Message);
             return judgeLineCopy;
         }
     }
 
-    // ─── 自适应采样异步版 ────────────────────────────────────────────────────
+    // 自适应采样异步版
 
     /// <summary>
     /// 自适应采样解绑（异步版）：以事件边界为强制切割点，仅在误差超过容差时插入新采样段，
@@ -151,65 +165,35 @@ internal static class FatherUnbindAsyncProcessor
         double precision, double tolerance,
         ConcurrentDictionary<int, Nrc.JudgeLine> cache)
     {
-        if (cache.TryGetValue(targetJudgeLineIndex, out var cached))
-        {
-            NrcToolLog.OnDebug($"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 命中缓存，直接返回已解绑结果");
-            return cached.Clone();
-        }
-
-        var judgeLineCopy = allJudgeLines[targetJudgeLineIndex].Clone();
-        var allJudgeLinesCopy = allJudgeLines.Select(jl => jl.Clone()).ToList();
+        Nrc.JudgeLine judgeLineCopy;
         try
         {
-            if (judgeLineCopy.Father <= -1)
+            // 与 FatherUnbindAsync 复用同一前置流程，确保行为对齐。
+            var prepare = await PrepareUnbindContextAsync(
+                targetJudgeLineIndex,
+                allJudgeLines,
+                cache,
+                logTag: "FatherUnbindAsyncPlus",
+                startAction: "开始解绑（自适应采样）",
+                recursiveUnbind: (idx, lines) => FatherUnbindPlusAsync(idx, lines, precision, tolerance, cache));
+
+            judgeLineCopy = prepare.JudgeLine;
+            if (prepare.ShouldReturn)
             {
-                NrcToolLog.OnWarning($"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 判定线无父线，跳过。");
-                cache.TryAdd(targetJudgeLineIndex, judgeLineCopy);
                 return judgeLineCopy;
             }
 
-            NrcToolLog.OnInfo(
-                $"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 开始解绑（自适应采样），父线索引={judgeLineCopy.Father}");
-
-            // 若父线仍有父线，递归异步解绑父链，确保父线已为绝对坐标
-            var fatherLineCopy = allJudgeLinesCopy[judgeLineCopy.Father].Clone();
-            if (fatherLineCopy.Father >= 0)
-            {
-                NrcToolLog.OnDebug(
-                    $"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 父线 {judgeLineCopy.Father} 仍有父线，递归解绑");
-                fatherLineCopy = await FatherUnbindPlusAsync(
-                    judgeLineCopy.Father, allJudgeLinesCopy, precision, tolerance, cache);
-            }
-
-            // 清理冗余（全零）事件层，减少后续合并的计算量
-            judgeLineCopy.EventLayers =
-                LayerProcessor.RemoveUnlessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
-            fatherLineCopy.EventLayers =
-                LayerProcessor.RemoveUnlessLayer(fatherLineCopy.EventLayers) ?? fatherLineCopy.EventLayers;
-
-            var tLayers = judgeLineCopy.EventLayers;
-            var fLayers = fatherLineCopy.EventLayers;
+            var fatherLine = prepare.FatherLine;
+            if (fatherLine is null)
+                return judgeLineCopy;
 
             // 并行合并各通道事件（自适应版使用 EventMergePlus）；各通道独立，可安全并行
-            var mergeResults = await Task.WhenAll(
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveXEvents,
-                    (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(tLayers, l => l.MoveYEvents,
-                    (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveXEvents,
-                    (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.MoveYEvents,
-                    (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance))),
-                Task.Run(() => FatherUnbindHelpers.MergeLayerChannel(fLayers, l => l.RotateEvents,
-                    (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance)))
-            );
-            // mergeResults 顺序：[0]=tx, [1]=ty, [2]=fx, [3]=fy, [4]=fr
+            var ch = await FatherUnbindHelpers.MergeChannelsAsync(
+                judgeLineCopy.EventLayers,
+                fatherLine.EventLayers,
+                (a, b) => EventMerger.EventMergePlus(a, b, precision, tolerance));
 
             // 构建事件通道，确定总体拍范围（委托给共享算法）
-            var ch = new FatherUnbindHelpers.EventChannels(
-                Fx: mergeResults[2], Fy: mergeResults[3], Fr: mergeResults[4],
-                Tx: mergeResults[0], Ty: mergeResults[1]);
-
             var rangeResult = FatherUnbindHelpers.TryGetOverallRange(ch);
             if (rangeResult is null)
             {
@@ -239,6 +223,7 @@ internal static class FatherUnbindAsyncProcessor
         }
         catch (Exception ex)
         {
+            judgeLineCopy = allJudgeLines[targetJudgeLineIndex].Clone();
             NrcToolLog.OnError($"FatherUnbindAsyncPlus[{targetJudgeLineIndex}]: 未知错误: " + ex.Message);
             return judgeLineCopy;
         }

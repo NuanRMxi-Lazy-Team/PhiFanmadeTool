@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using PhiFanmade.Core.Common;
 using PhiFanmade.Tool.Common;
 using PhiFanmade.Tool.PhiFanmadeNrc.Events.Internal;
+using PhiFanmade.Tool.PhiFanmadeNrc.Layers.Internal;
 
 namespace PhiFanmade.Tool.PhiFanmadeNrc.JudgeLines.Internal;
 
@@ -133,7 +134,54 @@ internal static class FatherUnbindHelpers
         var result = new List<Nrc.Event<double>>();
         return layers.Select(selector)
             .Where(ch => ch is { Count: > 0 })
-            .Aggregate(result, (current, ch) => merge(current, ch!));
+            .Select(ch => ch!)
+            .Aggregate(result, (current, ch) => merge(current, ch));
+    }
+
+    /// <summary>
+    /// 命中缓存时返回克隆结果，避免调用方直接持有缓存实例。
+    /// </summary>
+    internal static bool TryGetCachedClone(
+        int targetJudgeLineIndex,
+        ConcurrentDictionary<int, Nrc.JudgeLine> cache,
+        string logTag,
+        out Nrc.JudgeLine cachedClone)
+    {
+        if (cache.TryGetValue(targetJudgeLineIndex, out var cached))
+        {
+            NrcToolLog.OnDebug($"{logTag}[{targetJudgeLineIndex}]: 命中缓存，直接返回已解绑结果");
+            cachedClone = cached.Clone();
+            return true;
+        }
+
+        cachedClone = null;
+        return false;
+    }
+
+    /// <summary>
+    /// 判定线无父线时直接缓存并返回，统一同步/异步处理器的短路分支。
+    /// </summary>
+    internal static bool TryReturnWhenNoFather(
+        int targetJudgeLineIndex,
+        Nrc.JudgeLine judgeLineCopy,
+        ConcurrentDictionary<int, Nrc.JudgeLine> cache,
+        string logTag)
+    {
+        if (judgeLineCopy.Father > -1) return false;
+        NrcToolLog.OnWarning($"{logTag}[{targetJudgeLineIndex}]: 判定线无父线，跳过。");
+        cache.TryAdd(targetJudgeLineIndex, judgeLineCopy);
+        return true;
+    }
+
+    /// <summary>
+    /// 清理判定线与父线的全零事件层，减少后续通道合并计算量。
+    /// </summary>
+    internal static void CleanupRedundantLayers(Nrc.JudgeLine judgeLineCopy, Nrc.JudgeLine fatherLineCopy)
+    {
+        judgeLineCopy.EventLayers =
+            LayerProcessor.RemoveUnlessLayer(judgeLineCopy.EventLayers) ?? judgeLineCopy.EventLayers;
+        fatherLineCopy.EventLayers =
+            LayerProcessor.RemoveUnlessLayer(fatherLineCopy.EventLayers) ?? fatherLineCopy.EventLayers;
     }
 
     /// <summary>获取事件列表的拍范围（最小 StartBeat，最大 EndBeat）。列表为空时返回 (0, 0)。</summary>
@@ -194,6 +242,44 @@ internal static class FatherUnbindHelpers
         List<Nrc.Event<double>> Fr,
         List<Nrc.Event<double>> Tx,
         List<Nrc.Event<double>> Ty);
+
+    /// <summary>
+    /// 合并父子线五个通道事件，统一 EventChannels 拼装顺序。
+    /// </summary>
+    internal static EventChannels MergeChannels(
+        List<Nrc.EventLayer> targetLayers,
+        List<Nrc.EventLayer> fatherLayers,
+        Func<List<Nrc.Event<double>>, List<Nrc.Event<double>>, List<Nrc.Event<double>>> merge)
+        => new(
+            Fx: MergeLayerChannel(fatherLayers, l => l.MoveXEvents, merge),
+            Fy: MergeLayerChannel(fatherLayers, l => l.MoveYEvents, merge),
+            Fr: MergeLayerChannel(fatherLayers, l => l.RotateEvents, merge),
+            Tx: MergeLayerChannel(targetLayers, l => l.MoveXEvents, merge),
+            Ty: MergeLayerChannel(targetLayers, l => l.MoveYEvents, merge));
+
+    /// <summary>
+    /// 异步并行合并父子线五个通道事件。
+    /// </summary>
+    internal static async Task<EventChannels> MergeChannelsAsync(
+        List<Nrc.EventLayer> targetLayers,
+        List<Nrc.EventLayer> fatherLayers,
+        Func<List<Nrc.Event<double>>, List<Nrc.Event<double>>, List<Nrc.Event<double>>> merge)
+    {
+        var mergeResults = await Task.WhenAll(
+            Task.Run(() => MergeLayerChannel(targetLayers, l => l.MoveXEvents, merge)),
+            Task.Run(() => MergeLayerChannel(targetLayers, l => l.MoveYEvents, merge)),
+            Task.Run(() => MergeLayerChannel(fatherLayers, l => l.MoveXEvents, merge)),
+            Task.Run(() => MergeLayerChannel(fatherLayers, l => l.MoveYEvents, merge)),
+            Task.Run(() => MergeLayerChannel(fatherLayers, l => l.RotateEvents, merge))
+        );
+
+        return new EventChannels(
+            Fx: mergeResults[2],
+            Fy: mergeResults[3],
+            Fr: mergeResults[4],
+            Tx: mergeResults[0],
+            Ty: mergeResults[1]);
+    }
 
     // ─── 等间隔采样算法 ──────────────────────────────────────────────────────
 
