@@ -29,7 +29,7 @@ jobs:
           CSPROJ="PhiFanmade.Tool.Cli/PhiFanmade.Tool.Cli.csproj"
           output_dir="./artifacts/cli"
           frameworks=("net8.0" "net10.0")
-          runtimes=("win-x64" "win-x86" "linux-x64")
+          runtimes=("win-x64" "linux-x64")
 
           mkdir -p "$output_dir"
 
