@@ -9,7 +9,7 @@ namespace PhiFanmade.Core.Phigros.v3
         /// <summary>
         /// 格式版本号
         /// </summary>
-        [JsonProperty("formatVersion")] public int FormatVersion { get; set; }= 3;
+        [JsonProperty("formatVersion")] public uint FormatVersion { get; set; }= 3;
 
         /// <summary>
         /// 谱面偏移，单位为秒

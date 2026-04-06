@@ -16,6 +16,16 @@ public static class PeToNrc
     private const double TrailingBeatPadding = 1d / 64d;
 
     /// <summary>
+    /// 非事件起点 Frame 在 NRC 中保留的最小可编辑区间长度（拍）。
+    /// </summary>
+    private const double FrameEditableSliceBeat = 0.0125d;
+
+    /// <summary>
+    /// 拍点比较容差。
+    /// </summary>
+    private const double BeatComparisonEpsilon = 1e-6d;
+
+    /// <summary>
     /// PhiEdit 坐标系配置，用于将 PE 坐标统一映射到 NRC 归一化坐标系。
     /// </summary>
     private static readonly CoordinateProfile PeCoordinateProfile = new(
@@ -214,9 +224,10 @@ public static class PeToNrc
     {
         var orderedFrames = frames?.OrderBy(frame => frame.Beat).ToList() ?? [];
         var orderedEvents = events?.OrderBy(ev => ev.StartBeat).ToList() ?? [];
-        var boundaries = BuildBoundaries(
+        var boundaries = BuildBoundariesWithFrameSlices(
             orderedFrames.Select(frame => (double)frame.Beat),
             orderedEvents.SelectMany(ev => new double[] { ev.StartBeat, ev.EndBeat }),
+            orderedEvents.Select(ev => (double)ev.StartBeat),
             horizonBeat);
 
         if (boundaries.Count < 2) return null;
@@ -228,11 +239,19 @@ public static class PeToNrc
             var endBeat = boundaries[i + 1];
             if (endBeat <= startBeat) continue;
 
+            var frameAtBoundary = FindMoveFrameAtBeat(orderedFrames, startBeat);
+            if (frameAtBoundary != null && !IsMoveEventStartBeat(orderedEvents, startBeat))
+            {
+                var convertedValue = valueTransformer(selector((frameAtBoundary.XValue, frameAtBoundary.YValue)));
+                result.Add(CreateConstantEvent(startBeat, endBeat, convertedValue));
+                continue;
+            }
+
             var sampleBeat = GetMidBeat(startBeat, endBeat);
             var activeEvent = FindActiveMoveEvent(orderedEvents, sampleBeat);
             if (activeEvent != null)
             {
-                var intervalStartSource = ResolveMoveValueAfterBoundary(orderedFrames, orderedEvents, startBeat);
+                var eventStartSource = ResolveMoveEventStartValue(activeEvent, orderedFrames, orderedEvents);
                 result.Add(new Nrc.Event<double>
                 {
                     StartBeat = new Beat(startBeat),
@@ -241,16 +260,14 @@ public static class PeToNrc
                     EasingLeft = GetEventBoundary(activeEvent.StartBeat, activeEvent.EndBeat, startBeat),
                     EasingRight = GetEventBoundary(activeEvent.StartBeat, activeEvent.EndBeat, endBeat),
                     StartValue =
-                        valueTransformer(InterpolateMoveValue(activeEvent, startBeat, intervalStartSource, selector)),
-                    EndValue = valueTransformer(InterpolateMoveValue(activeEvent, endBeat, intervalStartSource,
+                        valueTransformer(InterpolateMoveValue(activeEvent, startBeat, eventStartSource, selector)),
+                    EndValue = valueTransformer(InterpolateMoveValue(activeEvent, endBeat, eventStartSource,
                         selector))
                 });
             }
             else
             {
-                var staticValue = ResolveMoveValueAfterBoundary(orderedFrames, orderedEvents, startBeat);
-                var convertedValue = valueTransformer(selector(staticValue));
-                result.Add(CreateConstantEvent(startBeat, endBeat, convertedValue));
+                // NRC 在无事件区间会沿用上一个事件结束值，这里不再填充冗余常值事件。
             }
         }
 
@@ -274,9 +291,10 @@ public static class PeToNrc
     {
         var orderedFrames = frames?.OrderBy(frame => frame.Beat).ToList() ?? [];
         var orderedEvents = events?.OrderBy(ev => ev.StartBeat).ToList() ?? [];
-        var boundaries = BuildBoundaries(
+        var boundaries = BuildBoundariesWithFrameSlices(
             orderedFrames.Select(frame => (double)frame.Beat),
             orderedEvents.SelectMany(ev => new double[] { ev.StartBeat, ev.EndBeat }),
+            orderedEvents.Select(ev => (double)ev.StartBeat),
             horizonBeat);
 
         if (boundaries.Count < 2) return null;
@@ -288,11 +306,18 @@ public static class PeToNrc
             var endBeat = boundaries[i + 1];
             if (endBeat <= startBeat) continue;
 
+            var frameAtBoundary = FindScalarFrameAtBeat(orderedFrames, startBeat);
+            if (frameAtBoundary != null && !IsScalarEventStartBeat(orderedEvents, startBeat))
+            {
+                result.Add(CreateConstantEvent(startBeat, endBeat, valueTransformer(frameAtBoundary.Value)));
+                continue;
+            }
+
             var sampleBeat = GetMidBeat(startBeat, endBeat);
             var activeEvent = FindActiveScalarEvent(orderedEvents, sampleBeat);
             if (activeEvent != null)
             {
-                var intervalStartSource = ResolveScalarValueAfterBoundary(orderedFrames, orderedEvents, startBeat);
+                var eventStartSource = ResolveScalarEventStartValue(activeEvent, orderedFrames, orderedEvents);
                 result.Add(new Nrc.Event<T>
                 {
                     StartBeat = new Beat(startBeat),
@@ -300,15 +325,13 @@ public static class PeToNrc
                     Easing = ConvertEasing(activeEvent.EasingType),
                     EasingLeft = GetEventBoundary(activeEvent.StartBeat, activeEvent.EndBeat, startBeat),
                     EasingRight = GetEventBoundary(activeEvent.StartBeat, activeEvent.EndBeat, endBeat),
-                    StartValue = valueTransformer(InterpolateScalarValue(activeEvent, startBeat, intervalStartSource)),
-                    EndValue = valueTransformer(InterpolateScalarValue(activeEvent, endBeat, intervalStartSource))
+                    StartValue = valueTransformer(InterpolateScalarValue(activeEvent, startBeat, eventStartSource)),
+                    EndValue = valueTransformer(InterpolateScalarValue(activeEvent, endBeat, eventStartSource))
                 });
             }
             else
             {
-                var staticValue =
-                    valueTransformer(ResolveScalarValueAfterBoundary(orderedFrames, orderedEvents, startBeat));
-                result.Add(CreateConstantEvent(startBeat, endBeat, staticValue));
+                // NRC 在无事件区间会沿用上一个事件结束值，这里不再填充冗余常值事件。
             }
         }
 
@@ -337,12 +360,42 @@ public static class PeToNrc
     }
 
     /// <summary>
+    /// 在基础边界上为非事件起点的 Frame 追加短切片边界，用于保留可编辑性。
+    /// </summary>
+    private static List<double> BuildBoundariesWithFrameSlices(
+        IEnumerable<double> frameBoundaries,
+        IEnumerable<double> eventBoundaries,
+        IEnumerable<double> eventStartBoundaries,
+        double horizonBeat)
+    {
+        var frameList = frameBoundaries.ToList();
+        var eventStartList = eventStartBoundaries.ToList();
+        var boundaries = BuildBoundaries(frameList, eventBoundaries, horizonBeat);
+        if (boundaries.Count == 0) return boundaries;
+
+        var expandedBoundaries = new SortedSet<double>(boundaries);
+        foreach (var frameBeat in frameList)
+        {
+            if (eventStartList.Any(startBeat => IsSameBeat(startBeat, frameBeat))) continue;
+            expandedBoundaries.Add(frameBeat + FrameEditableSliceBeat);
+        }
+
+        return expandedBoundaries.ToList();
+    }
+
+    /// <summary>
     /// 获取区间中点拍。
     /// </summary>
     /// <param name="startBeat">区间起点拍。</param>
     /// <param name="endBeat">区间终点拍。</param>
     /// <returns>中点拍。</returns>
     private static double GetMidBeat(double startBeat, double endBeat) => startBeat + (endBeat - startBeat) / 2d;
+
+    /// <summary>
+    /// 判断两个拍点是否近似相等。
+    /// </summary>
+    private static bool IsSameBeat(double leftBeat, double rightBeat)
+        => Math.Abs(leftBeat - rightBeat) <= BeatComparisonEpsilon;
 
     /// <summary>
     /// 将绝对拍点映射为事件内部归一化边界（供 NRC 的 EasingLeft/EasingRight 使用）。
@@ -466,6 +519,57 @@ public static class PeToNrc
 
         return 0f;
     }
+
+    /// <summary>
+    /// 解析 Move 事件的起始源值；若事件起点存在 Frame，则优先使用该 Frame。
+    /// </summary>
+    private static (float X, float Y) ResolveMoveEventStartValue(
+        Pe.MoveEvent ev,
+        List<Pe.MoveFrame> frames,
+        List<Pe.MoveEvent> events)
+    {
+        var frameAtStart = FindMoveFrameAtBeat(frames, ev.StartBeat);
+        if (frameAtStart != null)
+            return (frameAtStart.XValue, frameAtStart.YValue);
+
+        return ResolveMoveValueAfterBoundary(frames, events, ev.StartBeat);
+    }
+
+    /// <summary>
+    /// 解析标量事件的起始源值；若事件起点存在 Frame，则优先使用该 Frame。
+    /// </summary>
+    private static float ResolveScalarEventStartValue(Pe.Event ev, List<Pe.Frame> frames, List<Pe.Event> events)
+    {
+        var frameAtStart = FindScalarFrameAtBeat(frames, ev.StartBeat);
+        if (frameAtStart != null)
+            return frameAtStart.Value;
+
+        return ResolveScalarValueAfterBoundary(frames, events, ev.StartBeat);
+    }
+
+    /// <summary>
+    /// 判断拍点是否正好位于某个 Move 事件起点。
+    /// </summary>
+    private static bool IsMoveEventStartBeat(List<Pe.MoveEvent> events, double beat)
+        => events.Any(ev => IsSameBeat(ev.StartBeat, beat));
+
+    /// <summary>
+    /// 判断拍点是否正好位于某个标量事件起点。
+    /// </summary>
+    private static bool IsScalarEventStartBeat(List<Pe.Event> events, double beat)
+        => events.Any(ev => IsSameBeat(ev.StartBeat, beat));
+
+    /// <summary>
+    /// 获取指定拍点上的 Move Frame。
+    /// </summary>
+    private static Pe.MoveFrame? FindMoveFrameAtBeat(List<Pe.MoveFrame> frames, double beat)
+        => frames.LastOrDefault(frame => IsSameBeat(frame.Beat, beat));
+
+    /// <summary>
+    /// 获取指定拍点上的标量 Frame。
+    /// </summary>
+    private static Pe.Frame? FindScalarFrameAtBeat(List<Pe.Frame> frames, double beat)
+        => frames.LastOrDefault(frame => IsSameBeat(frame.Beat, beat));
 
     /// <summary>
     /// 在指定拍点对 Move 事件进行插值。
