@@ -1,6 +1,7 @@
 ﻿using JetBrains.Annotations;
 using PhiFanmade.Core.Common;
 using PhiFanmade.Tool.Common;
+using PhiFanmade.Tool.PhiFanmadeNrc.Converters.Utils;
 
 namespace PhiFanmade.Tool.PhiFanmadeNrc.Converters;
 
@@ -9,11 +10,6 @@ namespace PhiFanmade.Tool.PhiFanmadeNrc.Converters;
 /// </summary>
 public static class NrcToRpe
 {
-    // ── 缓动不兼容时抛出，由 ConvertFloatEventExpanding 捕获后切割拟合 ──
-    [PublicAPI]
-    public sealed class EasingNotSupportedException(int nrcEasing)
-        : Exception($"NRC 缓动编号 {nrcEasing} 在 RPE 中无对应项，需切割事件拟合");
-
     private const int UnsupportedEasingCutPrecision = 64;
 
     public static Rpe.Chart Convert(Nrc.Chart nrc) => new()
@@ -23,21 +19,8 @@ public static class NrcToRpe
         JudgeLineList = nrc.JudgeLineList.ConvertAll(ConvertJudgeLine)
     };
 
-    private static int MapEasingNumber(int nrc) => nrc switch
-    {
-        1 => 1, 2 => 3, 3 => 2, 4 => 6, 5 => 5, 6 => 4, 7 => 7,
-        8 => 9, 9 => 8, 10 => 12, 11 => 11, 12 => 10, 13 => 13,
-        14 => 15, 15 => 14,
-        16 => throw new EasingNotSupportedException(16),
-        17 => 17, 18 => 16,
-        19 => throw new EasingNotSupportedException(19),
-        20 => 19, 21 => 18, 22 => 22, 23 => 21, 24 => 20, 25 => 23,
-        26 => 25, 27 => 24, 28 => 29, 29 => 27, 30 => 26, 31 => 28,
-        _ => 1
-    };
-
     private static Rpe.Easing ConvertEasing(Nrc.Easing src, bool isBezier = false)
-        => isBezier ? new Rpe.Easing(1) : new Rpe.Easing(MapEasingNumber((int)src));
+        => isBezier ? new Rpe.Easing(1) : new Rpe.Easing(NrcToCmdysjEasings.MapEasingNumber((int)src));
     
     private static double TransformX(double x) => CoordinateGeometry.ToRenderX(x);
     private static double TransformY(double y) => CoordinateGeometry.ToRenderY(y);
@@ -202,7 +185,7 @@ public static class NrcToRpe
         {
             return [ConvertEvent(src)];
         }
-        catch (EasingNotSupportedException)
+        catch (NrcToCmdysjEasings.EasingNotSupportedException)
         {
             return CutEventToLinearFloat(src);
         }
@@ -263,7 +246,7 @@ public static class NrcToRpe
                 }
             ];
         }
-        catch (EasingNotSupportedException)
+        catch (NrcToCmdysjEasings.EasingNotSupportedException)
         {
             return CutEventToLinear(src, valueTransformer);
         }
@@ -308,7 +291,7 @@ public static class NrcToRpe
         {
             return [ConvertEvent(src)];
         }
-        catch (EasingNotSupportedException)
+        catch (NrcToCmdysjEasings.EasingNotSupportedException)
         {
             return CutEventToLinearInt(src);
         }
