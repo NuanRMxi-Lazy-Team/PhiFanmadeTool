@@ -25,7 +25,7 @@ namespace PhiFanmade.Core.RePhiEdit
                 {
                     var eventLayer = judgeLine.EventLayers[index];
                     eventLayer.Anticipation();
-                    // 若事件层级0上某个事件类别完全为空，且不存在其它事件层级，则创建一个垫底事件
+                    // 若事件层级0上Alpha事件类别完全为空，则创建一个垫底事件
                     if (index == 0 && judgeLine.EventLayers.Count == 1)
                     {
                         if (eventLayer.AlphaEvents == null || eventLayer.AlphaEvents.Count == 0)
@@ -40,49 +40,6 @@ namespace PhiFanmade.Core.RePhiEdit
                             });
                         }
 
-                        if (eventLayer.MoveXEvents.Count == 0)
-                        {
-                            eventLayer.MoveXEvents.Add(new Event<float>
-                            {
-                                StartBeat = new Beat(0),
-                                EndBeat = new Beat(1),
-                                StartValue = 0,
-                                EndValue = 0
-                            });
-                        }
-
-                        if (eventLayer.MoveYEvents.Count == 0)
-                        {
-                            eventLayer.MoveYEvents.Add(new Event<float>
-                            {
-                                StartBeat = new Beat(0),
-                                EndBeat = new Beat(1),
-                                StartValue = 0,
-                                EndValue = 0
-                            });
-                        }
-
-                        if (eventLayer.RotateEvents.Count == 0)
-                        {
-                            eventLayer.RotateEvents.Add(new Event<float>
-                            {
-                                StartBeat = new Beat(0),
-                                EndBeat = new Beat(1),
-                                StartValue = 0,
-                                EndValue = 0
-                            });
-                        }
-
-                        if (eventLayer.SpeedEvents.Count == 0)
-                        {
-                            eventLayer.SpeedEvents.Add(new Event<float>
-                            {
-                                StartBeat = new Beat(0),
-                                EndBeat = new Beat(1),
-                                StartValue = 0,
-                                EndValue = 0
-                            });
-                        }
                     }
 
                     eventLayer.Sort();

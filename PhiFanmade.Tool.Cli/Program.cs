@@ -3,6 +3,7 @@ using PhiFanmade.Tool.Cli.Commands;
 using PhiFanmade.Tool.Cli.Commands.Test;
 using PhiFanmade.Tool.Cli.Commands.WorkSpace;
 using PhiFanmade.Tool.Cli.Infrastructure;
+using PhiFanmade.Tool.Cli.Model;
 using PhiFanmade.Tool.Localization;
 using Spectre.Console.Cli;
 
@@ -32,12 +33,14 @@ app.Configure(config =>
             writer.Info(Strings.cli_hint_use_help);
             return 1;
         }
+
         // 如果是out of memory这种错误，应该提示使用--stream选项，而不是让其反馈
         if (ex is OutOfMemoryException)
         {
-            new ConsoleWriter().Error(string.Format(Strings.cli_err_out_of_memory,ex));
+            new ConsoleWriter().Error(string.Format(Strings.cli_err_out_of_memory, ex));
             return 1;
         }
+
         new ConsoleWriter().Error(string.Format(Strings.cli_err_ukerr, ex));
         return 1;
     });

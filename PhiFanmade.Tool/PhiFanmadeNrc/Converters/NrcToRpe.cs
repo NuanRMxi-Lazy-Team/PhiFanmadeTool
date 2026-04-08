@@ -21,7 +21,7 @@ public static class NrcToRpe
 
     private static Rpe.Easing ConvertEasing(Nrc.Easing src, bool isBezier = false)
         => isBezier ? new Rpe.Easing(1) : new Rpe.Easing(NrcToCmdysjEasings.MapEasingNumber((int)src));
-    
+
     private static double TransformX(double x) => CoordinateGeometry.ToRenderX(x);
     private static double TransformY(double y) => CoordinateGeometry.ToRenderY(y);
 

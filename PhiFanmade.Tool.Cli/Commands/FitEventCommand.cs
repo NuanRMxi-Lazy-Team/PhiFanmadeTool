@@ -1,4 +1,5 @@
 ﻿using PhiFanmade.Tool.Cli.Infrastructure;
+using PhiFanmade.Tool.Cli.Settings.Operation;
 using PhiFanmade.Tool.Localization;
 using PhiFanmade.Tool.PhiFanmadeNrc;
 using Spectre.Console.Cli;
@@ -10,13 +11,16 @@ namespace PhiFanmade.Tool.Cli.Commands;
 /// </summary>
 public sealed class FitEventCommand : AsyncCommand<FitEventCommand.Settings>
 {
-    public sealed class Settings : OperationSettings
+    public sealed class Settings : OperationSettingsWithTolerance
     {
+        protected override double? GetConfigToleranceDefault() => AppConfig.FitConfig?.Tolerance;
+        protected override bool? GetConfigDryRunDefault() => AppConfig.FitConfig?.DryRun;
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings,
         CancellationToken cancellationToken)
     {
+        settings.ApplyConfigDefaults();
         var writer = new ConsoleWriter();
         var nrc = await settings.LoadNrcChartAsync(cancellationToken);
 

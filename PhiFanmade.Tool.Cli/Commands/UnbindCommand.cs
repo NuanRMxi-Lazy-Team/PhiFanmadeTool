@@ -1,4 +1,5 @@
 ﻿using PhiFanmade.Tool.Cli.Infrastructure;
+using PhiFanmade.Tool.Cli.Settings.Operation;
 using PhiFanmade.Tool.Localization;
 using PhiFanmade.Tool.PhiFanmadeNrc;
 using PhiFanmade.Tool.PhiFanmadeNrc.JudgeLines;
@@ -11,20 +12,19 @@ namespace PhiFanmade.Tool.Cli.Commands;
 /// </summary>
 public sealed class UnbindFatherCommand : AsyncCommand<UnbindFatherCommand.Settings>
 {
-    public sealed class Settings : OperationSettings
+    public sealed class Settings : OperationSettingsWithPrecisionToleranceAndModes
     {
-        [CommandOption("--classic")]
-        [LocalizedDescription("cli_opt_classic_mode_desc")]
-        public bool Classic { get; set; }
-
-        [CommandOption("--no-compress")]
-        [LocalizedDescription("cli_opt_compress_desc")]
-        public bool DisableCompress { get; set; }
+        protected override double? GetConfigPrecisionDefault() => AppConfig.UnbindConfig.Precision;
+        protected override double? GetConfigToleranceDefault() => AppConfig.UnbindConfig.Tolerance;
+        protected override bool? GetConfigClassicModeDefault() => AppConfig.UnbindConfig.ClassicMode;
+        protected override bool? GetConfigDisableCompressDefault() => AppConfig.UnbindConfig.DisableCompress;
+        protected override bool? GetConfigDryRunDefault() => AppConfig.UnbindConfig.DryRun;
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings,
         CancellationToken cancellationToken)
     {
+        settings.ApplyConfigDefaults();
         var writer = new ConsoleWriter();
         var nrc = await settings.LoadNrcChartAsync(cancellationToken);
         if (settings is { DisableCompress: true, Classic: false })
@@ -68,3 +68,4 @@ public sealed class UnbindFatherCommand : AsyncCommand<UnbindFatherCommand.Setti
         return 0;
     }
 }
+

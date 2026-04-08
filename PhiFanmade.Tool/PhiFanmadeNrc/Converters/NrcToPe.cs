@@ -1,5 +1,6 @@
 ﻿using PhiFanmade.Core.Common;
 using PhiFanmade.Tool.Common;
+using PhiFanmade.Tool.PhiFanmadeNrc.Converters.Model;
 using PhiFanmade.Tool.PhiFanmadeNrc.Converters.Utils;
 using PhiFanmade.Tool.PhiFanmadeNrc.Events;
 using PhiFanmade.Tool.PhiFanmadeNrc.JudgeLines;
@@ -9,12 +10,14 @@ namespace PhiFanmade.Tool.PhiFanmadeNrc.Converters;
 /// <summary>
 /// NRC 格式 -> PhiEdit 格式转换器（框架版）。
 /// </summary>
-public static class NrcToPe
+public class NrcToPe
 {
-    /// <summary>
-    /// 与 NrcToRpe 保持一致：不支持缓动切段拟合时的切割精度。
-    /// </summary>
-    private const int UnsupportedEasingCutPrecision = 64;
+    private readonly PhiFanmadeNrcToPhiEditOptions _options;
+
+    public NrcToPe(PhiFanmadeNrcToPhiEditOptions options)
+    {
+        _options = options;
+    }
 
     /// <summary>
     /// 为兼容既有 PE 偏移定义而保留的常量偏移。
@@ -26,8 +29,6 @@ public static class NrcToPe
     /// </summary>
     private const float FloatEpsilon = 1e-6f;
 
-    
-
     private static readonly CoordinateProfile PeCoordinateProfile = new(
         Pe.Chart.CoordinateSystem.MinX,
         Pe.Chart.CoordinateSystem.MaxX,
@@ -35,12 +36,13 @@ public static class NrcToPe
         Pe.Chart.CoordinateSystem.MaxY,
         Pe.Chart.CoordinateSystem.ClockwiseRotation);
 
+
     /// <summary>
     /// 将 NRC 谱面转换为 PhiEdit 谱面。
     /// </summary>
     /// <param name="nrc">待转换的 NRC 谱面。</param>
     /// <returns>转换后的 PhiEdit 谱面。</returns>
-    public static Pe.Chart Convert(Nrc.Chart nrc)
+    public Pe.Chart Convert(Nrc.Chart nrc)
     {
         ArgumentNullException.ThrowIfNull(nrc);
 
@@ -76,7 +78,7 @@ public static class NrcToPe
     /// <summary>
     /// 转换单条判定线，并在转换前记录 PE 不支持字段的告警。
     /// </summary>
-    private static Pe.JudgeLine ConvertJudgeLine(Nrc.JudgeLine src, List<Nrc.JudgeLine> allLine)
+    private Pe.JudgeLine ConvertJudgeLine(Nrc.JudgeLine src, List<Nrc.JudgeLine> allLine)
     {
         WarnIfUnsupportedJudgeLineFields(src);
         var trueSrc = src;
@@ -84,14 +86,34 @@ public static class NrcToPe
         {
             NoteList = trueSrc.Notes?.ConvertAll(ConvertNote) ?? []
         };
+
+        if (!string.Equals(trueSrc.Texture, "line.png", StringComparison.Ordinal) ||
+            _options.LineFilter.RemoveTextureLine)
+        {
+            return pe;
+        }
+
+        if (trueSrc.AttachUi.HasValue || _options.LineFilter.RemoveAttachUiLine)
+        {
+            return pe;
+        }
+
+
         if (trueSrc.Father != -1)
         {
-            Warn($"JudgeLine.Father is unsupported by PE (value={src.Father}), will be auto unbind");
-            trueSrc = NrcJudgeLineTools.FatherUnbindPlus(allLine.FindIndex(l => l.GetHashCode() == src.GetHashCode()),
-                allLine);
+            Warn($"PE 不支持 JudgeLine.Father（值={src.Father}），将自动解除父子绑定");
+            trueSrc = _options.FatherLineUnbind.ClassicMode
+                ? NrcJudgeLineTools.FatherUnbind(allLine.FindIndex(l => l.GetHashCode() == src.GetHashCode()),
+                    allLine, _options.FatherLineUnbind.Precision, _options.FatherLineUnbind.Tolerance,
+                    !_options.FatherLineUnbind.Compress)
+                : NrcJudgeLineTools.FatherUnbindPlus(allLine.FindIndex(l => l.GetHashCode() == src.GetHashCode()),
+                    allLine, _options.FatherLineUnbind.Tolerance);
         }
 
         ConvertLineEvents(pe, trueSrc.EventLayers ?? []);
+        if (pe.AlphaEvents.Count == 0 || pe.AlphaFrames.Count == 0)
+            pe.AlphaFrames.Add(new Pe.Frame());
+
         return pe;
     }
 
@@ -118,10 +140,7 @@ public static class NrcToPe
     /// <summary>
     /// 将 NRC 事件层映射为 PE 的线事件结构。
     /// </summary>
-    /// <remarks>
-    /// PE 原生仅支持一层线事件：当输入存在多层时仅保留第一层，并对后续非空层输出警告。
-    /// </remarks>
-    private static void ConvertLineEvents(Pe.JudgeLine target, List<Nrc.EventLayer> layers)
+    private void ConvertLineEvents(Pe.JudgeLine target, List<Nrc.EventLayer> layers)
     {
         if (layers.Count == 0) return;
 
@@ -129,15 +148,23 @@ public static class NrcToPe
         for (var i = 1; i < layers.Count; i++)
         {
             if (!HasAnyEventData(layers[i])) continue;
-            Warn("JudgeLine has multiple event layers; PE supports one layer only, will auto merge to one");
+            Warn("JudgeLine 存在多个事件层；PE 仅支持单层，将自动合并为一层");
             // 使用Nrc工具将层级合并
-            primaryLayer = Layers.NrcLayerTools.LayerMergePlus(layers);
+            primaryLayer = _options.MultiLayerMerge.ClassicMode
+                ? Layers.NrcLayerTools.LayerMerge(layers,
+                    _options.MultiLayerMerge.Precision,
+                    _options.MultiLayerMerge.Tolerance,
+                    _options.MultiLayerMerge.Compress)
+                : Layers.NrcLayerTools.LayerMergePlus(
+                    layers,
+                    _options.MultiLayerMerge.Precision,
+                    _options.MultiLayerMerge.Tolerance);
             break;
         }
 
         ConvertMoveEvents(target, primaryLayer);
         ConvertScalarEvents(target.RotateFrames, target.RotateEvents, primaryLayer.RotateEvents,
-            value => ToPeAngle(value), "Rotate");
+            value => ToPeAngle(value), "旋转");
         ConvertAlphaEvents(target, primaryLayer.AlphaEvents);
         ConvertSpeedFrames(target, primaryLayer.SpeedEvents);
     }
@@ -145,19 +172,21 @@ public static class NrcToPe
     /// <summary>
     /// 转换 Alpha 事件：PE 的 cf 不支持缓动，需先按单事件切段并压缩，再写入线性事件。
     /// </summary>
-    private static void ConvertAlphaEvents(Pe.JudgeLine target, List<Nrc.Event<int>>? sourceEvents)
+    private void ConvertAlphaEvents(Pe.JudgeLine target, List<Nrc.Event<int>>? sourceEvents)
     {
         if (sourceEvents == null || sourceEvents.Count == 0) return;
 
-        WarnIfNrcEventPayloadUnsupported(sourceEvents, "Alpha");
+        WarnIfNrcEventPayloadUnsupported(sourceEvents, "透明度");
 
         var ordered = sourceEvents
             .OrderBy(e => (double)e.StartBeat)
             .SelectMany(srcEvent =>
             {
                 // Slice each source alpha event independently, then compress once before merging.
-                var sliced = NrcEventTools.CutEventToLiner(srcEvent, 1 / 64d);
-                return NrcEventTools.EventListCompress(sliced);
+                var sliced = NrcEventTools.CutEventToLiner(srcEvent, 1d / _options.Alpha.CutPrecision);
+                return _options.Alpha.CutCompress
+                    ? NrcEventTools.EventListCompress(sliced, _options.Alpha.CutTolerance)
+                    : sliced;
             })
             .ToList();
 
@@ -201,15 +230,15 @@ public static class NrcToPe
     /// <remarks>
     /// 对每个源事件强制切段；每个切段只产出一个帧：前两个切段取头值，其余取尾值。
     /// </remarks>
-    private static void ConvertSpeedFrames(Pe.JudgeLine target, List<Nrc.Event<float>>? sourceEvents)
+    private void ConvertSpeedFrames(Pe.JudgeLine target, List<Nrc.Event<float>>? sourceEvents)
     {
         if (sourceEvents == null || sourceEvents.Count == 0) return;
 
-        WarnIfNrcEventPayloadUnsupported(sourceEvents, "Speed");
+        WarnIfNrcEventPayloadUnsupported(sourceEvents, "速度");
 
         foreach (var srcEvent in sourceEvents.OrderBy(e => (double)e.StartBeat))
         {
-            var slices = CutEventToLinear(srcEvent);
+            var slices = NrcEventTools.CutEventToLiner(srcEvent, 1d / _options.Speed.CutPrecision);
             for (var i = 0; i < slices.Count; i++)
             {
                 var slice = slices[i];
@@ -230,179 +259,207 @@ public static class NrcToPe
     /// 转换 MoveX/MoveY 事件为 PE MoveFrame 与 MoveEvent。
     /// </summary>
     /// <remarks>
-    /// 通过收集 X/Y 边界做切片，区间末值写入 MoveEvent；首边界写入初始 MoveFrame。
+    /// 每个输出单元由一个 MoveFrame（立即设定起始位置）和一个 MoveEvent（描述终态及缓动）组成。
+    /// XY 事件对齐且缓动一致时直接映射；否则切段线性化输出。
     /// </remarks>
-    private static void ConvertMoveEvents(Pe.JudgeLine target, Nrc.EventLayer layer)
+    private void ConvertMoveEvents(Pe.JudgeLine target, Nrc.EventLayer layer)
     {
-        var xEvents = NrcEventTools.EventListCompress(
-            ExpandEventsForUnsupportedEasing(layer.MoveXEvents ?? [], "MoveX"), 0d);
-        var yEvents = NrcEventTools.EventListCompress(
-            ExpandEventsForUnsupportedEasing(layer.MoveYEvents ?? [], "MoveY"), 0d);
+        var xEvents = ExpandEventsForUnsupportedEasing(layer.MoveXEvents ?? [], "移动X");
+        var yEvents = ExpandEventsForUnsupportedEasing(layer.MoveYEvents ?? [], "移动Y");
         if (xEvents.Count == 0 && yEvents.Count == 0) return;
 
-        WarnIfNrcEventPayloadUnsupported(xEvents, "MoveX");
-        WarnIfNrcEventPayloadUnsupported(yEvents, "MoveY");
+        WarnIfNrcEventPayloadUnsupported(xEvents, "移动X");
+        WarnIfNrcEventPayloadUnsupported(yEvents, "移动Y");
 
         var boundaries = CollectBoundaries(xEvents, yEvents);
         if (boundaries.Count < 2) return;
 
-        var firstBeat = new Beat(boundaries[0]);
-        target.MoveFrames.Add(new Pe.MoveFrame
-        {
-            Beat = boundaries[0],
-            XValue = ToPeX(GetValueAt(xEvents, firstBeat)),
-            YValue = ToPeY(GetValueAt(yEvents, firstBeat))
-        });
+        var lastX = 0d;
+        var lastY = 0d;
 
-        var hasPreviousOutputInterval = false;
-        var previousOutputEnd = 0f;
         for (var i = 0; i < boundaries.Count - 1; i++)
         {
             var start = boundaries[i];
             var end = boundaries[i + 1];
             if (end - start <= FloatEpsilon) continue;
-
-            var emitted = ProcessMoveInterval(target, xEvents, yEvents, start, end);
-            if (!emitted) continue;
-
-            // If there is a real gap between two emitted intervals, insert a frame to prevent implicit chaining.
-            if (hasPreviousOutputInterval && start - previousOutputEnd > FloatEpsilon)
-            {
-                var startBeat = new Beat(start);
-                target.MoveFrames.Add(new Pe.MoveFrame
-                {
-                    Beat = start,
-                    XValue = ToPeX(GetValueAt(xEvents, startBeat)),
-                    YValue = ToPeY(GetValueAt(yEvents, startBeat))
-                });
-            }
-
-            hasPreviousOutputInterval = true;
-            previousOutputEnd = end;
+            ProcessMoveInterval(target, xEvents, yEvents, start, end, ref lastX, ref lastY);
         }
     }
 
     /// <summary>
-    /// 处理单个 Move 区间并选择直接映射或切段线性化策略。
+    /// 处理单个边界区间，选择直接映射或切段线性化策略并输出帧和事件。
     /// </summary>
-    private static bool ProcessMoveInterval(
+    private void ProcessMoveInterval(
         Pe.JudgeLine target,
         List<Nrc.Event<double>> xEvents,
         List<Nrc.Event<double>> yEvents,
-        float start,
-        float end)
+        float start, float end,
+        ref double lastX, ref double lastY)
     {
-        var startBeat = new Beat(start);
-        var endBeat = new Beat(end);
-        var activeX = FindActiveEvent(xEvents, startBeat);
-        var activeY = FindActiveEvent(yEvents, startBeat);
+        var activeX = FindActiveEvent(xEvents, new Beat(start));
+        var activeY = FindActiveEvent(yEvents, new Beat(start));
 
-        if (activeX == null && activeY == null)
+        if (activeX == null && activeY == null) return; // true gap — preserve it
+
+        var xAligned = IsExactlyCovering(activeX, start, end);
+        var yAligned = IsExactlyCovering(activeY, start, end);
+        var sameEasing = xAligned && yAligned
+                                  && activeX != null && activeY != null
+                                  && (int)activeX.Easing == (int)activeY.Easing;
+        var canDirectMap = (xAligned && activeY == null)
+                           || (yAligned && activeX == null)
+                           || sameEasing;
+
+        if (canDirectMap)
         {
-            // Keep true gaps empty instead of fabricating constant-velocity move events.
-            return false;
+            EmitAlignedMoveSegment(target, start, end, activeX, activeY, ref lastX, ref lastY);
         }
-
-        if (activeX != null && activeY != null
-                            && IsEventExactMatch(activeX, activeY, start, end)
-                            && (int)activeX.Easing == (int)activeY.Easing)
+        else
         {
-            AppendMoveEvent(target, xEvents, yEvents, start, end,
-                SafeConvertEasingToInt(activeX.Easing, $"Move@{start:F3}"));
-            return true;
+            WarnMoveSegmentMisalignment(activeX, activeY, xAligned, yAligned, start, end);
+            EmitCutMoveSegments(target, xEvents, yEvents, start, end, ref lastX, ref lastY);
         }
-
-        var hasX = activeX != null;
-        var hasY = activeY != null;
-        if (hasX ^ hasY)
-        {
-            var missingSideHasNoEvents = hasX ? yEvents.Count == 0 : xEvents.Count == 0;
-            if (missingSideHasNoEvents)
-            {
-                Warn(
-                    $"Move interval [{start:F3}, {end:F3}] only has {(hasX ? "X" : "Y")} events; other side has no events, supplemented with historical constant value");
-                AppendMoveEvent(target, xEvents, yEvents, start, end, 1);
-                return true;
-            }
-
-            Warn(
-                $"Move interval [{start:F3}, {end:F3}] only has {(hasX ? "X" : "Y")} active event while opposite side is misaligned; cut interval events via EventCutter then linearize");
-            return AppendCutMoveInterval(target, xEvents, yEvents, startBeat, endBeat);
-        }
-
-        Warn(
-            $"Move interval [{start:F3}, {end:F3}] X/Y events are not directly alignable; cut interval events via EventCutter then linearize");
-        return AppendCutMoveInterval(target, xEvents, yEvents, startBeat, endBeat);
     }
 
     /// <summary>
-    /// 判断 X/Y 事件是否在当前区间完全对齐（同起止）。
+    /// 输出对齐区间的 MoveFrame（立即设定起始状态）和 MoveEvent（描述终态及缓动）。
     /// </summary>
-    private static bool IsEventExactMatch(Nrc.Event<double> xEvent, Nrc.Event<double> yEvent, float start, float end)
-        => Math.Abs((double)xEvent.StartBeat - start) <= FloatEpsilon
-           && Math.Abs((double)yEvent.StartBeat - start) <= FloatEpsilon
-           && Math.Abs((double)xEvent.EndBeat - end) <= FloatEpsilon
-           && Math.Abs((double)yEvent.EndBeat - end) <= FloatEpsilon;
-
-    /// <summary>
-    /// 向 PE 添加单段 MoveEvent。
-    /// </summary>
-    private static void AppendMoveEvent(
+    private static void EmitAlignedMoveSegment(
         Pe.JudgeLine target,
-        List<Nrc.Event<double>> xEvents,
-        List<Nrc.Event<double>> yEvents,
-        float start,
-        float end,
-        int easing)
+        float start, float end,
+        Nrc.Event<double>? activeX, Nrc.Event<double>? activeY,
+        ref double lastX, ref double lastY)
     {
-        var endBeat = new Beat(end);
+        var startXv = activeX?.StartValue ?? lastX;
+        var endXv = activeX?.EndValue ?? lastX;
+        var startYv = activeY?.StartValue ?? lastY;
+        var endYv = activeY?.EndValue ?? lastY;
+        int easing;
+        if (activeX != null)
+            easing = SafeConvertEasingToInt(activeX.Easing, $"移动@{start:F3}");
+        else if (activeY != null)
+            easing = SafeConvertEasingToInt(activeY.Easing, $"移动@{start:F3}");
+        else
+            easing = 1;
+
+        target.MoveFrames.Add(new Pe.MoveFrame
+        {
+            Beat = start,
+            XValue = ToPeX(startXv),
+            YValue = ToPeY(startYv)
+        });
         target.MoveEvents.Add(new Pe.MoveEvent
         {
             StartBeat = start,
             EndBeat = end,
             EasingType = easing,
-            EndXValue = ToPeX(GetValueAt(xEvents, endBeat)),
-            EndYValue = ToPeY(GetValueAt(yEvents, endBeat))
+            EndXValue = ToPeX(endXv),
+            EndYValue = ToPeY(endYv)
         });
+        lastX = endXv;
+        lastY = endYv;
     }
 
     /// <summary>
-    /// 对指定 Move 区间使用 EventCutter 切割，并输出线性子事件。
+    /// 输出 Move 区间不对齐或缓动不一致的告警。
     /// </summary>
-    private static bool AppendCutMoveInterval(
+    private static void WarnMoveSegmentMisalignment(
+        Nrc.Event<double>? activeX, Nrc.Event<double>? activeY,
+        bool xAligned, bool yAligned,
+        float start, float end)
+    {
+        switch (xAligned)
+        {
+            case false when !yAligned:
+                Warn($"Move 区间 [{start:F3}, {end:F3}] X/Y 事件均未完整覆盖此区间，将切段线性化");
+                break;
+            case false:
+                Warn($"Move 区间 [{start:F3}, {end:F3}] X 事件跨越 Y 边界（未对齐），将切段线性化");
+                break;
+            default:
+            {
+                if (!yAligned)
+                    Warn($"Move 区间 [{start:F3}, {end:F3}] Y 事件跨越 X 边界（未对齐），将切段线性化");
+                else
+                {
+                    var xEasingNum = activeX != null ? (int)activeX.Easing : 0;
+                    var yEasingNum = activeY != null ? (int)activeY.Easing : 0;
+                    Warn($"Move 区间 [{start:F3}, {end:F3}] X/Y 缓动类型不一致（X={xEasingNum}, Y={yEasingNum}），将切段线性化");
+                }
+
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 检查事件是否精确覆盖指定区间（起止拍均在容差内匹配）。
+    /// </summary>
+    private static bool IsExactlyCovering(Nrc.Event<double>? ev, float start, float end)
+        => ev != null
+           && Math.Abs((double)ev.StartBeat - start) <= FloatEpsilon
+           && Math.Abs((double)ev.EndBeat - end) <= FloatEpsilon;
+
+    /// <summary>
+    /// 对 X/Y 不对齐或缓动不一致的区间切割为线性片段，逐段输出 MoveFrame+MoveEvent。
+    /// </summary>
+    private void EmitCutMoveSegments(
         Pe.JudgeLine target,
         List<Nrc.Event<double>> xEvents,
         List<Nrc.Event<double>> yEvents,
-        Beat startBeat,
-        Beat endBeat)
+        float start, float end,
+        ref double lastX, ref double lastY)
     {
-        var interval = Math.Max((double)(endBeat - startBeat), 1e-6d);
-        var cutLength = interval / UnsupportedEasingCutPrecision;
+        var startBeat = new Beat(start);
+        var endBeat = new Beat(end);
+        var cutLength = 1d / _options.Cutting.MisalignedXyEventPrecision;
+
         var cutX = NrcEventTools.CutEventsInRange(xEvents, startBeat, endBeat, cutLength);
         var cutY = NrcEventTools.CutEventsInRange(yEvents, startBeat, endBeat, cutLength);
 
-        var boundaries = CollectBoundaries(cutX, cutY);
-        boundaries.Add((float)(double)startBeat);
-        boundaries.Add((float)(double)endBeat);
-        boundaries = boundaries.Distinct().OrderBy(v => v).ToList();
+        var subBoundaries = CollectBoundaries(cutX, cutY);
+        subBoundaries.Add(start);
+        subBoundaries.Add(end);
+        subBoundaries = subBoundaries.Distinct().OrderBy(v => v).ToList();
 
-        var emitted = false;
-        for (var i = 0; i < boundaries.Count - 1; i++)
+        for (var i = 0; i < subBoundaries.Count - 1; i++)
         {
-            var segStart = boundaries[i];
-            var segEnd = boundaries[i + 1];
+            var segStart = subBoundaries[i];
+            var segEnd = subBoundaries[i + 1];
             if (segEnd - segStart <= FloatEpsilon) continue;
-            AppendMoveEvent(target, xEvents, yEvents, segStart, segEnd, 1);
-            emitted = true;
-        }
 
-        return emitted;
+            var xSeg = FindSegment(cutX, segStart, segEnd);
+            var ySeg = FindSegment(cutY, segStart, segEnd);
+
+            var startXv = xSeg?.StartValue ?? lastX;
+            var endXv = xSeg?.EndValue ?? lastX;
+            var startYv = ySeg?.StartValue ?? lastY;
+            var endYv = ySeg?.EndValue ?? lastY;
+
+            target.MoveFrames.Add(new Pe.MoveFrame
+            {
+                Beat = segStart,
+                XValue = ToPeX(startXv),
+                YValue = ToPeY(startYv)
+            });
+            target.MoveEvents.Add(new Pe.MoveEvent
+            {
+                StartBeat = segStart,
+                EndBeat = segEnd,
+                EasingType = 1,
+                EndXValue = ToPeX(endXv),
+                EndYValue = ToPeY(endYv)
+            });
+
+            if (xSeg != null) lastX = xSeg.EndValue;
+            if (ySeg != null) lastY = ySeg.EndValue;
+        }
     }
 
     /// <summary>
     /// 转换 double 标量事件通道（如 Rotate）。
     /// </summary>
-    private static void ConvertScalarEvents(
+    private void ConvertScalarEvents(
         List<Pe.Frame> targetFrames,
         List<Pe.Event>? targetEvents,
         List<Nrc.Event<double>>? sourceEvents,
@@ -421,7 +478,7 @@ public static class NrcToPe
     /// <param name="sourceEvents">输入事件列表。</param>
     /// <param name="valueTransform">数值变换（坐标/范围/系数）。</param>
     /// <param name="channelName">通道名，用于告警上下文。</param>
-    private static void ConvertScalarEventsInternal<T>(
+    private void ConvertScalarEventsInternal<T>(
         List<Pe.Frame> targetFrames,
         List<Pe.Event>? targetEvents,
         List<Nrc.Event<T>>? sourceEvents,
@@ -493,7 +550,7 @@ public static class NrcToPe
         }
         catch (NrcToCmdysjEasings.EasingNotSupportedException)
         {
-            Warn($"{context}: unsupported easing remained after expansion, fallback to linear(1)");
+            Warn($"{context}：展开后仍存在不支持的缓动，回退为线性(1)");
             return 1;
         }
     }
@@ -501,7 +558,7 @@ public static class NrcToPe
     /// <summary>
     /// 对 Move 双精度事件列表进行展开：不支持缓动会切割为线性分段。
     /// </summary>
-    private static List<Nrc.Event<double>> ExpandEventsForUnsupportedEasing(
+    private List<Nrc.Event<double>> ExpandEventsForUnsupportedEasing(
         List<Nrc.Event<double>> source,
         string channel)
     {
@@ -517,56 +574,21 @@ public static class NrcToPe
     /// <summary>
     /// 若事件缓动不受支持，切割为多段线性事件拟合曲线。
     /// </summary>
-    private static List<Nrc.Event<T>> ExpandUnsupportedEasing<T>(Nrc.Event<T> src, string context)
+    private List<Nrc.Event<T>> ExpandUnsupportedEasing<T>(Nrc.Event<T> src, string context)
     {
         try
         {
+            if (src.IsBezier)
+                throw new NrcToCmdysjEasings.EasingNotSupportedException(-1);
             _ = ConvertEasing(src.Easing);
             return [src];
         }
         catch (NrcToCmdysjEasings.EasingNotSupportedException)
         {
-            Warn($"{context}: unsupported easing will be sliced into {UnsupportedEasingCutPrecision} linear segments");
-            return CutEventToLinear(src);
+            Warn(
+                $"{context}：检测到不支持的缓动，将切分为 {src.EndBeat - src.StartBeat / _options.Cutting.UnsupportedEasingPrecision} 段线性事件");
+            return NrcEventTools.CutEventToLiner(src, 1d / _options.Cutting.UnsupportedEasingPrecision);
         }
-    }
-
-    /// <summary>
-    /// 将单个 NRC 事件按固定精度切割为线性事件。
-    /// </summary>
-    private static List<Nrc.Event<T>> CutEventToLinear<T>(Nrc.Event<T> src)
-    {
-        var result = new List<Nrc.Event<T>>(UnsupportedEasingCutPrecision);
-        var totalBeats = (double)(src.EndBeat - src.StartBeat);
-        var current = src.StartBeat;
-        var currentVal = src.GetValueAtBeat(src.StartBeat);
-
-        for (var i = 0; i < UnsupportedEasingCutPrecision; i++)
-        {
-            var isLast = i == UnsupportedEasingCutPrecision - 1;
-            var next = isLast
-                ? src.EndBeat
-                : new Beat((double)src.StartBeat + (i + 1.0) / UnsupportedEasingCutPrecision * totalBeats);
-            var nextVal = isLast ? src.EndValue : src.GetValueAtBeat(next);
-
-            result.Add(new Nrc.Event<T>
-            {
-                StartBeat = new Beat((int[])current),
-                EndBeat = new Beat((int[])next),
-                StartValue = currentVal,
-                EndValue = nextVal,
-                Easing = new Nrc.Easing(1),
-                BezierPoints = new float[4],
-                EasingLeft = 0f,
-                EasingRight = 1f,
-                Font = src.Font
-            });
-
-            current = next;
-            currentVal = nextVal;
-        }
-
-        return result;
     }
 
     /// <summary>
@@ -595,24 +617,15 @@ public static class NrcToPe
             && beatValue < (double)e.EndBeat - FloatEpsilon);
     }
 
-    /// <summary>
-    /// 获取指定拍点上的事件值。
-    /// </summary>
-    /// <remarks>
-    /// 命中区间返回插值值；未命中时回退到最近历史事件 EndValue；再无历史时返回 0。
-    /// </remarks>
-    private static double GetValueAt(List<Nrc.Event<double>> events, Beat beat)
-    {
-        if (events.Count == 0) return 0d;
-        for (var i = 0; i < events.Count; i++)
-        {
-            var e = events[i];
-            if (beat >= e.StartBeat && beat <= e.EndBeat) return e.GetValueAtBeat(beat);
-            if (beat < e.StartBeat) break;
-        }
 
-        var previous = events.LastOrDefault(e => beat > e.EndBeat);
-        return previous?.EndValue ?? 0d;
+    /// <summary>
+    /// 在切分后的共享边界上查找与区间完全匹配的事件片段。
+    /// </summary>
+    private static Nrc.Event<double>? FindSegment(List<Nrc.Event<double>> events, float start, float end)
+    {
+        return events.FirstOrDefault(e =>
+            Math.Abs((double)e.StartBeat - start) <= FloatEpsilon
+            && Math.Abs((double)e.EndBeat - end) <= FloatEpsilon);
     }
 
     private static float ToSingle<T>(T value) => value switch
@@ -637,51 +650,54 @@ public static class NrcToPe
     {
         var defaults = new Nrc.Meta();
         if (src.Background != defaults.Background)
-            Warn($"Meta.Background is unsupported by PE (value='{src.Background}')");
-        if (src.Author != defaults.Author) Warn($"Meta.Author is unsupported by PE (value='{src.Author}')");
-        if (src.Composer != defaults.Composer) Warn($"Meta.Composer is unsupported by PE (value='{src.Composer}')");
-        if (src.Artist != defaults.Artist) Warn($"Meta.Artist is unsupported by PE (value='{src.Artist}')");
-        if (src.Level != defaults.Level) Warn($"Meta.Level is unsupported by PE (value='{src.Level}')");
-        if (src.Name != defaults.Name) Warn($"Meta.Name is unsupported by PE (value='{src.Name}')");
-        if (src.Song != defaults.Song) Warn($"Meta.Song is unsupported by PE (value='{src.Song}')");
+            Warn($"PE 不支持 Meta.Background（值='{src.Background}'）");
+        if (src.Author != defaults.Author) Warn($"PE 不支持 Meta.Author（值='{src.Author}'）");
+        if (src.Composer != defaults.Composer) Warn($"PE 不支持 Meta.Composer（值='{src.Composer}'）");
+        if (src.Artist != defaults.Artist) Warn($"PE 不支持 Meta.Artist（值='{src.Artist}'）");
+        if (src.Level != defaults.Level) Warn($"PE 不支持 Meta.Level（值='{src.Level}'）");
+        if (src.Name != defaults.Name) Warn($"PE 不支持 Meta.Name（值='{src.Name}'）");
+        if (src.Song != defaults.Song) Warn($"PE 不支持 Meta.Song（值='{src.Song}'）");
     }
 
     /// <summary>
     /// 检查判定线中 PE 不支持字段是否出现非默认值，并逐项告警。
     /// </summary>
-    private static void WarnIfUnsupportedJudgeLineFields(Nrc.JudgeLine src)
+    private void WarnIfUnsupportedJudgeLineFields(Nrc.JudgeLine src)
     {
-        if (!string.Equals(src.Name, "NrcJudgeLine", StringComparison.Ordinal))
-            Warn($"JudgeLine.Name is unsupported by PE (value='{src.Name}')");
+        if (!string.Equals(src.Name, "Untitled", StringComparison.Ordinal))
+            Warn($"PE 不支持 JudgeLine.Name（值='{src.Name}'）");
         if (!string.Equals(src.Texture, "line.png", StringComparison.Ordinal))
-            Warn($"JudgeLine.Texture is unsupported by PE (value='{src.Texture}')");
+            Warn(
+                $"PE 不支持 JudgeLine.Texture（值='{src.Texture}'），{(_options.LineFilter.RemoveTextureLine ? "，判定线将被自动移除。" : "。")}");
         if (!IsDefaultAnchor(src.Anchor))
-            Warn($"JudgeLine.Anchor is unsupported by PE (value='[{string.Join(", ", src.Anchor)}]')");
+            Warn($"PE 不支持 JudgeLine.Anchor（值='[{string.Join(", ", src.Anchor)}]'）");
         if (src.Father != -1)
-            Warn($"JudgeLine.Father is unsupported by PE (value={src.Father}), will be auto unbind");
+            Warn($"PE 不支持 JudgeLine.Father（值={src.Father}），将自动解除父子绑定");
         if (!src.IsCover)
-            Warn($"JudgeLine.IsCover is unsupported by PE (value={src.IsCover})");
+            Warn($"PE 不支持 JudgeLine.IsCover（值={src.IsCover}）");
         if (src.ZOrder != 0)
-            Warn($"JudgeLine.ZOrder is unsupported by PE (value={src.ZOrder})");
+            Warn($"PE 不支持 JudgeLine.ZOrder（值={src.ZOrder}）");
         if (src.AttachUi.HasValue)
-            Warn($"JudgeLine.AttachUi is unsupported by PE (value={(int)src.AttachUi.Value})");
+            Warn(
+                $"PE 不支持 JudgeLine.AttachUi（值={(int)src.AttachUi.Value}）{(_options.LineFilter.RemoveAttachUiLine ? "，判定线将被自动移除。" : "。")}"
+            );
         if (src.IsGif)
-            Warn($"JudgeLine.IsGif is unsupported by PE (value={src.IsGif})");
+            Warn($"PE 不支持 JudgeLine.IsGif（值={src.IsGif}）");
         if (Math.Abs(src.BpmFactor - 1f) > FloatEpsilon)
-            Warn($"JudgeLine.BpmFactor is unsupported by PE (value={src.BpmFactor})");
+            Warn($"PE 不支持 JudgeLine.BpmFactor（值={src.BpmFactor}）");
 
         if (HasNonDefaultExtendLayer(src.Extended))
-            Warn("JudgeLine.Extended is unsupported by PE (contains non-default data)");
+            Warn("PE 不支持 JudgeLine.Extended（包含非默认数据）");
         if (!IsDefaultXControls(src.PositionControls))
-            Warn("JudgeLine.PositionControls is unsupported by PE (contains non-default data)");
+            Warn("PE 不支持 JudgeLine.PositionControls（包含非默认数据）");
         if (!IsDefaultAlphaControls(src.AlphaControls))
-            Warn("JudgeLine.AlphaControls is unsupported by PE (contains non-default data)");
+            Warn("PE 不支持 JudgeLine.AlphaControls（包含非默认数据）");
         if (!IsDefaultSizeControls(src.SizeControls))
-            Warn("JudgeLine.SizeControls is unsupported by PE (contains non-default data)");
+            Warn("PE 不支持 JudgeLine.SizeControls（包含非默认数据）");
         if (!IsDefaultSkewControls(src.SkewControls))
-            Warn("JudgeLine.SkewControls is unsupported by PE (contains non-default data)");
+            Warn("PE 不支持 JudgeLine.SkewControls（包含非默认数据）");
         if (!IsDefaultYControls(src.YControls))
-            Warn("JudgeLine.YControls is unsupported by PE (contains non-default data)");
+            Warn("PE 不支持 JudgeLine.YControls（包含非默认数据）");
     }
 
     /// <summary>
@@ -690,19 +706,19 @@ public static class NrcToPe
     private static void WarnIfUnsupportedNoteFields(Nrc.Note src)
     {
         if (src.Alpha != 255)
-            Warn($"Note.Alpha is unsupported by PE (value={src.Alpha})");
+            Warn($"PE 不支持 Note.Alpha（值={src.Alpha}）");
         if (Math.Abs(src.JudgeArea - 1f) > FloatEpsilon)
-            Warn($"Note.JudgeArea is unsupported by PE (value={src.JudgeArea})");
+            Warn($"PE 不支持 Note.JudgeArea（值={src.JudgeArea}）");
         if (Math.Abs(src.VisibleTime - 999999f) > FloatEpsilon)
-            Warn($"Note.VisibleTime is unsupported by PE (value={src.VisibleTime})");
+            Warn($"PE 不支持 Note.VisibleTime（值={src.VisibleTime}）");
         if (Math.Abs(src.YOffset) > FloatEpsilon)
-            Warn($"Note.YOffset is unsupported by PE (value={src.YOffset})");
+            Warn($"PE 不支持 Note.YOffset（值={src.YOffset}）");
         if (!IsDefaultTint(src.Tint))
-            Warn($"Note.Tint is unsupported by PE (value='[{string.Join(", ", src.Tint)}]')");
+            Warn($"PE 不支持 Note.Tint（值='[{string.Join(", ", src.Tint)}]'）");
         if (src.HitFxColor != null)
-            Warn($"Note.HitFxColor is unsupported by PE (value='[{string.Join(", ", src.HitFxColor)}]')");
+            Warn($"PE 不支持 Note.HitFxColor（值='[{string.Join(", ", src.HitFxColor)}]'）");
         if (!string.IsNullOrWhiteSpace(src.HitSound))
-            Warn($"Note.HitSound is unsupported by PE (value='{src.HitSound}')");
+            Warn($"PE 不支持 Note.HitSound（值='{src.HitSound}'）");
     }
 
     /// <summary>
@@ -713,13 +729,13 @@ public static class NrcToPe
         foreach (var e in events)
         {
             if (e.IsBezier)
-                Warn($"{channel}: Bezier event is unsupported by PE native event model");
+                Warn($"{channel}：Bezier 事件不受 PE 原生事件模型支持，事件将被自动转换为线性事件");
             if (!IsDefaultBezierPoints(e.BezierPoints))
-                Warn($"{channel}: non-default BezierPoints will be dropped");
+                Warn($"{channel}：非默认 BezierPoints 将被丢弃");
             if (Math.Abs(e.EasingLeft) > FloatEpsilon || Math.Abs(e.EasingRight - 1f) > FloatEpsilon)
-                Warn($"{channel}: EasingLeft/EasingRight trimming is unsupported by PE");
+                Warn($"{channel}：PE 不支持 EasingLeft/EasingRight 裁剪，事件将被自动转换为线性事件");
             if (!string.IsNullOrWhiteSpace(e.Font))
-                Warn($"{channel}: Font is unsupported by PE");
+                Warn($"{channel}：PE 不支持 Font 字段，字段将被丢弃");
         }
     }
 
@@ -748,19 +764,19 @@ public static class NrcToPe
            && Math.Abs(points[3]) <= FloatEpsilon;
 
     private static bool IsDefaultXControls(List<Nrc.XControl>? controls)
-        => controls == null || controls.Count == 0 || controls.SequenceEqual(Nrc.XControl.Default);
+        => Nrc.XControl.Default.Equals(controls);
 
     private static bool IsDefaultAlphaControls(List<Nrc.AlphaControl>? controls)
-        => controls == null || controls.Count == 0 || controls.SequenceEqual(Nrc.AlphaControl.Default);
+        => Nrc.AlphaControl.Default.Equals(controls);
 
     private static bool IsDefaultSizeControls(List<Nrc.SizeControl>? controls)
-        => controls == null || controls.Count == 0 || controls.SequenceEqual(Nrc.SizeControl.Default);
+        => Nrc.SizeControl.Default.Equals(controls);
 
     private static bool IsDefaultSkewControls(List<Nrc.SkewControl>? controls)
-        => controls == null || controls.Count == 0 || controls.SequenceEqual(Nrc.SkewControl.Default);
+        => Nrc.SkewControl.Default.Equals(controls);
 
     private static bool IsDefaultYControls(List<Nrc.YControl>? controls)
-        => controls == null || controls.Count == 0 || controls.SequenceEqual(Nrc.YControl.Default);
+        => Nrc.YControl.Default.Equals(controls);
 
     /// <summary>
     /// 输出 NrcToPe 统一前缀的告警日志。

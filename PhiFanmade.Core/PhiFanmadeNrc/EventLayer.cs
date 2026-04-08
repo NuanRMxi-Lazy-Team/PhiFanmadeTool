@@ -21,7 +21,7 @@ namespace PhiFanmade.Core.PhiFanmadeNrc
         /// <param name="events">事件数组</param>
         /// <param name="beat">指定拍</param>
         /// <returns>在指定拍时，指定事件列表的数值</returns>
-        public T GetValueAtBeat<T>(List<Event<T>> events, Beat beat)
+        public static T GetValueAtBeat<T>(List<Event<T>> events, Beat beat)
         {
             for (int i = 0; i < events.Count; i++)
             {

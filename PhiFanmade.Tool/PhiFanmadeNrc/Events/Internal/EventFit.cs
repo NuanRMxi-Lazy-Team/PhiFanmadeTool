@@ -14,6 +14,7 @@ internal static class EventFit
 
     // DP 中每增加一个段的惩罚；越大越倾向于更少事件。
     private const double SegmentPenalty = 1.0d;
+
     // 保留原事件的轻微偏置，避免在边界条件下过拟合复杂缓动。
     private const double KeepOriginalPenalty = 1.02d;
 
@@ -75,7 +76,7 @@ internal static class EventFit
         var units = BuildFitUnits(sortedEvents, tolerance);
         var outputs = new List<Nrc.Event<T>>[units.Count];
 
-        if (units.Count == 1 && units[0].NeedsFit)
+        if (units is [{ NeedsFit: true }])
         {
             // 单个超长 run 时，把所有核心预算给 run 内部 DP 并行。
             outputs[0] = FitLinearRun(
@@ -115,8 +116,8 @@ internal static class EventFit
         }
 
         var result = new List<Nrc.Event<T>>(sortedEvents.Count);
-        for (var i = 0; i < outputs.Length; i++)
-            result.AddRange(outputs[i]);
+        foreach (var t in outputs)
+            result.AddRange(t);
 
         NrcToolLog.OnInfo($"EventListFit: 拟合完成，{events.Count} -> {result.Count} 个事件");
         return result;
@@ -257,8 +258,8 @@ internal static class EventFit
         List<Nrc.Event<T>> runEvents,
         int startIndex,
         int endLocal,
-        IReadOnlyList<double> dpCost,
-        IReadOnlyList<int> dpSegments)
+        double[] dpCost,
+        int[] dpSegments)
     {
         var absoluteEnd = startIndex + endLocal - 1;
         return new PlanChoice<T>(
@@ -276,8 +277,8 @@ internal static class EventFit
         int startIndex,
         int endLocal,
         int window,
-        IReadOnlyList<double> dpCost,
-        IReadOnlyList<int> dpSegments,
+        double[] dpCost,
+        int[] dpSegments,
         PlanChoice<T> currentBest)
     {
         var absoluteEnd = startIndex + endLocal - 1;
@@ -370,7 +371,7 @@ internal static class EventFit
     }
 
     /// <summary>
-    /// 在允许缓动集合中选择分数最低的拟合事件。
+    /// 在允许缓动集合中选择分数最低拟合事件。
     /// </summary>
     private static bool TryCreateBestFittedEvent<T>(
         List<Nrc.Event<T>> runEvents,
@@ -506,7 +507,7 @@ internal static class EventFit
     }
 
     /// <summary>
-    /// 在容差约束下对候选事件打分；失败返回 false。
+    /// 在容差约束下对候选事件打分；失败返回 <see langword="false"/>。
     /// </summary>
     private static bool TryScoreCandidate<T>(
         Nrc.Event<T> candidate,
@@ -558,10 +559,10 @@ internal static class EventFit
         var maxError = 0d;
         var sumSquaredError = 0d;
 
-        foreach (var sample in samples)
+        foreach (var error in from sample in samples
+                 let candidateValue = Convert.ToDouble(candidate.GetValueAtBeat(sample.Beat))
+                 select Math.Abs(candidateValue - sample.Value))
         {
-            var candidateValue = Convert.ToDouble(candidate.GetValueAtBeat(sample.Beat));
-            var error = Math.Abs(candidateValue - sample.Value);
             if (error > allowedError)
             {
                 normalizedMaxError = double.PositiveInfinity;
@@ -798,4 +799,3 @@ internal static class EventFit
         InOut
     }
 }
-
