@@ -71,9 +71,13 @@ internal static class FatherUnbindHelpers
             X: segmentStart.X + (intervalEnd.X - segmentStart.X) * progress,
             Y: segmentStart.Y + (intervalEnd.Y - segmentStart.Y) * progress);
         var error = CoordinateGeometry.GetNrcScreenDistance(next, predicted, CurrentRenderProfile);
-        var threshold = tolerance / 100.0 *
-                        ((CoordinateGeometry.GetNrcScreenMagnitude(segmentStart, CurrentRenderProfile) +
-                          CoordinateGeometry.GetNrcScreenMagnitude(next, CurrentRenderProfile)) / 2.0 + 1e-9);
+
+        // Use local displacement scale so tolerance is translation-invariant and does not grow
+        // just because the line is far from origin (common near 90-degree rotational motion).
+        var localScale = Math.Max(
+            CoordinateGeometry.GetNrcScreenDistance(segmentStart, intervalEnd, CurrentRenderProfile),
+            CoordinateGeometry.GetNrcScreenDistance(segmentStart, next, CurrentRenderProfile));
+        var threshold = tolerance / 100.0 * Math.Max(localScale, 1e-9);
         return error > threshold;
     }
 
@@ -193,6 +197,10 @@ internal static class FatherUnbindHelpers
     /// <summary>
     /// 将计算结果写回判定线：清除第 1 层及以上的 X/Y 事件，将压缩后的结果写入第 0 层。
     /// RotateWithFather 为 true 时叠加父线旋转事件；最后置 Father = -1 完成解绑。
+    /// <para>
+    /// 位置通道 X/Y 使用 <see cref="CompressXYPosition"/> 联合压缩，以屏幕空间欧几里得距离
+    /// 同时感知两轴偏差；旋转通道为单轴，仍使用 <see cref="EventCompressor.EventListCompress"/>。
+    /// </para>
     /// </summary>
     internal static void WriteResultToLine(
         Nrc.JudgeLine line,
@@ -212,6 +220,8 @@ internal static class FatherUnbindHelpers
         if (line.EventLayers.Count == 0)
             line.EventLayers.Add(new Nrc.EventLayer());
 
+        // 使用单轴独立压缩。CompressXYPosition 已实现联合 2D 屏幕距离压缩，
+        // 但属于独立优化，保留为可选项，待单独测试后启用。
         line.EventLayers[0].MoveXEvents = compress
             ? EventCompressor.EventListCompress(newXEvents, tolerance)
             : newXEvents;
@@ -228,6 +238,124 @@ internal static class FatherUnbindHelpers
         }
 
         line.Father = -1;
+    }
+
+    /// <summary>
+    /// 对 X/Y 位置通道进行联合压缩。
+    /// <para>
+    /// 使用屏幕空间欧几里得距离衡量合并误差，同时感知两轴偏差，
+    /// 避免独立单轴压缩时因 X/Y 比例不等而产生的误差失真。
+    /// 误差阈值 = <paramref name="tolerance"/>% × 合并段的局部屏幕位移尺度。
+    /// 使用局部尺度可避免远离原点时阈值被放大，从而产生位置相关的外偏/内偏。
+    /// </para>
+    /// <para>
+    /// 若 X/Y 长度不一致（对齐失败），退回到各自调用 <see cref="EventCompressor.EventListCompress"/>。
+    /// </para>
+    /// </summary>
+    /// <param name="xEvents">X 通道事件列表（与 yEvents 按拍对齐）。</param>
+    /// <param name="yEvents">Y 通道事件列表（与 xEvents 按拍对齐）。</param>
+    /// <param name="tolerance">误差容差百分比。</param>
+    /// <returns>压缩后的 (X, Y) 事件列表对。</returns>
+    private static (List<Nrc.Event<double>> X, List<Nrc.Event<double>> Y) CompressXYPosition(
+        List<Nrc.Event<double>> xEvents,
+        List<Nrc.Event<double>> yEvents,
+        double tolerance)
+    {
+        // 若 X/Y 未对齐，退回独立 1D 压缩
+        if (xEvents.Count != yEvents.Count || xEvents.Count == 0)
+            return (EventCompressor.EventListCompress(xEvents, tolerance),
+                    EventCompressor.EventListCompress(yEvents, tolerance));
+
+        var compX = new List<Nrc.Event<double>> { xEvents[0] };
+        var compY = new List<Nrc.Event<double>> { yEvents[0] };
+        var relTol = tolerance / 100.0;
+
+        for (var i = 1; i < xEvents.Count; i++)
+        {
+            var lastX = compX[^1];
+            var lastY = compY[^1];
+            var curX  = xEvents[i];
+            var curY  = yEvents[i];
+
+            // 仅合并相邻线性段，且 X/Y 拍边界需一致
+            if (lastX.Easing != 1 || lastY.Easing != 1 ||
+                curX.Easing  != 1 || curY.Easing  != 1 ||
+                lastX.EndBeat != curX.StartBeat ||
+                lastY.EndBeat != curY.StartBeat)
+            {
+                compX.Add(curX);
+                compY.Add(curY);
+                continue;
+            }
+
+            // 使用局部位移尺度，避免离原点越远阈值越大而导致过度压缩。
+            var screenScale = Math.Max(
+                CoordinateGeometry.GetNrcScreenDistance(
+                    (lastX.StartValue, lastY.StartValue),
+                    (curX.EndValue, curY.EndValue),
+                    CurrentRenderProfile),
+                CoordinateGeometry.GetNrcScreenDistance(
+                    (lastX.StartValue, lastY.StartValue),
+                    (lastX.EndValue, lastY.EndValue),
+                    CurrentRenderProfile));
+            var threshold = relTol * Math.Max(screenScale, 1e-9);
+
+            // 检查交界处连续性（屏幕空间间距）
+            var junctionGap = CoordinateGeometry.GetNrcScreenDistance(
+                (lastX.EndValue, lastY.EndValue),
+                (curX.StartValue, curY.StartValue),
+                CurrentRenderProfile);
+
+            if (junctionGap > threshold)
+            {
+                compX.Add(curX);
+                compY.Add(curY);
+                continue;
+            }
+
+            var tA    = (double)lastX.StartBeat;
+            var tB    = (double)lastX.EndBeat;
+            var tC    = (double)curX.EndBeat;
+            var tSpan = tC - tA;
+
+            bool canMerge;
+            if (tSpan < 1e-12)
+            {
+                // 零长度合并段，连续性已通过，直接合并
+                canMerge = true;
+            }
+            else
+            {
+                var p = (tB - tA) / tSpan;
+
+                // 合并段在交界拍的线性插值预测位置
+                var predX = lastX.StartValue + (curX.EndValue - lastX.StartValue) * p;
+                var predY = lastY.StartValue + (curY.EndValue - lastY.StartValue) * p;
+
+                // 屏幕空间欧几里得距离：交界实际位置 vs 合并段预测位置
+                var junctionDev = CoordinateGeometry.GetNrcScreenDistance(
+                    (lastX.EndValue, lastY.EndValue),
+                    (predX, predY),
+                    CurrentRenderProfile);
+
+                canMerge = junctionDev <= threshold;
+            }
+
+            if (canMerge)
+            {
+                lastX.EndBeat  = curX.EndBeat;
+                lastX.EndValue = curX.EndValue;
+                lastY.EndBeat  = curY.EndBeat;
+                lastY.EndValue = curY.EndValue;
+            }
+            else
+            {
+                compX.Add(curX);
+                compY.Add(curY);
+            }
+        }
+
+        return (compX, compY);
     }
 
     // ─── 共享数据结构 ────────────────────────────────────────────────────────

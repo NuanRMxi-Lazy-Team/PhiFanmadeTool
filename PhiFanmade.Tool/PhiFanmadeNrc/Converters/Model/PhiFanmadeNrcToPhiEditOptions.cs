@@ -2,8 +2,8 @@
 
 public class PhiFanmadeNrcToPhiEditOptions
 {
-    public const double DefaultPrecision = 64d;
-    public const double DefaultTolerancePercent = 5d;
+    public const double DefaultPrecision = 32d;
+    public const double DefaultTolerancePercent = 0.1d;
 
     /// <summary>
     /// 事件切割相关配置
@@ -86,8 +86,8 @@ public class PhiFanmadeNrcToPhiEditOptions
 
     public class FatherLineUnbindOptions
     {
-        private bool _classicMode;
-        private bool _compress = true;
+        private bool _classicMode = true;
+        private bool _compress = false;
 
         /// <summary>
         /// 遇到父子线时父线解绑精度
@@ -114,7 +114,7 @@ public class PhiFanmadeNrcToPhiEditOptions
         /// <summary>
         /// 遇到父子线时合并后压缩拟合容差百分比
         /// </summary>
-        public double Tolerance { get; set; } = 2.5d;
+        public double Tolerance { get; set; } = 0.1d;
 
         /// <summary>
         /// 在启用经典模式的情况下，是否对解绑后的事件列表进行压缩
@@ -136,8 +136,8 @@ public class PhiFanmadeNrcToPhiEditOptions
 
     public class MultiLayerMergeOptions
     {
-        private bool _classicMode;
-        private bool _compress = true;
+        private bool _classicMode = true;
+        private bool _compress = false;
 
         /// <summary>
         /// 遇到多层级时的合并精度
@@ -147,7 +147,7 @@ public class PhiFanmadeNrcToPhiEditOptions
         /// <summary>
         /// 遇到多层级时合并后压缩拟合容差百分比
         /// </summary>
-        public double Tolerance { get; set; } = 1.0d;
+        public double Tolerance { get; set; } = 0.1d;
 
         /// <summary>
         /// 遇到多层级时是否使用经典模式。

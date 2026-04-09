@@ -105,13 +105,13 @@ public class NrcToPe
             trueSrc = _options.FatherLineUnbind.ClassicMode
                 ? NrcJudgeLineTools.FatherUnbind(allLine.FindIndex(l => l.GetHashCode() == src.GetHashCode()),
                     allLine, _options.FatherLineUnbind.Precision, _options.FatherLineUnbind.Tolerance,
-                    !_options.FatherLineUnbind.Compress)
+                    _options.FatherLineUnbind.Compress)
                 : NrcJudgeLineTools.FatherUnbindPlus(allLine.FindIndex(l => l.GetHashCode() == src.GetHashCode()),
                     allLine, _options.FatherLineUnbind.Tolerance);
         }
 
         ConvertLineEvents(pe, trueSrc.EventLayers ?? []);
-        if (pe.AlphaEvents.Count == 0 || pe.AlphaFrames.Count == 0)
+        if (pe.AlphaEvents.Count == 0 && pe.AlphaFrames.Count == 0)
             pe.AlphaFrames.Add(new Pe.Frame());
 
         return pe;

@@ -60,7 +60,7 @@ internal static class EventMerger
             toEvents, toEventsCopy, fromEventsCopy, precision, tolerance);
     }
 
-    // ─── 快速返回 ────────────────────────────────────────────────────────────
+    // 快速返回
 
     /// <summary>
     /// 在任一输入列表为空时直接给出合并结果，避免进入完整合并流程。
@@ -233,8 +233,10 @@ internal static class EventMerger
             return false;
         }
 
-        start = fe.StartBeat < te.StartBeat ? fe.StartBeat : te.StartBeat;
-        end = fe.EndBeat > te.EndBeat ? fe.EndBeat : te.EndBeat;
+        // Overlap bounds must be intersection: [max(start), min(end)].
+        // Using union here over-expands sampled merge windows and introduces value drift.
+        start = fe.StartBeat > te.StartBeat ? fe.StartBeat : te.StartBeat;
+        end = fe.EndBeat < te.EndBeat ? fe.EndBeat : te.EndBeat;
         return true;
     }
 
@@ -454,6 +456,7 @@ internal static class EventMerger
         while (currentBeat < end)
         {
             var nextBeat = currentBeat + cutLength;
+            if (nextBeat > end) nextBeat = end;
             var toEvent = cutTo.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
             var formEvent = cutFrom.FirstOrDefault(e => e.StartBeat == currentBeat && e.EndBeat == nextBeat);
 
@@ -503,13 +506,6 @@ internal static class EventMerger
 
         newEvents.AddRange(
             MergeAdaptiveIntervals(toEventsCopy, fromEventsCopy, overlapIntervals, precision, tolerance));
-
-        if (typeof(T) == typeof(float))
-        {
-            var floatEvents = newEvents as List<Nrc.Event<float>>;
-            newEvents = EventCompressor.EventListCompress(floatEvents, tolerance)
-                .Select(e => (Nrc.Event<T>)(object)e).ToList();
-        }
 
         SortByStartBeat(newEvents);
         return newEvents;
@@ -692,7 +688,12 @@ internal static class EventMerger
     }
 
     /// <summary>
-    /// 根据线性预测误差判断当前自适应分段是否需要切分。
+    /// 使用归一化 (时间, 值) 空间中的欧几里得垂直距离判断当前自适应分段是否需要切分。
+    /// <para>
+    /// 将时间归一化到 [0, 1]、值归一化到以最大绝对值为比例尺的无量纲空间，
+    /// 计算测试点到理想线段的垂直距离（不混用量纲），避免原公式 sqrt(dx²+dy²)−dx 
+    /// 因时间单位（拍）与值单位不同而导致的失真。
+    /// </para>
     /// </summary>
     /// <typeparam name="T">事件值类型。</typeparam>
     /// <param name="segmentStart">分段起始拍。</param>
@@ -702,23 +703,39 @@ internal static class EventMerger
     /// <param name="sumAtNext">下一拍点和轨道值。</param>
     /// <param name="sumAtEnd">区间终点和轨道值。</param>
     /// <param name="tolerance">允许误差百分比。</param>
-    /// <returns>误差超限或到达区间末尾时返回 <see langword="true"/>。</returns>
+    /// <returns>垂直距离超限或到达区间末尾时返回 <see langword="true"/>。</returns>
     private static bool ShouldSplitAdaptiveSegment<T>(
         Beat segmentStart, Beat nextBeat, Beat intervalEnd,
         T? segmentStartSum, T? sumAtNext, T? sumAtEnd, double tolerance)
     {
-        var segmentProgress = nextBeat == intervalEnd
-            ? 1.0
-            : (double)(nextBeat - segmentStart) / (double)(intervalEnd - segmentStart);
+        if (nextBeat >= intervalEnd) return true;
+        if (nextBeat <= segmentStart) return false;
+
+        var dtTotal = (double)(intervalEnd - segmentStart);
+        var dtLocal = (double)(nextBeat - segmentStart);
+        if (dtTotal <= 1e-12 || dtLocal <= 1e-12) return false;
+
+        var p = Math.Clamp(dtLocal / dtTotal, 0.0, 1.0);
 
         var startNum = ToDouble(segmentStartSum);
-        var nextNum = ToDouble(sumAtNext);
-        var endNum = ToDouble(sumAtEnd);
-        var predicted = startNum + (endNum - startNum) * segmentProgress;
-        var error = Math.Abs(nextNum - predicted);
-        var threshold = tolerance / 100.0 * ((Math.Abs(startNum) + Math.Abs(nextNum)) / 2.0 + 1e-9);
+        var nextNum  = ToDouble(sumAtNext);
+        var endNum   = ToDouble(sumAtEnd);
 
-        return error > threshold || nextBeat >= intervalEnd;
+        // 归一化比例尺：避免量纲混用
+        var scale = Math.Max(Math.Max(Math.Abs(startNum), Math.Abs(endNum)), 1e-9);
+
+        // 归一化 (时间, 值) 空间中的垂直距离：
+        //   A'=(0, 0), C'=(1, dvNorm), 测试点 B'=(p, byNorm)
+        //   d = |byNorm − dvNorm·p| / sqrt(1 + dvNorm²)
+        // 当 dvNorm≈0（水平段）退化为纯值域偏差，当 dvNorm 很大（陡峭段）退化为时间偏差，
+        // 两者通过欧几里得范数自然融合，无需手动加权。
+        var dvNorm = (endNum  - startNum) / scale;
+        var byNorm = (nextNum - startNum) / scale;
+        var det    = byNorm - dvNorm * p;
+        var len    = Math.Sqrt(1.0 + dvNorm * dvNorm);
+        var normalizedDist = Math.Abs(det) / len;
+
+        return normalizedDist > Math.Max(0d, tolerance) / 100.0;
     }
 
     /// <summary>
