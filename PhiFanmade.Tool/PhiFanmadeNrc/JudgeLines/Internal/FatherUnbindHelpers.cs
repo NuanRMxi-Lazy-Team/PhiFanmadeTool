@@ -9,7 +9,6 @@ namespace PhiFanmade.Tool.PhiFanmadeNrc.JudgeLines.Internal;
 
 /// <summary>
 /// NRC 父子解绑共用辅助方法：缓存表、坐标计算、通道合并、范围统计、采样算法、结果写回。
-/// 同步处理器（<see cref="FatherUnbindProcessor"/>）与异步处理器（<see cref="FatherUnbindAsyncProcessor"/>）共享此类。
 /// </summary>
 internal static class FatherUnbindHelpers
 {
@@ -382,30 +381,6 @@ internal static class FatherUnbindHelpers
             Fr: MergeLayerChannel(fatherLayers, l => l.RotateEvents, merge),
             Tx: MergeLayerChannel(targetLayers, l => l.MoveXEvents, merge),
             Ty: MergeLayerChannel(targetLayers, l => l.MoveYEvents, merge));
-
-    /// <summary>
-    /// 异步并行合并父子线五个通道事件。
-    /// </summary>
-    internal static async Task<EventChannels> MergeChannelsAsync(
-        List<Nrc.EventLayer> targetLayers,
-        List<Nrc.EventLayer> fatherLayers,
-        Func<List<Nrc.Event<double>>, List<Nrc.Event<double>>, List<Nrc.Event<double>>> merge)
-    {
-        var mergeResults = await Task.WhenAll(
-            Task.Run(() => MergeLayerChannel(targetLayers, l => l.MoveXEvents, merge)),
-            Task.Run(() => MergeLayerChannel(targetLayers, l => l.MoveYEvents, merge)),
-            Task.Run(() => MergeLayerChannel(fatherLayers, l => l.MoveXEvents, merge)),
-            Task.Run(() => MergeLayerChannel(fatherLayers, l => l.MoveYEvents, merge)),
-            Task.Run(() => MergeLayerChannel(fatherLayers, l => l.RotateEvents, merge))
-        );
-
-        return new EventChannels(
-            Fx: mergeResults[2],
-            Fy: mergeResults[3],
-            Fr: mergeResults[4],
-            Tx: mergeResults[0],
-            Ty: mergeResults[1]);
-    }
 
     // ─── 等间隔采样算法 ──────────────────────────────────────────────────────
 

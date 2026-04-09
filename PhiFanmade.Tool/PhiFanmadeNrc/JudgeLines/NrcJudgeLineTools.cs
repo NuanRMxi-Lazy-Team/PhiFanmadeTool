@@ -43,24 +43,6 @@ public static class NrcJudgeLineTools
             targetJudgeLineIndex, allJudgeLines, precision, tolerance, compress);
     }
 
-    /// <summary>将判定线与父判定线解绑并保持行为一致（等间隔采样，异步）。</summary>
-    public static async Task<Nrc.JudgeLine> FatherUnbindAsync(
-        int targetJudgeLineIndex, List<Nrc.JudgeLine> allJudgeLines,
-        double precision = 64d, double tolerance = 5d, bool compress = true)
-        => await FatherUnbindAsyncProcessor.FatherUnbindAsync(
-            targetJudgeLineIndex, allJudgeLines, precision, tolerance,
-            FatherUnbindHelpers.ChartCacheTable.GetOrCreateValue(allJudgeLines), compress);
-
-    /// <summary>将判定线与父判定线解绑并保持行为一致（等间隔采样，异步，指定渲染坐标系）。</summary>
-    public static async Task<Nrc.JudgeLine> FatherUnbindAsync(
-        int targetJudgeLineIndex, List<Nrc.JudgeLine> allJudgeLines, CoordinateProfile renderProfile,
-        double precision = 64d, double tolerance = 5d, bool compress = true)
-    {
-        using var _ = FatherUnbindHelpers.UseRenderProfile(renderProfile);
-        return await FatherUnbindAsync(
-            targetJudgeLineIndex, allJudgeLines, precision, tolerance, compress);
-    }
-
     #endregion
 
     #region Plus（自适应采样）
@@ -80,23 +62,6 @@ public static class NrcJudgeLineTools
     {
         using var _ = FatherUnbindHelpers.UseRenderProfile(renderProfile);
         return FatherUnbindPlus(targetJudgeLineIndex, allJudgeLines, precision, tolerance);
-    }
-
-    /// <summary>将判定线与父判定线解绑并保持行为一致（自适应采样，异步）。</summary>
-    public static async Task<Nrc.JudgeLine> FatherUnbindPlusAsync(
-        int targetJudgeLineIndex, List<Nrc.JudgeLine> allJudgeLines,
-        double precision = 64d, double tolerance = 5d)
-        => await FatherUnbindAsyncProcessor.FatherUnbindPlusAsync(
-            targetJudgeLineIndex, allJudgeLines, precision, tolerance,
-            FatherUnbindHelpers.ChartCacheTable.GetOrCreateValue(allJudgeLines));
-
-    /// <summary>将判定线与父判定线解绑并保持行为一致（自适应采样，异步，指定渲染坐标系）。</summary>
-    public static async Task<Nrc.JudgeLine> FatherUnbindPlusAsync(
-        int targetJudgeLineIndex, List<Nrc.JudgeLine> allJudgeLines, CoordinateProfile renderProfile,
-        double precision = 64d, double tolerance = 5d)
-    {
-        using var _ = FatherUnbindHelpers.UseRenderProfile(renderProfile);
-        return await FatherUnbindPlusAsync(targetJudgeLineIndex, allJudgeLines, precision, tolerance);
     }
 
     #endregion
