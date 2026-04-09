@@ -2,8 +2,9 @@
 
 /// <summary>
 /// 坐标几何换算工具。
-/// NRC 作为统一归一化坐标空间；坐标转换和距离评估在可配置的渲染空间进行，
-/// 但判定线偏移旋转直接在 NRC 空间内执行，以避免非等比渲染坐标系引入轴向比例失真。
+/// NRC 作为统一归一化坐标空间；坐标转换和距离评估在可配置的渲染空间进行。
+/// 判定线偏移旋转在物理等比空间执行，以匹配 RPE 引擎（prpr）的父子坐标变换语义：
+/// 旋转前将 NRC Y 折算到以半宽为单位的物理等比坐标（×halfH/halfW），旋转后还原（÷halfH/halfW）。
 /// </summary>
 internal static class CoordinateGeometry
 {
@@ -280,11 +281,13 @@ internal static class CoordinateGeometry
         => (ToTargetXCore(x, target), ToTargetYCore(y, target));
 
     /// <summary>
-    /// 在 NRC 归一化坐标系中直接旋转偏移向量。
+    /// 在物理等比空间中旋转 NRC 偏移向量，旋转后还原到 NRC 坐标。
     /// <para>
-    /// 旋转在 NRC 空间内进行，不经过渲染坐标系的缩放往返，
-    /// 以避免非等比渲染坐标系（如 675×450）对旋转结果造成轴向比例失真。
-    /// NRC 坐标系本身是各向同性的正方形归一化空间，因此旋转直接在此空间内应用标准二维旋转矩阵即可。
+    /// RPE 引擎（prpr）的父子坐标变换在物理等比空间中执行：
+    /// X 轴和 Y 轴都先除以半宽（halfW = renderProfile.SpanX / 2），再做旋转。
+    /// 而 NRC 坐标系中 X = rpe_x / halfW（正确），Y = rpe_y / halfH（halfH ≠ halfW），
+    /// 因此旋转前需要将 NRC Y 乘以 (halfH / halfW) 折算到物理等比空间，旋转后再除以该比例还原。
+    /// 这等价于在旋转矩阵中对 Y 轴引入缩放因子 k = halfH / halfW（宽高比的倒数）。
     /// </para>
     /// <para>
     /// 屏幕空间的几何感知（如误差阈值、距离评估）由 <see cref="GetNrcScreenDistance"/>
@@ -294,36 +297,46 @@ internal static class CoordinateGeometry
     /// <param name="x">NRC X 增量。</param>
     /// <param name="y">NRC Y 增量。</param>
     /// <param name="angleDegrees">旋转角度（度，CCW 为正，与 NRC 内部约定一致）。</param>
+    /// <param name="renderProfile">渲染坐标配置，用于计算 X/Y 轴物理比例。</param>
     /// <returns>旋转后的 NRC 增量向量。</returns>
-    internal static (double X, double Y) RotateNrcOffset(double x, double y, double angleDegrees)
+    internal static (double X, double Y) RotateNrcOffset(
+        double x, double y, double angleDegrees, in CoordinateProfile renderProfile)
     {
+        // k = halfH / halfW = SpanY / SpanX
+        // 物理等比空间：phys_x = nrc_x，phys_y = nrc_y * k
+        // 旋转后还原：result_y = rotated_phys_y / k
+        var spanX = GetSpan(renderProfile.MinX, renderProfile.MaxX, "X");
+        var spanY = GetSpan(renderProfile.MinY, renderProfile.MaxY, "Y");
+        var k = spanY / spanX; // halfH / halfW，典型值 900/1350 = 2/3
         var rad = angleDegrees * (Math.PI / 180d);
         var cos = Math.Cos(rad);
         var sin = Math.Sin(rad);
-        return (x * cos - y * sin, x * sin + y * cos);
+        // 等价于：先 y→ y*k，旋转，再 y→ y/k
+        // rotX = x*cos - (y*k)*sin
+        // rotY = (x*sin + (y*k)*cos) / k
+        return (x * cos - y * k * sin,
+                (x * sin + y * k * cos) / k);
     }
 
     /// <summary>
-    /// 在 NRC 归一化坐标系中直接旋转偏移向量（保留渲染坐标参数以兼容现有调用语义，实际不参与旋转计算）。
+    /// 在物理等比空间中旋转 NRC 偏移向量（使用默认渲染配置）。
     /// <para>
-    /// 旋转在 NRC 空间内进行，不经过 <paramref name="renderProfile"/> 缩放，
-    /// 以保证非等比渲染坐标系下不引入轴向比例失真。
+    /// 使用 <see cref="CoordinateProfile.DefaultRenderProfile"/> 作为宽高比参考。
+    /// 详见带 <see cref="CoordinateProfile"/> 参数的重载。
     /// </para>
     /// </summary>
     /// <param name="x">NRC X 增量。</param>
     /// <param name="y">NRC Y 增量。</param>
     /// <param name="angleDegrees">旋转角度（度，CCW 为正）。</param>
-    /// <param name="renderProfile">保留参数，不参与旋转计算，仅供外部传参兼容。</param>
     /// <returns>旋转后的 NRC 增量向量。</returns>
-    internal static (double X, double Y) RotateNrcOffset(
-        double x, double y, double angleDegrees, in CoordinateProfile renderProfile)
-        => RotateNrcOffset(x, y, angleDegrees);
+    internal static (double X, double Y) RotateNrcOffset(double x, double y, double angleDegrees)
+        => RotateNrcOffset(x, y, angleDegrees, RenderProfileDefault);
 
     /// <summary>
     /// 计算子线在 NRC 下的绝对坐标。
     /// <para>
-    /// 旋转在 NRC 空间内直接进行，不经过渲染坐标系缩放，
-    /// 以保证非等比渲染坐标系（如 675×450）不影响判定线位置的几何正确性。
+    /// 旋转在物理等比空间内进行（X 和 Y 都先折算到以半宽为单位的等比坐标），
+    /// 以匹配 RPE 引擎（prpr）的父子坐标变换语义，保证解绑后子线位置在屏幕上与原谱面一致。
     /// </para>
     /// </summary>
     /// <param name="fatherLineX">父线 NRC X 坐标。</param>
@@ -341,10 +354,10 @@ internal static class CoordinateGeometry
     }
 
     /// <summary>
-    /// 计算子线在 NRC 下的绝对坐标（保留渲染坐标参数以兼容现有调用语义，不参与旋转计算）。
+    /// 计算子线在 NRC 下的绝对坐标（指定渲染坐标配置）。
     /// <para>
-    /// 旋转在 NRC 空间内直接进行，<paramref name="renderProfile"/> 不参与旋转，
-    /// 仅保留此重载供外部已指定渲染配置的调用路径使用。
+    /// 旋转在物理等比空间内进行，<paramref name="renderProfile"/> 的宽高比用于确定物理等比折算系数，
+    /// 以匹配 RPE 引擎（prpr）的父子坐标变换语义。
     /// </para>
     /// </summary>
     /// <param name="fatherLineX">父线 NRC X 坐标。</param>
@@ -352,12 +365,15 @@ internal static class CoordinateGeometry
     /// <param name="angleDegrees">子线相对旋转角度（度，CCW 为正）。</param>
     /// <param name="lineX">子线相对 NRC X 偏移。</param>
     /// <param name="lineY">子线相对 NRC Y 偏移。</param>
-    /// <param name="renderProfile">保留参数，不参与旋转计算。</param>
+    /// <param name="renderProfile">渲染坐标配置，用于物理等比折算。</param>
     /// <returns>子线 NRC 绝对坐标。</returns>
     internal static (double X, double Y) GetNrcAbsolutePos(
         double fatherLineX, double fatherLineY, double angleDegrees,
         double lineX, double lineY, in CoordinateProfile renderProfile)
-        => GetNrcAbsolutePos(fatherLineX, fatherLineY, angleDegrees, lineX, lineY);
+    {
+        var (rotX, rotY) = RotateNrcOffset(lineX, lineY, angleDegrees, renderProfile);
+        return (fatherLineX + rotX, fatherLineY + rotY);
+    }
 
     /// <summary>
     /// 基于默认渲染坐标配置，计算 NRC 点在屏幕空间中的模长。

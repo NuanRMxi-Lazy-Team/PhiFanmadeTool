@@ -72,12 +72,10 @@ internal static class FatherUnbindHelpers
             Y: segmentStart.Y + (intervalEnd.Y - segmentStart.Y) * progress);
         var error = CoordinateGeometry.GetNrcScreenDistance(next, predicted, CurrentRenderProfile);
 
-        // Use local displacement scale so tolerance is translation-invariant and does not grow
-        // just because the line is far from origin (common near 90-degree rotational motion).
         var localScale = Math.Max(
             CoordinateGeometry.GetNrcScreenDistance(segmentStart, intervalEnd, CurrentRenderProfile),
             CoordinateGeometry.GetNrcScreenDistance(segmentStart, next, CurrentRenderProfile));
-        var threshold = tolerance / 100.0 * Math.Max(localScale, 1e-9);
+        var threshold = tolerance / 100.0 * Math.Max(localScale, 1e-3);
         return error > threshold;
     }
 

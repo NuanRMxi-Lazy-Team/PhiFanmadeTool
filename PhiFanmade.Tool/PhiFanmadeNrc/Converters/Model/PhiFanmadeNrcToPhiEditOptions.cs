@@ -2,7 +2,7 @@
 
 public class PhiFanmadeNrcToPhiEditOptions
 {
-    public const double DefaultPrecision = 32d;
+    public const double DefaultPrecision = 64d;
     public const double DefaultTolerancePercent = 0.1d;
 
     /// <summary>

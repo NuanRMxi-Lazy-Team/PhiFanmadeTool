@@ -41,9 +41,11 @@ internal static class EventCompressor
                 var vBstart = Convert.ToDouble(currentEvent.StartValue);
                 var vC     = Convert.ToDouble(currentEvent.EndValue);
 
-                // 归一化比例尺：所有端点绝对值的最大值，至少 1e-9 以防除零
+                // 归一化比例尺：所有端点绝对值的最大值。
+                // 下限设为 1e-3（NRC 坐标全范围 [-1,1] 的 0.1%），避免坐标趋零时
+                // 浮点残差被放大 10^6 倍导致 perpDist 爆炸、永远无法合并。
                 var scale  = Math.Max(Math.Max(Math.Abs(vA), Math.Abs(vBend)),
-                                      Math.Max(Math.Abs(vC), 1e-9));
+                                      Math.Max(Math.Abs(vC), 1e-3));
                 var relTol = tolerance / 100.0;
 
                 // 检查交界处的连续性：在归一化值域中，两段交界点的间距需在容差内
