@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Version>0.4.0</Version>
+        <AssemblyVersion>0.4.0</AssemblyVersion>
+        <FileVersion>0.4.0</FileVersion>
+        <IsPackable>false</IsPackable>
+        <Configurations>Debug;Release;PreRelease</Configurations>
+        <Platforms>x64</Platforms>
+        <ApplicationIcon>..\PhiFanmadeToolIcon.ico</ApplicationIcon>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <DefineConstants>$(DefineConstants);$(Configuration)</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\KaedePhi.Core\KaedePhi.Core.csproj" />
+        <ProjectReference Include="..\KaedePhi.Tool\KaedePhi.Tool.csproj" />
+        <ProjectReference Include="..\KaedePhi.Tool.Localization\KaedePhi.Tool.Localization.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Spectre.Console.Cli" Version="0.55.0" />
+        <PackageReference Include="YamlDotNet" Version="17.0.0" />
+    </ItemGroup>
+</Project>
