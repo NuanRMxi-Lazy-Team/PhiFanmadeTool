@@ -29,7 +29,7 @@ internal static class LayerProcessor
     internal static List<EventLayer> CutLayerEvents(
         List<EventLayer> layers, double precision = 64d)
     {
-        layers.RemoveAll(layer => layer == null);
+        layers.RemoveAll(layer => (object?)layer is null);
         layers = RemoveUnlessLayer(layers) ?? layers;
         return layers.Select(layer => CutLayerEvents(layer, precision)).ToList();
     }

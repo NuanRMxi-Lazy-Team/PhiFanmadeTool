@@ -49,14 +49,10 @@ public sealed class FitEventCommand : AsyncCommand<FitEventCommand.Settings>
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // 4 个通道完全独立，并发异步启动；每个通道内部 Phase 1 再利用多核预计算。
-                var moveXTask = KpcEventTools.EventListFitAsync(
-                    eventLayer.MoveXEvents, settings.Tolerance, fitTaskDegree, cancellationToken);
-                var moveYTask = KpcEventTools.EventListFitAsync(
-                    eventLayer.MoveYEvents, settings.Tolerance, fitTaskDegree, cancellationToken);
-                var alphaTask = KpcEventTools.EventListFitAsync(
-                    eventLayer.AlphaEvents, settings.Tolerance, fitTaskDegree, cancellationToken);
-                var rotateTask = KpcEventTools.EventListFitAsync(
-                    eventLayer.RotateEvents, settings.Tolerance, fitTaskDegree, cancellationToken);
+                var moveXTask = Task.Run(() => KpcEventTools.EventListFit(eventLayer.MoveXEvents, settings.Tolerance, fitTaskDegree),cancellationToken);
+                var moveYTask = Task.Run(() => KpcEventTools.EventListFit(eventLayer.MoveYEvents, settings.Tolerance, fitTaskDegree),cancellationToken);
+                var alphaTask = Task.Run(() => KpcEventTools.EventListFit(eventLayer.AlphaEvents, settings.Tolerance, fitTaskDegree),cancellationToken);
+                var rotateTask = Task.Run(() => KpcEventTools.EventListFit(eventLayer.RotateEvents, settings.Tolerance, fitTaskDegree),cancellationToken);
 
                 await Task.WhenAll(moveXTask, moveYTask, alphaTask, rotateTask);
 

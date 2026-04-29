@@ -1,6 +1,8 @@
 ﻿using KaedePhi.Tool.Cli.Infrastructure;
 using KaedePhi.Tool.Cli.Model;
 using KaedePhi.Tool.Common;
+using KaedePhi.Tool.Converter.PhiEdit;
+using KaedePhi.Tool.Converter.PhiEdit.Model;
 using KaedePhi.Tool.Converter.RePhiEdit;
 using KaedePhi.Tool.Converter.RePhiEdit.Model;
 using Spectre.Console;
@@ -101,7 +103,7 @@ public abstract class OperationSettingsBase : CommandSettings
         {
             ChartType.RePhiEdit => new RePhiEditConverter().ToKpc(
                 await global::KaedePhi.Core.RePhiEdit.Chart.LoadFromJsonAsync(chartText)),
-            ChartType.PhiEdit => new PhiEdit.Converters.PeToKpc().Import(
+            ChartType.PhiEdit => new PhiEditConverter().ToKpc(
                 await global::KaedePhi.Core.PhiEdit.Chart.LoadAsync(chartText)),
             _ => null
         };

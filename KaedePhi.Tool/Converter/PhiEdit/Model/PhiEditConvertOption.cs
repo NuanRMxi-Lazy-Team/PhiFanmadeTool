@@ -1,6 +1,6 @@
-﻿namespace KaedePhi.Tool.KaedePhi.Converters.Model;
+﻿namespace KaedePhi.Tool.Converter.PhiEdit.Model;
 
-public class KaedePhiToPhiEditOptions
+public class PhiEditConvertOptions
 {
     public const double DefaultPrecision = 64d;
     public const double DefaultTolerancePercent = 0.1d;

@@ -10,83 +10,39 @@ internal static class EventCutter
     /// <summary>
     /// 在指定的拍范围内切割事件列表。
     /// </summary>
+    [Obsolete("请使用 global::KaedePhi.Tool.Event.KaedePhi.EventCutter<T>().CutEventsInRange")]
     internal static List<Kpc.Event<T>> CutEventsInRange<T>(
         List<Kpc.Event<T>> events,
         Beat startBeat,
         Beat endBeat,
         Beat cutLength)
     {
-        var cutEvents = new List<Kpc.Event<T>>();
-        var eventsToCut = events.Where(e => e.StartBeat < endBeat && e.EndBeat > startBeat).ToList();
-
-        foreach (var evt in eventsToCut)
-        {
-            var cutStart = evt.StartBeat < startBeat ? startBeat : evt.StartBeat;
-            var cutEnd = evt.EndBeat > endBeat ? endBeat : evt.EndBeat;
-
-            var totalBeats = cutEnd - cutStart;
-            var segmentCount = (int)Math.Ceiling((totalBeats / cutLength));
-
-            for (var i = 0; i < segmentCount; i++)
-            {
-                var currentBeat = new Beat(cutStart + (cutLength * i));
-                var segmentEnd = new Beat(cutStart + (cutLength * (i + 1)));
-                if (segmentEnd > cutEnd) segmentEnd = cutEnd;
-
-                cutEvents.Add(new Kpc.Event<T>
-                {
-                    StartBeat = currentBeat,
-                    EndBeat = segmentEnd,
-                    StartValue = evt.GetValueAtBeat(currentBeat),
-                    EndValue = evt.GetValueAtBeat(segmentEnd),
-                });
-            }
-        }
-
-        return cutEvents;
+        var cutter = new global::KaedePhi.Tool.Event.KaedePhi.EventCutter<T>();
+        return cutter.CutEventsInRange(events, startBeat, endBeat, cutLength);
     }
-
-    /// <see cref="CutEventsInRange{T}(List{Event{T}}, Beat, Beat, Beat)"/>
+    
+    [Obsolete("请使用 global::KaedePhi.Tool.Event.KaedePhi.EventCutter<T>().CutEventsInRange")]
     internal static List<Kpc.Event<T>> CutEventsInRange<T>(
         List<Kpc.Event<T>> events,
         Beat startBeat,
         Beat endBeat,
         double cutLength)
     {
-        var cutLengthBeat = new Beat(cutLength);
-        return CutEventsInRange(events, startBeat, endBeat, cutLengthBeat);
+        var cutter = new global::KaedePhi.Tool.Event.KaedePhi.EventCutter<T>();
+        return cutter.CutEventsInRange(events, startBeat, endBeat, cutLength);
     }
 
+    [Obsolete("请使用 global::KaedePhi.Tool.Event.KaedePhi.EventCutter<T>().CutEventToLiner")]
     internal static List<Kpc.Event<T>> CutEventToLiner<T>(
         Kpc.Event<T> evt, double cutLength)
         => CutEventToLiner(evt, new Beat(cutLength));
 
+    [Obsolete("请使用 global::KaedePhi.Tool.Event.KaedePhi.EventCutter<T>().CutEventToLiner")]
     internal static List<Kpc.Event<T>> CutEventToLiner<T>(
         Kpc.Event<T> evt,
         Beat cutLength)
     {
-        var cutEvents = new List<Kpc.Event<T>>();
-        // 在evt中均匀采样，并返回
-        var nowBeat = evt.StartBeat;
-        while (nowBeat < evt.EndBeat)
-        {
-            var segmentEnd = nowBeat + cutLength;
-            if (segmentEnd > evt.EndBeat)
-            {
-                segmentEnd = evt.EndBeat;
-            }
-
-            cutEvents.Add(new Kpc.Event<T>()
-            {
-                StartBeat = nowBeat,
-                EndBeat = segmentEnd,
-                StartValue = evt.GetValueAtBeat(nowBeat),
-                EndValue = evt.GetValueAtBeat(segmentEnd),
-            });
-
-            nowBeat = segmentEnd;
-        }
-
-        return cutEvents;
+        var cutter = new global::KaedePhi.Tool.Event.KaedePhi.EventCutter<T>();
+        return cutter.CutEventToLiner(evt, cutLength);
     }
 }

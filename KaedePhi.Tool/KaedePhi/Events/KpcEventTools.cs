@@ -65,12 +65,13 @@ public static class KpcEventTools
     /// <summary>
     /// 对事件列表做缓动拟合（异步版）。
     /// </summary>
+    [Obsolete("异步版不再支持",true)]
     public static Task<List<Kpc.Event<T>>> EventListFitAsync<T>(
         List<Kpc.Event<T>> events,
         double tolerance = 5d,
         int? maxDegreeOfParallelism = null,
         CancellationToken cancellationToken = default)
-        => EventFit.EventListFitAsync(events, tolerance, maxDegreeOfParallelism, cancellationToken);
+        => throw new NotSupportedException("Async version after now to be removed");
 
 
     /// <summary>根据容差压缩事件列表，合并变化率相近的相邻线性事件。</summary>
@@ -86,6 +87,7 @@ public static class KpcEventTools
     /// <param name="tolerance"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete("此方法弃用，请使用KaedePhi.Tool.Event.KaedePhi.EventCompressor<T>中的EventListCompressSqrt", false)]
     public static List<Kpc.Event<T>> EventListCompressSqrt<T>(List<Kpc.Event<T>> events, double tolerance = 5)
         => EventCompressor.EventListCompressSqrt(events, tolerance);
     /// <summary>
@@ -95,6 +97,7 @@ public static class KpcEventTools
     /// <param name="tolerance"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete("此方法弃用，请使用KaedePhi.Tool.Event.KaedePhi.EventCompressor<T>中的EventListCompressSlope", false)]
     public static List<Kpc.Event<T>> EventListCompressSlope<T>(List<Kpc.Event<T>> events, double tolerance = 5)
         => EventCompressor.EventListCompressSlope(events, tolerance);
 
@@ -114,12 +117,12 @@ public static class KpcEventTools
         double precision = 64d, double tolerance = 5d)
         => EventMerger.EventMergePlus(toEvents, fromEvents, precision, tolerance);
 
-    public static double GetMsAtBeat(Beat beat, List<BpmItem> bpmList)
+    public static double GetMsAtBeat(Beat beat, List<BpmItem> bpmList,float bpmFactor = 1f)
     {
         var sortedBpms = bpmList.OrderBy(b => (double)b.StartBeat).ToList();
         double ms = 0;
 
-        for (int i = 0; i < sortedBpms.Count; i++)
+        for (var i = 0; i < sortedBpms.Count; i++)
         {
             var segmentStart = sortedBpms[i].StartBeat;
             if (segmentStart >= beat) break;
@@ -129,7 +132,7 @@ public static class KpcEventTools
                 : beat;
 
             var beatLength = (double)(segmentEnd - segmentStart);
-            ms += beatLength / sortedBpms[i].Bpm * 60000d;
+            ms += beatLength / sortedBpms[i].Bpm / bpmFactor * 60000d;
         }
 
         return ms;

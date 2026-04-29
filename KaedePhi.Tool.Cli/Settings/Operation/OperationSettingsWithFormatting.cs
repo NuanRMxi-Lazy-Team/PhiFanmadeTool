@@ -1,10 +1,9 @@
 ﻿using KaedePhi.Tool.Cli.Infrastructure;
 using KaedePhi.Tool.Common;
+using KaedePhi.Tool.Converter.PhiEdit;
+using KaedePhi.Tool.Converter.PhiEdit.Model;
 using KaedePhi.Tool.Converter.RePhiEdit.Model;
-using KaedePhi.Tool.KaedePhi.Converters;
-using KaedePhi.Tool.KaedePhi.Converters.Model;
 using Chart = KaedePhi.Core.KaedePhi.Chart;
-using KpcToPe = KaedePhi.Tool.KaedePhi.Converters.KpcToPe;
 
 namespace KaedePhi.Tool.Cli.Settings.Operation;
 
@@ -131,8 +130,7 @@ public abstract class OperationSettingsWithFormatting : OperationSettingsBase
                 break;
             case ChartType.PhiEdit:
             {
-                var converter = new KpcToPe(new KaedePhiToPhiEditOptions());
-                var peChart = converter.Convert(chart);
+                var peChart = new PhiEditConverter().FromKpc(chart, new PhiEditConvertOptions());
                 if (DryRun) return output;
                 if (StreamOutput)
                 {
