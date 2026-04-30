@@ -44,7 +44,7 @@ public sealed class RenderCommand : AsyncCommand<RenderCommand.Settings>
 
         var writer = new ConsoleWriter();
         var svc = new ChartService();
-        var nrc = await svc.LoadNrcAsync(s.Input, s.Workspace, ct);
+        var nrc = await svc.LoadKpcAsync(s.Input, s.Workspace, ct);
         if (nrc == null) { writer.Error(CliLocalizationString.render_err_load_failed); return 1; }
 
         var outputDir = !string.IsNullOrWhiteSpace(s.Output) ? s.Output

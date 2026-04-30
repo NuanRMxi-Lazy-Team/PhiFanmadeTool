@@ -35,7 +35,7 @@ public sealed class ChartService
     }
 
     /// <summary>将输入谱面统一转换为中间类型。</summary>
-    public async Task<Chart?> LoadNrcAsync(string? input, string? workspace, CancellationToken ct = default)
+    public async Task<Chart?> LoadKpcAsync(string? input, string? workspace, CancellationToken ct = default)
     {
         var text = await LoadChartTextAsync(input, workspace, ct);
         var chartType = ChartGetType.GetType(text);
@@ -81,7 +81,7 @@ public sealed class ChartService
         return Path.Combine(_workspace.Root, workspace, "chart.json");
     }
 
-    /// <summary>将 NRC 谱面导出为 RPE 格式并写入。</summary>
+    /// <summary>将 KPC 谱面导出为 RPE 格式并写入。</summary>
     public async Task<string> SaveAsRpeAsync(Chart chart, string outputPath, bool dryRun,
         CancellationToken ct = default)
     {
@@ -92,7 +92,7 @@ public sealed class ChartService
         return outputPath;
     }
 
-    /// <summary>将 NRC 谱面导出为目标格式并写入。</summary>
+    /// <summary>将 KPC 谱面导出为目标格式并写入。</summary>
     public async Task<string?> SaveAsAsync(Chart chart, string outputPath, ChartType target,
         bool stream, bool format, bool dryRun, CancellationToken ct = default)
     {

@@ -113,41 +113,15 @@ namespace KaedePhi.Core.PhiEdit
                 }
                 else if (line.StartsWith('n'))
                 {
-                    var hashIndex = Array.IndexOf(part, "#");
-                    var ampIndex = Array.IndexOf(part, "&");
-
-                    string[] noteSpeedMultiplierPart;
-                    string[] noteWidthRatioPart;
-
-                    if (hashIndex != -1 && ampIndex != -1)
-                    {
-                        // inline 参数，无需预读
-                        noteSpeedMultiplierPart = new[] { "#", part[hashIndex + 1] };
-                        noteWidthRatioPart = new[] { "&", part[ampIndex + 1] };
-                    }
-                    else
+                    var (speedPart, widthPart) = GetInlineNoteParts(part);
+                    if (speedPart == null)
                     {
                         // 需要额外读取后续两行
-                        noteSpeedMultiplierPart = reader.ReadLine()?.Split(' ');
-                        noteWidthRatioPart = reader.ReadLine()?.Split(' ');
+                        speedPart = reader.ReadLine()?.Split(' ');
+                        widthPart = reader.ReadLine()?.Split(' ');
                     }
 
-                    var noteType = (NoteType)int.Parse(part[0].Substring(1, 1));
-                    var isHold = noteType == NoteType.Hold;
-                    var note = new Note
-                    {
-                        StartBeat = float.Parse(part[2]),
-                        EndBeat = isHold ? float.Parse(part[3]) : float.Parse(part[2]),
-                        PositionX = float.Parse(part[isHold ? 4 : 3]),
-                        Above = part[isHold ? 5 : 4] == "1",
-                        IsFake = part[isHold ? 6 : 5] == "1",
-                        SpeedMultiplier = float.Parse(noteSpeedMultiplierPart[1]),
-                        WidthRatio = float.Parse(noteWidthRatioPart[1]),
-                        Type = noteType
-                    };
-
-                    if (!judgeDict.ContainsKey(judgeLineIndex)) judgeDict[judgeLineIndex] = new JudgeLine();
-                    judgeDict[judgeLineIndex].NoteList.Add(note);
+                    AddNoteToDict(BuildNote(part, speedPart, widthPart), judgeLineIndex, judgeDict);
                 }
                 else
                     ParseLineCommand(part, judgeLineIndex, judgeDict);
@@ -163,7 +137,6 @@ namespace KaedePhi.Core.PhiEdit
                 var tmp = pendingLine;
                 pendingLine = null;
                 return tmp;
-
             }
         }
         
@@ -213,41 +186,15 @@ namespace KaedePhi.Core.PhiEdit
                 }
                 else if (line.StartsWith('n'))
                 {
-                    var hashIndex = Array.IndexOf(part, "#");
-                    var ampIndex = Array.IndexOf(part, "&");
-
-                    string[] noteSpeedMultiplierPart;
-                    string[] noteWidthRatioPart;
-
-                    if (hashIndex != -1 && ampIndex != -1)
-                    {
-                        // inline 参数，无需预读
-                        noteSpeedMultiplierPart = new[] { "#", part[hashIndex + 1] };
-                        noteWidthRatioPart = new[] { "&", part[ampIndex + 1] };
-                    }
-                    else
+                    var (speedPart, widthPart) = GetInlineNoteParts(part);
+                    if (speedPart == null)
                     {
                         // 需要额外读取后续两行
-                        noteSpeedMultiplierPart = (await reader.ReadLineAsync())?.Split(' ');
-                        noteWidthRatioPart = (await reader.ReadLineAsync())?.Split(' ');
+                        speedPart = (await reader.ReadLineAsync())?.Split(' ');
+                        widthPart = (await reader.ReadLineAsync())?.Split(' ');
                     }
 
-                    var noteType = (NoteType)int.Parse(part[0].Substring(1, 1));
-                    var isHold = noteType == NoteType.Hold;
-                    var note = new Note
-                    {
-                        StartBeat = float.Parse(part[2]),
-                        EndBeat = isHold ? float.Parse(part[3]) : float.Parse(part[2]),
-                        PositionX = float.Parse(part[isHold ? 4 : 3]),
-                        Above = part[isHold ? 5 : 4] == "1",
-                        IsFake = part[isHold ? 6 : 5] == "1",
-                        SpeedMultiplier = float.Parse(noteSpeedMultiplierPart[1]),
-                        WidthRatio = float.Parse(noteWidthRatioPart[1]),
-                        Type = noteType
-                    };
-
-                    if (!judgeDict.ContainsKey(judgeLineIndex)) judgeDict[judgeLineIndex] = new JudgeLine();
-                    judgeDict[judgeLineIndex].NoteList.Add(note);
+                    AddNoteToDict(BuildNote(part, speedPart, widthPart), judgeLineIndex, judgeDict);
                 }
                 else
                     ParseLineCommand(part, judgeLineIndex, judgeDict);
@@ -327,29 +274,11 @@ namespace KaedePhi.Core.PhiEdit
             }
         }
 
-        private static int ParseNote(string[] lines, int i, string[] part, int judgeLineIndex,
-            Dictionary<int, JudgeLine> judgeDict)
+        private static Note BuildNote(string[] part, string[] noteSpeedMultiplierPart, string[] noteWidthRatioPart)
         {
             var noteType = (NoteType)int.Parse(part[0].Substring(1, 1));
-            var hashIndex = Array.IndexOf(part, "#");
-            var ampIndex = Array.IndexOf(part, "&");
-
-            string[] noteSpeedMultiplierPart;
-            string[] noteWidthRatioPart;
-            if (hashIndex != -1 && ampIndex != -1)
-            {
-                noteSpeedMultiplierPart = new[] { "#", part[hashIndex + 1] };
-                noteWidthRatioPart = new[] { "&", part[ampIndex + 1] };
-            }
-            else
-            {
-                noteSpeedMultiplierPart = lines[i + 1].Split(' ');
-                noteWidthRatioPart = lines[i + 2].Split(' ');
-                i += 2;
-            }
-
             var isHold = noteType == NoteType.Hold;
-            var note = new Note
+            return new Note
             {
                 StartBeat = float.Parse(part[2]),
                 EndBeat = isHold ? float.Parse(part[3]) : float.Parse(part[2]),
@@ -360,9 +289,35 @@ namespace KaedePhi.Core.PhiEdit
                 WidthRatio = float.Parse(noteWidthRatioPart[1]),
                 Type = noteType
             };
+        }
 
+        private static (string[] speedPart, string[] widthPart) GetInlineNoteParts(string[] part)
+        {
+            var hashIndex = Array.IndexOf(part, "#");
+            var ampIndex = Array.IndexOf(part, "&");
+            if (hashIndex != -1 && ampIndex != -1)
+                return (new[] { "#", part[hashIndex + 1] }, new[] { "&", part[ampIndex + 1] });
+            return (null, null);
+        }
+
+        private static void AddNoteToDict(Note note, int judgeLineIndex, Dictionary<int, JudgeLine> judgeDict)
+        {
             if (!judgeDict.ContainsKey(judgeLineIndex)) judgeDict[judgeLineIndex] = new JudgeLine();
             judgeDict[judgeLineIndex].NoteList.Add(note);
+        }
+
+        private static int ParseNote(string[] lines, int i, string[] part, int judgeLineIndex,
+            Dictionary<int, JudgeLine> judgeDict)
+        {
+            var (speedPart, widthPart) = GetInlineNoteParts(part);
+            if (speedPart == null)
+            {
+                speedPart = lines[i + 1].Split(' ');
+                widthPart = lines[i + 2].Split(' ');
+                i += 2;
+            }
+
+            AddNoteToDict(BuildNote(part, speedPart, widthPart), judgeLineIndex, judgeDict);
             return i;
         }
 

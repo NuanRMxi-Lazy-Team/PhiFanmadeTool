@@ -18,7 +18,7 @@
         public (float, float) GetValueAtBeat(float beat, float startXValue, float startYValue)
         {
             //获得这个拍在这个事件的时间轴上的位置
-            float t = (beat - StartBeat) / (EndBeat - StartBeat);
+            var t = (beat - StartBeat) / (EndBeat - StartBeat);
             var xValue = EasingType.Interpolate(startXValue, EndXValue, t);
             var yValue = EasingType.Interpolate(startYValue, EndYValue, t);
             return (xValue, yValue);

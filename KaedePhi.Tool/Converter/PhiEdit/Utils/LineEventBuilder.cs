@@ -206,8 +206,10 @@ public class LineEventBuilder
         var sameEasing = xAligned && yAligned
                                   && activeX != null && activeY != null
                                   && (int)activeX.Easing == (int)activeY.Easing;
-        var canDirectMap = (xAligned && activeY == null)
-                           || (yAligned && activeX == null)
+        // 只有一轴活跃时（另一轴为 null），无论该轴是否精确覆盖当前区间，均可直接映射。
+        // 跨越边界时用 GetValueAtBeat 取正确插值，保留原始缓动曲线，避免不必要的线性化切段。
+        var canDirectMap = (activeX != null && activeY == null)
+                           || (activeY != null && activeX == null)
                            || sameEasing;
 
         if (canDirectMap)
@@ -227,10 +229,31 @@ public class LineEventBuilder
         Kpc.Event<double>? activeX, Kpc.Event<double>? activeY,
         ref double lastX, ref double lastY)
     {
-        var startXv = activeX?.StartValue ?? lastX;
-        var endXv = activeX?.EndValue ?? lastX;
-        var startYv = activeY?.StartValue ?? lastY;
-        var endYv = activeY?.EndValue ?? lastY;
+        // 对于精确覆盖当前区间的事件，直接取 StartValue/EndValue；
+        // 对于跨越边界的事件（如单轴活跃但事件范围超出当前区间），用 GetValueAtBeat 插值，保留原始缓动曲线。
+        double startXv, endXv, startYv, endYv;
+        if (activeX != null)
+        {
+            var xAligned = IsExactlyCovering(activeX, start, end);
+            startXv = xAligned ? activeX.StartValue : activeX.GetValueAtBeat(new Beat(start));
+            endXv = xAligned ? activeX.EndValue : activeX.GetValueAtBeat(new Beat(end));
+        }
+        else
+        {
+            startXv = lastX;
+            endXv = lastX;
+        }
+        if (activeY != null)
+        {
+            var yAligned = IsExactlyCovering(activeY, start, end);
+            startYv = yAligned ? activeY.StartValue : activeY.GetValueAtBeat(new Beat(start));
+            endYv = yAligned ? activeY.EndValue : activeY.GetValueAtBeat(new Beat(end));
+        }
+        else
+        {
+            startYv = lastY;
+            endYv = lastY;
+        }
         int easing;
         if (activeX != null)
             easing = SafeConvertEasingToInt(activeX.Easing, $"移动@{start:F3}");
@@ -316,13 +339,16 @@ public class LineEventBuilder
             var segEnd = subBoundaries[i + 1];
             if (segEnd - segStart <= FloatEpsilon) continue;
 
-            var xSeg = FindSegment(cutX, segStart, segEnd);
-            var ySeg = FindSegment(cutY, segStart, segEnd);
+            // CutEventsInRange 对每个原始事件独立按 cutLength 切割，cutX 与 cutY 的段边界不一定对齐。
+            // CollectBoundaries(cutX, cutY) 会产生比任一列表更细的子区间，FindSegment 精确匹配会失败。
+            // 改用 FindActiveEvent 在 segStart 处查找活跃段，再插值取区间端点值。
+            var xSeg = FindActiveEvent(cutX, new Beat(segStart));
+            var ySeg = FindActiveEvent(cutY, new Beat(segStart));
 
-            var startXv = xSeg?.StartValue ?? lastX;
-            var endXv = xSeg?.EndValue ?? lastX;
-            var startYv = ySeg?.StartValue ?? lastY;
-            var endYv = ySeg?.EndValue ?? lastY;
+            var startXv = xSeg != null ? xSeg.GetValueAtBeat(new Beat(segStart)) : lastX;
+            var endXv = xSeg != null ? xSeg.GetValueAtBeat(new Beat(segEnd)) : lastX;
+            var startYv = ySeg != null ? ySeg.GetValueAtBeat(new Beat(segStart)) : lastY;
+            var endYv = ySeg != null ? ySeg.GetValueAtBeat(new Beat(segEnd)) : lastY;
 
             target.MoveFrames.Add(new Pe.MoveFrame
             {
@@ -339,8 +365,8 @@ public class LineEventBuilder
                 EndYValue = Transform.TransformToPeY(endYv)
             });
 
-            if (xSeg != null) lastX = xSeg.EndValue;
-            if (ySeg != null) lastY = ySeg.EndValue;
+            if (xSeg != null) lastX = endXv;
+            if (ySeg != null) lastY = endYv;
         }
     }
 
@@ -433,7 +459,7 @@ public class LineEventBuilder
         catch (EasingConverter.EasingNotSupportedException)
         {
             Warn(
-                $"{context}：检测到不支持的缓动，将切分为 {src.EndBeat - src.StartBeat / _options.Cutting.UnsupportedEasingPrecision} 段线性事件");
+                $"{context}：检测到不支持的缓动，将切分为 {(src.EndBeat - src.StartBeat) / _options.Cutting.UnsupportedEasingPrecision} 段线性事件");
             return KpcEventTools.CutEventToLiner(src, 1d / _options.Cutting.UnsupportedEasingPrecision);
         }
     }

@@ -5,13 +5,13 @@
         <AssemblyName>KaedePhi.Core</AssemblyName>
         <RootNamespace>KaedePhi.Core</RootNamespace>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Title>PhiFanmade Core Lib</Title>
+        <Title>KaedePhi Core Lib</Title>
         <Authors>NuanR_Star Ciallo Team</Authors>
         <Description>即使身处无人角落，我仍要继续向前，直到我无法前进。但，可曾记得启程的初衷？</Description>
-        <PackageProjectUrl>https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/NuanRMxi-Lazy-Team/KaedePhi</PackageProjectUrl>
         <PackageLicenseUrl>https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html</PackageLicenseUrl>
         <PackageIcon>PhiFanmadeToolIcon.png</PackageIcon>
-        <RepositoryUrl>https://github.com/NuanRMxi-Lazy-Team/PhiFanmadeTool</RepositoryUrl>
+        <RepositoryUrl>https://github.com/NuanRMxi-Lazy-Team/KaedePhi</RepositoryUrl>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
         <Copyright>NuanR_Star Ciallo Copyright © 2025</Copyright>
         <TargetFrameworks>net10.0;net8.0;netstandard2.1</TargetFrameworks>

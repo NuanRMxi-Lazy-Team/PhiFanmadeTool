@@ -37,12 +37,11 @@ namespace KaedePhi.Core.PhiEdit
         /// <returns>PhiEditor Chart格式字符串</returns>
         public string ToString(int judgeLineIndex, string head)
         {
-            if (head == "cm" || head == "cp")
+            if (head is "cm" or "cp")
                 throw new ArgumentException("请使用 MoveEvent 或 MoveFrame 的 ToString 方法，这不是一个 MoveEvent 或 MoveFrame");
-            if (head != "cf")
-                return $"{head} {judgeLineIndex} {StartBeat} {EndBeat} {EndValue} {(int)EasingType}";
-            else
-                return $"{head} {judgeLineIndex} {StartBeat} {EndBeat} {EndValue}";
+            return head != "cf"
+                ? $"{head} {judgeLineIndex} {StartBeat} {EndBeat} {EndValue} {(int)EasingType}"
+                : $"{head} {judgeLineIndex} {StartBeat} {EndBeat} {EndValue}";
         }
 
         public Event Clone()

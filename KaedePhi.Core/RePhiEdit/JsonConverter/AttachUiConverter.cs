@@ -55,7 +55,7 @@ namespace KaedePhi.Core.RePhiEdit.JsonConverter
         {
             if (reader.TokenType == JsonToken.Null)
                 return null;
-            else if (reader.TokenType == JsonToken.String)
+            if (reader.TokenType == JsonToken.String)
             {
                 var value = (string)reader.Value;
                 var lowerValue = value!.ToLower();

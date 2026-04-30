@@ -86,8 +86,8 @@ public class PhiEditConvertOptions
 
     public class FatherLineUnbindOptions
     {
-        private bool _classicMode = true;
-        private bool _compress = false;
+        private bool _classicMode = false;
+        private bool _compress = true;
 
         /// <summary>
         /// 遇到父子线时父线解绑精度
@@ -136,8 +136,8 @@ public class PhiEditConvertOptions
 
     public class MultiLayerMergeOptions
     {
-        private bool _classicMode = true;
-        private bool _compress = false;
+        private bool _classicMode = false;
+        private bool _compress = true;
 
         /// <summary>
         /// 遇到多层级时的合并精度

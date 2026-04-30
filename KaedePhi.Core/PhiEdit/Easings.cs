@@ -68,6 +68,7 @@ namespace KaedePhi.Core.PhiEdit
         }
 
         /// <summary>对 [start, end] 区间在 t 处进行插值</summary>
+        [PublicAPI]
         public float Interpolate(float start, float end, float t)
         {
             var easedTime = _function(t);
@@ -75,6 +76,7 @@ namespace KaedePhi.Core.PhiEdit
         }
 
         /// <inheritdoc cref="Interpolate(float,float,float)"/>
+        [PublicAPI]
         public double Interpolate(double start, double end, double t)
         {
             var easedTime = _function(t);

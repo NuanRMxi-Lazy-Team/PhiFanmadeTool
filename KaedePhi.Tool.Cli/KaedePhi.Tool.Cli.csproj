@@ -23,6 +23,6 @@
     
     <ItemGroup>
         <PackageReference Include="Spectre.Console.Cli" Version="0.55.0" />
-        <PackageReference Include="YamlDotNet" Version="17.0.0" />
+        <PackageReference Include="YamlDotNet" Version="17.1.0" />
     </ItemGroup>
 </Project>

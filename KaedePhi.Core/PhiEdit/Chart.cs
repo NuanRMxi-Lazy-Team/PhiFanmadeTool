@@ -25,12 +25,12 @@ namespace KaedePhi.Core.PhiEdit
         /// <summary>
         /// 判定线列表
         /// </summary>
-        public List<JudgeLine> JudgeLineList { get; set; } = new List<JudgeLine>();
+        public List<JudgeLine> JudgeLineList { get; set; } = new();
 
         /// <summary>
         /// BPM列表
         /// </summary>
-        public List<BpmItem> BpmList { get; set; } = new List<BpmItem>();
+        public List<BpmItem> BpmList { get; set; } = new();
 
         public Chart Clone()
         {

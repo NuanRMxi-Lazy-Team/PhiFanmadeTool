@@ -25,7 +25,7 @@ public sealed class ConvertCommand : AsyncCommand<ConvertCommand.Settings>
         var writer = new ConsoleWriter();
         var svc = new ChartService();
 
-        var kpc = await svc.LoadNrcAsync(s.Input, s.Workspace, ct);
+        var kpc = await svc.LoadKpcAsync(s.Input, s.Workspace, ct);
         if (kpc == null) { writer.Error(Strings.cli_err_unimplemented); return 1; }
 
         using var _ = KpcToolLog.Subscribe(info: writer.Info, warning: writer.Warn, error: writer.Error, debug: writer.Info);

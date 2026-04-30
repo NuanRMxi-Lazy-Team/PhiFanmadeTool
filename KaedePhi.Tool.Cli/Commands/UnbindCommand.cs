@@ -19,7 +19,7 @@ public sealed class UnbindFatherCommand : AsyncCommand<UnbindFatherCommand.Setti
 
         var writer = new ConsoleWriter();
         var svc = new ChartService();
-        var nrc = await svc.LoadNrcAsync(s.Input, s.Workspace, ct);
+        var nrc = await svc.LoadKpcAsync(s.Input, s.Workspace, ct);
         if (nrc == null) { writer.Error(Strings.cli_err_unimplemented); return 1; }
 
         var nrcCopy = nrc.Clone();

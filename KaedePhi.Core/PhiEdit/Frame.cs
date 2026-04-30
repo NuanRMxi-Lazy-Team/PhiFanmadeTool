@@ -12,8 +12,7 @@ namespace KaedePhi.Core.PhiEdit
         /// </summary>
         public override string ToString()
             => $"Frame(Beat={Beat}, Value={Value})";
-
-
+        
         /// <summary>
         /// 用于将瞬时事件转换为PhiEditor Chart格式的字符串
         /// </summary>

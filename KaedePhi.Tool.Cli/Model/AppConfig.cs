@@ -8,7 +8,7 @@ public class AppConfig
     /// <summary>
     /// 0 = 关闭日志, 1 = Debug日志, 2 = Info日志, 3 = Warning日志, 4 = Error日志
     /// </summary>
-    public uint LogLevel { get; set; } = 2;
+    public uint LogLevel { get; set; } = 2; // TODO: 控制日志级别
 
     /// <summary>
     /// 拟合默认参数设置

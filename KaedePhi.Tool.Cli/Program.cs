@@ -21,6 +21,7 @@ app.Configure(config =>
     config.UseStrictParsing();
 
     // 统一异常处理，保持与原先相同的错误输出风格
+    // TODO: 放宽命令检查，或提供更多辅助修正命令的提示
     config.SetExceptionHandler((ex, _) =>
     {
         // 未知命令/参数：引导用户使用 --help
