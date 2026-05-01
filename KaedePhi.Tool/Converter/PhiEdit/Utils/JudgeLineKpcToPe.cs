@@ -1,10 +1,6 @@
-using KaedePhi.Core.Common;
-using global::KaedePhi.Tool.Converter.PhiEdit.Model;
+using KaedePhi.Tool.Converter.PhiEdit.Model;
 using global::KaedePhi.Tool.JudgeLines.KaedePhi;
-using global::KaedePhi.Tool.KaedePhi.Events;
-using global::KaedePhi.Tool.KaedePhi;
 using AlphaControl = KaedePhi.Core.KaedePhi.AlphaControl;
-using KpcEventLayer = KaedePhi.Core.KaedePhi.EventLayer;
 using ExtendLayer = KaedePhi.Core.KaedePhi.ExtendLayer;
 using KpcJudgeLine = KaedePhi.Core.KaedePhi.JudgeLine;
 using SizeControl = KaedePhi.Core.KaedePhi.SizeControl;
@@ -208,5 +204,5 @@ public class JudgeLineKpcToPe
     }
 
 
-    private void Warn(string message) => _warnLogger.Invoke(message);
+    private void Warn(string message) => _warnLogger?.Invoke(message);
 }

@@ -53,8 +53,8 @@ namespace KaedePhi.Core.PhiEdit
                     $"n{(int)Type} {judgeLineIndex} {StartBeat} {EndBeat} {PositionX} {aboveNumber} {isFakeNumber}");
             }
 
-            stringBuilder.AppendLine($"# {WidthRatio}");
-            stringBuilder.AppendLine($"& {SpeedMultiplier}");
+            stringBuilder.AppendLine($"# {SpeedMultiplier}");
+            stringBuilder.AppendLine($"& {WidthRatio}");
 
             return stringBuilder.ToString().Trim();
         }

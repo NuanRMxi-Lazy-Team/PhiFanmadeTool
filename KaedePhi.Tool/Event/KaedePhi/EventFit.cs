@@ -19,13 +19,6 @@ public class EventFit<TPayload> : LoggableBase, IEventFit<Kpc.Event<TPayload>>
     private const int FullSearchRunLengthThreshold = 160;
     private const int LongRunSearchWindow = 160;
 
-    public Action<string> OnInfo { get; set; } = _ => { };
-    public Action<string> OnWarning { get; set; } = _ => { };
-    public Action<string> OnError { get; set; } = _ => { };
-    private void Info(string message) => OnInfo.Invoke(message);
-    private void Warning(string message) => OnWarning.Invoke(message);
-    private void Error(string message) => OnError.Invoke(message);
-
 
     /// <inheritdoc/>
     public List<Kpc.Event<TPayload>> EventListFit(
@@ -120,7 +113,7 @@ public class EventFit<TPayload> : LoggableBase, IEventFit<Kpc.Event<TPayload>>
         foreach (var t in outputs)
             result.AddRange(t);
 
-        Info($"EventListFit: 拟合完成，{events.Count} -> {result.Count} 个事件");
+        LogInfo($"EventListFit: 拟合完成，{events.Count} -> {result.Count} 个事件");
         return result;
     }
 
@@ -151,7 +144,7 @@ public class EventFit<TPayload> : LoggableBase, IEventFit<Kpc.Event<TPayload>>
                 continue;
             }
 
-            Info(
+            LogInfo(
                 $"EventListFit: 发现可拟合线性段 [{sortedEvents[index].StartBeat} -> {sortedEvents[runEnd - 1].EndBeat}]，共 {runEnd - index} 个事件");
             units.Add(new FitUnit(index, runEnd, true));
             index = runEnd;
@@ -175,7 +168,7 @@ public class EventFit<TPayload> : LoggableBase, IEventFit<Kpc.Event<TPayload>>
         var window = runLength <= FullSearchRunLengthThreshold ? runLength : LongRunSearchWindow;
 
         if (runLength > FullSearchRunLengthThreshold)
-            Info(
+            LogInfo(
                 $"EventListFit: 长线性段优化模式启用，长度={runLength}，回看窗口={window}");
 
         // ---- Phase 1: 并行预计算所有候选段 ----
@@ -513,6 +506,7 @@ public class EventFit<TPayload> : LoggableBase, IEventFit<Kpc.Event<TPayload>>
             if (abs > maxAbsValue)
                 maxAbsValue = abs;
         }
+
         return Math.Max(maxAbsValue, 1d);
     }
 

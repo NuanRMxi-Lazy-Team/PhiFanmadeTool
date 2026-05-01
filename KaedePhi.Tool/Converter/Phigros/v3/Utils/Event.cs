@@ -23,7 +23,7 @@ public static class Event
 
         foreach (var ev in sorted)
         {
-            var startBeat = ev.StartTime / 32.0;
+            var startBeat = Math.Max(0d, ev.StartTime / 32.0);
             var endBeat = ev.EndTime / 32.0;
             if (endBeat <= startBeat) continue;
 
@@ -52,7 +52,7 @@ public static class Event
 
         foreach (var ev in sorted)
         {
-            var startBeat = ev.StartTime / 32.0;
+            var startBeat = Math.Max(0d, ev.StartTime / 32.0);
             var endBeat = ev.EndTime / 32.0;
             if (endBeat <= startBeat) continue;
 
@@ -79,7 +79,7 @@ public static class Event
 
         foreach (var ev in sorted)
         {
-            var startBeat = ev.StartTime / 32.0;
+            var startBeat = Math.Max(0d, ev.StartTime / 32.0);
             var endBeat = ev.EndTime / 32.0;
             var speedValue = (float)(ev.Value * SpeedValueRatio);
             if (endBeat <= startBeat) continue;
@@ -105,10 +105,14 @@ public static class Event
         maxBeat = Math.Max(maxBeat, GetMaxBeat(src.NotesBelow?
             .Where(n => n.Type == PhigrosNoteType.Hold)
             .Select(n => (double)(n.Time + n.HoldTime) / 32)));
-        maxBeat = Math.Max(maxBeat, GetMaxBeat(src.SpeedEvents?.Select(e => (double)e.EndTime / 32)));
-        maxBeat = Math.Max(maxBeat, GetMaxBeat(src.JudgeLineMoveEvents?.Select(e => (double)e.EndTime / 32)));
-        maxBeat = Math.Max(maxBeat, GetMaxBeat(src.JudgeLineRotateEvents?.Select(e => (double)e.EndTime / 32)));
-        maxBeat = Math.Max(maxBeat, GetMaxBeat(src.JudgeLineDisappearEvents?.Select(e => (double)e.EndTime / 32)));
+        maxBeat = Math.Max(maxBeat, GetMaxBeat(src.SpeedEvents?.Select(e =>
+            Math.Min((double)e.EndTime / 32, Math.Max(0d, (double)e.StartTime / 32) + 1))));
+        maxBeat = Math.Max(maxBeat, GetMaxBeat(src.JudgeLineMoveEvents?.Select(e =>
+            e.Start == e.End ? Math.Min((double)e.EndTime / 32, Math.Max(0d, (double)e.StartTime / 32) + 1) : (double)e.EndTime / 32)));
+        maxBeat = Math.Max(maxBeat, GetMaxBeat(src.JudgeLineRotateEvents?.Select(e =>
+            e.Start == e.End ? Math.Min((double)e.EndTime / 32, Math.Max(0d, (double)e.StartTime / 32) + 1) : (double)e.EndTime / 32)));
+        maxBeat = Math.Max(maxBeat, GetMaxBeat(src.JudgeLineDisappearEvents?.Select(e =>
+            e.Start == e.End ? Math.Min((double)e.EndTime / 32, Math.Max(0d, (double)e.StartTime / 32) + 1) : (double)e.EndTime / 32)));
         return maxBeat + TrailingBeatPadding;
     }
 
@@ -117,9 +121,6 @@ public static class Event
         {
             StartBeat = new Beat(startBeat),
             EndBeat = new Beat(endBeat),
-            Easing = new Kpc.Easing(1),
-            EasingLeft = 0f,
-            EasingRight = 1f,
             StartValue = startValue,
             EndValue = endValue
         };
